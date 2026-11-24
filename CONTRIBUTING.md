@@ -1,6 +1,6 @@
 # Contributing
 
-Two kinds of changes come up here: a new exercise, and a change to the tool itself. Exercises are the common one and need no code.
+Thank you for wanting to help. There are two ways in, and the first needs no code: you can add an exercise, or you can change the tool itself. Small pull requests that do one thing are the easiest to review, so start there.
 
 ## Set up
 
@@ -10,62 +10,58 @@ make install      # installs dependencies and checks Claude Code, OpenCode and t
 make help         # every command
 ```
 
-`make test` runs the unit tests, `make typecheck` the type check, `make dev` starts the frontend and the backend with hot reload. `AGENTS.md` explains how the tool is put together, and it is the file to give any AI agent that works on this repository.
+`make dev` starts the frontend and the backend with hot reload, `make test` runs the unit tests and `make typecheck` the type check. [AGENTS.md](AGENTS.md) explains how the tool is put together, and it is the file to give any AI agent that works on this repository.
+
+## Send a change
+
+![Branch, check, commit and open a pull request](docs/images/contribute.gif)
+
+1. Fork the repository and branch from `main` with a short name (`feature/`, `fix/` or `chore/` followed by what it does). Nobody pushes to `main` directly.
+2. Make the change with a test. Logic goes in small functions that are easy to test, and the files that need a real process, terminal, socket or assistant stay thin.
+3. Run `npm run lint`, `make typecheck`, `make test` and `npx next build`. The pull request runs the same checks.
+4. If you changed something people see, try it in the browser on both sides: `http://localhost:3000` is the interviewer, and `http://candidate.localhost:3000` (or the tunnel link in another browser profile) is the candidate.
+5. Open the pull request and say what changed and how you checked it. A screenshot helps for anything visual.
 
 ## Add an exercise
 
-An exercise is a folder in `exercises/` with a `description.md`. `make start` lists every such folder, so nothing else needs registering.
+An exercise is a folder in `exercises/` with a `description.md`, and `make start` lists every such folder, so nothing else needs registering. The easiest way is to let an agent ask you the questions (the animation below is an illustration of the flow, and the questions you get depend on your agent):
 
-### With an agent (recommended)
+![Creating an exercise with the create-exercise skill](docs/images/create-exercise.gif)
 
-The repository ships a skill that asks the right questions and scaffolds everything. In Claude Code, OpenCode or any agent that reads files, ask:
+In Claude Code, OpenCode or any agent that reads files, ask it to run the `create-exercise` skill (`.claude/skills/create-exercise/SKILL.md`). It asks for the id, title, stack, duration and scenario, and whether some phases stay hidden, then writes the files. Read what it wrote, because the scenario and the starter code are your call.
 
-> Run the create-exercise skill
-
-It lives in `.claude/skills/create-exercise/SKILL.md`. It asks for the id, title, stack, duration and scenario, whether there are phases and which ones stay hidden, and then creates the files below. Review what it wrote; the scenario and the starter code are your call.
-
-### By hand
+To do it by hand, the folder looks like this:
 
 ```
 exercises/<id>/
-  description.md            H1 is the title shown in the start menu; the candidate reads it first
-  exercise.json             the one config file: locked files, hidden files, first file, assistant overview, how Run starts the app
-  phases/                   phase briefs (optional)
-  codebase/                 the starting code, or a single starter file for small exercises
+  description.md     the H1 is the title in the start menu, and the candidate reads it first
+  exercise.json      locked files, hidden files, first file, assistant overview, how Run starts the app
+  phases/            phase briefs (optional)
+  codebase/          the starting code, or a single starter file for small exercises
 ```
 
-The details of every file are in the "Creating an exercise" section of `AGENTS.md`. Rules worth repeating:
+[AGENTS.md](AGENTS.md) has the details of every file in "Creating an exercise". The rules that matter most:
 
-- `description.md` must not name or describe hidden phases. Hidden files are moved out of the candidate's folder, so the file tree, the terminal and the AI assistant cannot see them, but the description is read by all three.
-- Interviewer material (guides, solutions, evaluation criteria) is hidden too, or lives outside the exercise folder. You see hidden files with a `hidden` badge in the file tree and reveal them one by one or all at once:
-- Lock `description.md` and `phases/` in `exercise.json` (`lockedFiles`), plus any fixture or test the candidate must not edit.
-- A web app sets `run.serverPort` to 3002 or higher (3000 and 3001 belong to the tool), uses `exercises/_templates/web-app/vite.config.ts` so the preview works through the platform path, and sets its router `basename` to `import.meta.env.BASE_URL`.
-- Commit the exercise. Activating a candidate restores the template with `git checkout HEAD -- exercises/<id>`, so uncommitted changes are discarded.
+- `description.md` must not name or describe hidden phases. Hidden files are moved out of the candidate's folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.
+- Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in `docs/interviewers/`.
+- Lock `description.md` and `phases/` in `exercise.json`, plus any fixture or test the candidate must not edit.
+- A web app uses a `run.serverPort` of 3002 or higher and the `vite.config.ts` from `exercises/_templates/web-app/`, so the preview works through the tool.
+- Commit the exercise, because starting a candidate restores it from git and drops uncommitted changes.
 
-### Check it before you open the pull request
+### Check it before the pull request
 
-1. `make start`, pick the exercise, open `http://localhost:3000` and enter a name.
-2. Click Run (if it has an app) and confirm the preview opens.
-3. Open the tunnel URL in another browser profile and check that locked files are read only and hidden files are not there.
-4. Reveal a hidden file from the interviewer side and check that it shows up for the candidate.
+![Starting an interview and revealing a hidden phase](docs/images/hidden-files.png)
 
-On `localhost`, "I'm an interviewer" lists the candidates and opens their workspace live.
+Run `make start`, pick the exercise, open `http://localhost:3000` and enter a name. Click Run if it has an app and confirm the preview opens. Then open the candidate side in another browser profile and check that locked files are read only and hidden files are not there, and reveal one from the interviewer side to see it appear.
 
-## Change the tool
+## Things worth knowing
 
-1. Branch from the main branch (`feature/short-description`, `fix/` and `chore/` work too). Never push to the main branch.
-2. Make the change with tests. Logic goes in small functions with unit tests; the files that need a real process, terminal, socket or AI provider are the hard ones to test, so keep decision making out of them.
-3. Run `npm run lint`, `make typecheck`, `make test` and `npx next build`.
-4. Verify UI changes in the browser on both sides: `localhost` (the interviewer) and `candidate.localhost` or the tunnel URL in a separate browser profile (the candidate).
-5. Open a pull request and say what changed and how you checked it.
+When you change who may do what (roles, the choice of assistant, what a terminal assistant can reach), add a test that tries to break it. `server/routes/__tests__/agent.test.ts` is the example, because it calls the API the way a candidate could and not through the page.
 
-CI runs the type check, the lint and the tests on every pull request (`.github/workflows/pr-branch-checks.yml`).
+The assistants that candidates talk to run on the interviewer's machine, so changes to `server/lib/assistant-prompt.ts`, to the flags in `server/lib/claude-proxy.ts` or `server/lib/agent-pty.ts`, or to what `server/lib/opencode-pty.ts` copies in, change what a candidate can do. Say what the effect is in the pull request.
 
-When you change who may do what (roles, the choice of assistant, what a terminal assistant can reach), add a test that tries to break it. `server/routes/__tests__/agent.test.ts` is the example: it calls the API directly the way a candidate could, not through the page.
+Candidate data (`.solutions/`, `exports/`) and tokens never go in the repository, and git already ignores them.
 
 ## House rules
 
-- English for code, docs and commit messages. Short sentences, no dashes in prose, no emojis.
-- Never skip hooks.
-- Candidate data (`.solutions/`, `exports/`) and interviewer tokens never go in the repository. They are gitignored; keep it that way.
-- The assistants that candidates talk to run on the interviewer's machine. Changes to `server/lib/assistant-prompt.ts`, to the flags in `server/lib/claude-proxy.ts` or `server/lib/agent-pty.ts`, or to what `server/lib/opencode-pty.ts` copies in, change what candidates can do, so describe the effect in the pull request.
+English for code, docs and commit messages, short and plain, no emojis, and no dashes in prose. Never skip the git hooks. The tool is licensed under the AGPL-3.0, and by sending a change you agree that it is shared under the same license.
