@@ -3,7 +3,25 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join, posix, relative } from 'path';
 import { fileURLToPath } from 'url';
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import yaml from 'highlight.js/lib/languages/yaml';
 import { marked } from 'marked';
+
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('yaml', yaml);
+const ALIASES = { sh: 'bash', shell: 'bash', zsh: 'bash', js: 'javascript', yml: 'yaml' };
+
+/** A code block with its colours, or plain when the language is not one of the four the docs use */
+export function highlight(code, lang) {
+  const name = ALIASES[lang] ?? lang;
+  const body = name && hljs.getLanguage(name) ? hljs.highlight(code, { language: name, ignoreIllegals: true }).value : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<pre><code${name ? ` class="hljs language-${name}"` : ' class="hljs"'}>${body}</code></pre>\n`;
+}
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'site', 'docs');
@@ -47,6 +65,7 @@ function render(file) {
     if (depth === 2) headings.push({ id, text: text.replace(/[`*_]/g, '') });
     return `<h${depth} id="${id}">${marked.Parser.parseInline(tokens)}</h${depth}>\n`;
   };
+  renderer.code = ({ text, lang }) => highlight(text, (lang || '').split(/\s/)[0]);
   renderer.link = ({ href, title, tokens }) => {
     const to = rewriteLink(href, file);
     const external = /^https?:/.test(to);

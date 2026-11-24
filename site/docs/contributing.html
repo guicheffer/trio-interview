@@ -31,10 +31,9 @@
     <article class="md"><h1 id="contributing">Contributing</h1>
 <p>Thank you for wanting to help. There are two ways in, and the first needs no code: you can add an exercise, or you can change the tool itself. Small pull requests that do one thing are the easiest to review, so start there.</p>
 <h2 id="set-up">Set up</h2>
-<pre><code class="language-bash">nvm use           # Node 25, see .nvmrc
-make install      # installs dependencies and checks Claude Code, OpenCode and the tunnel
-make help         # every command
-</code></pre>
+<pre><code class="hljs language-bash">nvm use           <span class="hljs-comment"># Node 25, see .nvmrc</span>
+make install      <span class="hljs-comment"># installs dependencies and checks Claude Code, OpenCode and the tunnel</span>
+make <span class="hljs-built_in">help</span>         <span class="hljs-comment"># every command</span></code></pre>
 <p><code>make dev</code> starts the frontend and the backend with hot reload, <code>make test</code> runs the unit tests and <code>make typecheck</code> the type check. <a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> explains how the tool is put together, and it is the file to give any AI agent that works on this repository.</p>
 <h2 id="send-a-change">Send a change</h2>
 <p><img src="images/contribute.gif" alt="Branch, check, commit and open a pull request" loading="lazy"></p>
@@ -47,27 +46,24 @@ make help         # every command
 </ol>
 <h2 id="add-an-exercise">Add an exercise</h2>
 <p>Exercises you use live in <code>exercises/</code>, which git ignores, so they stay on your machine along with the work of every candidate. The ones that ship with the tool are in <code>examples/</code>, and you can start from them:</p>
-<pre><code class="language-bash">make new-exercise FROM=word-count            # copy an example into exercises/ and change it
-make new-exercise TITLE=&quot;Todo API&quot; KIND=web   # or make an empty one that already runs
-</code></pre>
+<pre><code class="hljs language-bash">make new-exercise FROM=word-count            <span class="hljs-comment"># copy an example into exercises/ and change it</span>
+make new-exercise TITLE=<span class="hljs-string">&quot;Todo API&quot;</span> KIND=web   <span class="hljs-comment"># or make an empty one that already runs</span></code></pre>
 <p>With no options <code>make new-exercise</code> asks, and offers the examples first. A new exercise has a working <code>exercise.json</code> from the start, so you can pick it in <code>make start</code> before there is any code in it, and fill the files in afterwards.</p>
 <p>An agent can write the content for you:</p>
 <p><img src="images/create-exercise.gif" alt="Creating an exercise with the create-exercise skill" loading="lazy"></p>
 <p>In Claude Code, OpenCode or any agent that reads files, ask it to run the <code>create-exercise</code> skill (<code>.claude/skills/create-exercise/SKILL.md</code>). It asks for the title, stack, duration and scenario, and whether some phases stay hidden, then writes the files. Read what it wrote, because the scenario and the starter code are your call. The animation is an illustration of the flow, and the questions you get depend on your agent.</p>
 <h3 id="keep-your-exercises-in-your-own-repository">Keep your exercises in your own repository</h3>
 <p>A company can keep its set in a private repository and bring it in on any machine. List the repository, or a folder, in <code>interview.config.yaml</code>:</p>
-<pre><code class="language-yaml">sources:
-  - https://github.com/your-company/interview-exercises.git
-  - ../my-exercises
-</code></pre>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">sources:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-string">https://github.com/your-company/interview-exercises.git</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-string">../my-exercises</span></code></pre>
 <p>Then run <code>make exercises</code>. It copies each folder that has a <code>description.md</code> into <code>exercises/</code>, leaves alone any exercise that is already there, and skips folders whose names are not lowercase letters, digits and dashes. A git source is cloned over https or ssh and nothing else.</p>
 <h3 id="what-an-exercise-is-made-of">What an exercise is made of</h3>
-<pre><code>exercises/&lt;id&gt;/
+<pre><code class="hljs">exercises/&lt;id&gt;/
   description.md     the H1 is the title in the start menu, and the candidate reads it first
   exercise.json      locked files, hidden files, first file, assistant overview, how Run starts the app
   phases/            phase briefs (optional)
-  codebase/          the starting code, or a single starter file for small exercises
-</code></pre>
+  codebase/          the starting code, or a single starter file for small exercises</code></pre>
 <p><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> has the details of every file in &quot;Creating an exercise&quot;. The rules that matter most:</p>
 <ul>
 <li><code>description.md</code> must not name or describe hidden phases. Hidden files are moved out of the candidate&#39;s folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.</li>
