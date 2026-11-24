@@ -2,9 +2,11 @@
 // Run it again any time to change the settings, or edit the file by hand. `--check` only reports and never asks.
 import { spawnSync } from 'child_process';
 import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { homedir } from 'os';
 import { join } from 'path';
 import { createInterface } from 'readline/promises';
-import { DEFAULT_CONFIG, TOOLS, parseConfig, renderConfig, type InterviewConfig, type Tool } from '../shared/interview-config.js';
+import { DEFAULT_CONFIG, TOOLS, TUNNELS, parseConfig, renderConfig, type InterviewConfig, type Tool, type Tunnel } from '../shared/interview-config.js';
+import { tunnelStatus } from '../shared/tunnel.js';
 
 const root = process.cwd();
 const file = join(root, 'interview.config.yaml');
@@ -34,6 +36,15 @@ function exercisesIn(dir: string): string[] {
   return readdirSync(path).filter(name => !name.startsWith('_') && existsSync(join(path, name, 'description.md'))).sort();
 }
 
+const NGROK_CONFIGS = [
+  join(homedir(), 'Library', 'Application Support', 'ngrok', 'ngrok.yml'),
+  join(homedir(), '.config', 'ngrok', 'ngrok.yml'),
+  join(homedir(), '.ngrok2', 'ngrok.yml'),
+];
+
+
+const ngrokSignedIn = () => NGROK_CONFIGS.some(f => existsSync(f) && /authtoken:\s*\S+/.test(readFileSync(f, 'utf-8')));
+
 const current: InterviewConfig = existsSync(file) ? parseConfig(readFileSync(file, 'utf-8')) : DEFAULT_CONFIG;
 
 /** Looks at the machine and says what is ready. Returns false when something that is allowed is not usable. */
@@ -54,6 +65,9 @@ function report(config: InterviewConfig): boolean {
   const missing = offered.filter(id => !folders.includes(id));
   if (missing.length) { warn(`Exercises not found in exercises/: ${missing.join(', ')}`); ready = false; }
   else ok(`Exercises offered: ${offered.join(', ') || 'none'}`);
+  const tunnel = tunnelStatus(config.tunnel, program => spawnSync('which', [program], { encoding: 'utf-8' }).status === 0, ngrokSignedIn);
+  if (tunnel.ready) ok(`Tunnel (${config.tunnel}): ${tunnel.message}`);
+  else { warn(`Tunnel (${config.tunnel}): ${tunnel.message}`); if (tunnel.fix) note(tunnel.fix); ready = false; }
   console.log('');
   return ready;
 }
@@ -107,9 +121,20 @@ async function main() {
   console.log(`  Found: ${folders.join(', ') || 'none'}`);
   const answer = await ask('Offer which? (comma separated, or "all")', current.exercises.length ? current.exercises.join(',') : 'all');
   const exercises = answer.toLowerCase() === 'all' ? [] : answer.split(',').map(s => s.trim()).filter(id => folders.includes(id));
+
+  // 3. How the candidate reaches this machine. Each answer says what it needs from you, and it is checked right away.
+  console.log(`\n${c(1, 'Sharing the link')}`);
+  console.log('  ngrok         needs a free account and a token (once). The address stays the same between interviews. Works with every assistant.');
+  console.log('  cloudflared   needs no account. A new address each time. The chat (Agent mode) does not get its live answers through it.');
+  console.log('  none          no tunnel. Only this machine, or people on your network, can open the link.');
+  const tunnelAnswer = (await ask(`Which tunnel? (${TUNNELS.join(', ')})`, current.tunnel)).toLowerCase();
+  const tunnel = (TUNNELS as readonly string[]).includes(tunnelAnswer) ? (tunnelAnswer as Tunnel) : current.tunnel;
+  if (tunnel !== tunnelAnswer) warn(`"${tunnelAnswer}" is not one of ${TUNNELS.join(', ')}, so ${tunnel} stays.`);
+  const status = tunnelStatus(tunnel, program => spawnSync('which', [program], { encoding: 'utf-8' }).status === 0, ngrokSignedIn);
+  if (!status.ready) { warn(status.message); if (status.fix) note(status.fix); }
   rl.close();
 
-  const config: InterviewConfig = { tools, exercises };
+  const config: InterviewConfig = { tools, exercises, tunnel };
   writeFileSync(file, renderConfig(config));
   console.log(`\n  Saved ${c(1, 'interview.config.yaml')} ${c(2, '(ignored by git, edit it any time)')}`);
   const ready = report(config);
