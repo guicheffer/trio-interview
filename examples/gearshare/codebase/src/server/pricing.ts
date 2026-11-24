@@ -4,7 +4,7 @@ export function daysBetween(start: string, end: string): number {
   return Math.round(ms / 86_400_000);
 }
 
-/** Two date ranges overlap when each starts before the other ends. Ending on the day another starts is fine. */
+/** Whether two date ranges, given as YYYY-MM-DD, share any time. */
 export function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
   return aStart <= bEnd && bStart <= aEnd;
 }
@@ -16,7 +16,7 @@ export interface Quote {
   totalCents: number;
 }
 
-/** Longer loans are cheaper per day: 10% off from 7 days, 20% off from 14 days. */
+/** The longer a loan runs, the less each day costs. The fee is the daily fee times the days, after the discount. */
 export function quote(dailyFeeCents: number, depositCents: number, start: string, end: string): Quote {
   const days = daysBetween(start, end);
   const discount = days >= 14 ? 0.2 : days > 7 ? 0.1 : 0;
