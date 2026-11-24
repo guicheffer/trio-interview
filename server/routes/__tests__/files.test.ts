@@ -1,0 +1,161 @@
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import type { FastifyInstance } from 'fastify';
+import { LOCAL, TUNNEL, buildApp, makeWorkspace, type Workspace } from './harness.js';
+
+const enc = encodeURIComponent;
+
+describe('file routes', () => {
+  let ws: Workspace;
+  let app: FastifyInstance;
+  let work: string;
+
+  beforeAll(async () => {
+    ws = makeWorkspace();
+    const { activateCandidate } = await import('../../lib/active-candidate.js');
+    const { applyVisibility } = await import('../../lib/visibility.js');
+    work = activateCandidate('maria', ws.exercise, 'demo');
+    applyVisibility(ws.exercise, 'maria', 'demo');
+    const { registerFileRoutes } = await import('../files.js');
+    app = await buildApp(registerFileRoutes);
+  });
+
+  afterAll(async () => {
+    await app.close();
+    ws.restore();
+  });
+
+  test('lists the files for a candidate without the hidden ones', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/files', headers: TUNNEL });
+    const paths = res.json().files.map((f: { path: string }) => f.path);
+
+    expect(paths).toContain('src/index.ts');
+    expect(paths).toContain('phases/phase-1.md');
+    expect(paths).not.toContain('phases/phase-2-hidden.md');
+  });
+
+  test('lists the hidden files, marked, for the interviewer', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/files', headers: LOCAL });
+    const hidden = res.json().files.find((f: { path: string }) => f.path === 'phases/phase-2-hidden.md');
+
+    expect(hidden).toMatchObject({ hidden: true, type: 'file' });
+  });
+
+  test('reads a file, and a hidden one only for the interviewer', async () => {
+    const own = await app.inject({ method: 'GET', url: `/api/files/${enc('src/index.ts')}`, headers: TUNNEL });
+    expect(own.json().content).toBe('export const n = 1;');
+
+    const asInterviewer = await app.inject({ method: 'GET', url: `/api/files/${enc('phases/phase-2-hidden.md')}`, headers: LOCAL });
+    expect(asInterviewer.json()).toEqual({ content: 'two', hidden: true });
+
+    const asCandidate = await app.inject({ method: 'GET', url: `/api/files/${enc('phases/phase-2-hidden.md')}`, headers: TUNNEL });
+    expect(asCandidate.statusCode).toBe(500);
+  });
+
+  test('creates and saves a file', async () => {
+    const created = await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: 'notes/todo.md', content: 'a' } });
+    expect(created.statusCode).toBe(201);
+
+    const saved = await app.inject({ method: 'PUT', url: `/api/files/${enc('notes/todo.md')}`, headers: TUNNEL, payload: { content: 'b' } });
+    expect(saved.json()).toEqual({ ok: true });
+    expect(readFileSync(join(work, 'notes', 'todo.md'), 'utf-8')).toBe('b');
+  });
+
+  test('validates the request bodies', async () => {
+    expect((await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'PUT', url: `/api/files/${enc('a.md')}`, headers: TUNNEL, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'PATCH', url: `/api/files/${enc('a.md')}`, headers: TUNNEL, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'a' } })).statusCode).toBe(400);
+  });
+
+  test('refuses paths outside the candidate folder', async () => {
+    const create = await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: '../outside.txt', content: 'x' } });
+    expect(create.statusCode).toBe(403);
+    expect(existsSync(join(ws.root, '.solutions', 'maria', 'outside.txt'))).toBe(false);
+
+    const save = await app.inject({ method: 'PUT', url: `/api/files/${enc('../../outside.txt')}`, headers: TUNNEL, payload: { content: 'x' } });
+    expect(save.statusCode).toBe(403);
+
+    const move = await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'src/index.ts', toDir: '../..' } });
+    expect(move.statusCode).toBe(403);
+  });
+
+  test('locked files are read only for candidates and editable for the interviewer', async () => {
+    const edit = await app.inject({ method: 'PUT', url: `/api/files/${enc('description.md')}`, headers: TUNNEL, payload: { content: 'hacked' } });
+    expect(edit.statusCode).toBe(403);
+
+    const folder = await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: 'phases/new.md', content: '' } });
+    expect(folder.statusCode).toBe(403);
+
+    const rename = await app.inject({ method: 'PATCH', url: `/api/files/${enc('description.md')}`, headers: TUNNEL, payload: { newName: 'x.md' } });
+    expect(rename.statusCode).toBe(403);
+
+    const renameOut = await app.inject({ method: 'PATCH', url: `/api/files/${enc('src/index.ts')}`, headers: TUNNEL, payload: { newName: 'description.md' } });
+    expect(renameOut.statusCode).toBe(403);
+
+    const dotted = await app.inject({ method: 'PUT', url: `/api/files/${enc('./description.md')}`, headers: TUNNEL, payload: { content: 'hacked' } });
+    expect(dotted.statusCode).toBe(403);
+
+    const moveOut = await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'phases/phase-1.md', toDir: 'src' } });
+    expect(moveOut.statusCode).toBe(403);
+
+    const interviewer = await app.inject({ method: 'PUT', url: `/api/files/${enc('description.md')}`, headers: LOCAL, payload: { content: '# Edited' } });
+    expect(interviewer.statusCode).toBe(200);
+    expect(readFileSync(join(work, 'description.md'), 'utf-8')).toBe('# Edited');
+  });
+
+  test('the interviewer edits a hidden file in place', async () => {
+    const res = await app.inject({ method: 'PUT', url: `/api/files/${enc('phases/phase-2-hidden.md')}`, headers: LOCAL, payload: { content: 'changed' } });
+    expect(res.json()).toEqual({ ok: true, hidden: true });
+    expect(existsSync(join(work, 'phases', 'phase-2-hidden.md'))).toBe(false);
+  });
+
+  test('renames and moves files', async () => {
+    const renamed = await app.inject({ method: 'PATCH', url: `/api/files/${enc('notes/todo.md')}`, headers: TUNNEL, payload: { newName: 'done.md' } });
+    expect(renamed.json()).toEqual({ ok: true, newName: 'done.md' });
+
+    const bad = await app.inject({ method: 'PATCH', url: `/api/files/${enc('notes/done.md')}`, headers: TUNNEL, payload: { newName: '../x.md' } });
+    expect(bad.statusCode).toBe(403);
+
+    const moved = await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'notes/done.md', toDir: 'archive' } });
+    expect(moved.json()).toEqual({ ok: true, path: 'archive/done.md' });
+    expect(existsSync(join(work, 'archive', 'done.md'))).toBe(true);
+
+    const toRoot = await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'archive/done.md', toDir: '' } });
+    expect(toRoot.json().path).toBe('done.md');
+  });
+
+  test('refuses to move a folder into itself', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'notes', toDir: 'notes' } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('serves the run command and the challenge meta', async () => {
+    const run = await app.inject({ method: 'GET', url: '/api/run-challenge' });
+    expect(run.json()).toMatchObject({ start: 'npm start' });
+
+    const meta = await app.inject({ method: 'GET', url: '/api/challenge-meta' });
+    expect(meta.json()).toMatchObject({ exerciseId: 'demo', defaultFile: 'description.md', lockedFiles: ['description.md', 'phases/'] });
+  });
+
+  test('a candidate cannot read the exercise config', async () => {
+    const res = await app.inject({ method: 'GET', url: `/api/files/${enc('exercise.json')}`, headers: TUNNEL });
+    expect(res.statusCode).not.toBe(200);
+  });
+});
+
+describe('file routes without a session', () => {
+  test('refuse to serve the exercise template', async () => {
+    const ws = makeWorkspace();
+    const { registerFileRoutes } = await import('../files.js');
+    const app = await buildApp(registerFileRoutes);
+    const { clearActiveSession } = await import('../../lib/active-candidate.js');
+    clearActiveSession();
+    const res = await app.inject({ method: 'GET', url: '/api/files', headers: TUNNEL });
+    expect(res.statusCode).toBe(409);
+    expect((await app.inject({ method: 'GET', url: '/api/run-challenge', headers: TUNNEL })).statusCode).toBe(200);
+    await app.close();
+    ws.restore();
+  });
+});
