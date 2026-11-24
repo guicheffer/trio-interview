@@ -37,3 +37,27 @@
   .side ul{display:flex;flex-wrap:wrap;gap:4px 14px}
   .side h4{display:none}
 }
+
+/* The colours of the editor in the app, so code reads the same here and there */
+.hljs{color:#d4d4d4}
+.hljs-keyword,.hljs-literal,.hljs-built_in,.hljs-selector-tag{color:#569cd6}
+.hljs-string,.hljs-regexp,.hljs-meta .hljs-string{color:#ce9178}
+.hljs-number{color:#b5cea8}
+.hljs-title,.hljs-title.class_,.hljs-type{color:#3dc9b0}
+.hljs-title.function_{color:#dcdcaa}
+.hljs-attr,.hljs-attribute,.hljs-property,.hljs-variable,.hljs-params{color:#9cdcfe}
+.hljs-comment,.hljs-quote{color:#608b4e;font-style:normal}
+.hljs-punctuation,.hljs-operator{color:#dcdcdc}
+.hljs-meta,.hljs-meta .hljs-keyword{color:#c586c0}
+@media (prefers-color-scheme: light){
+  .hljs{color:#24292f}
+  .hljs-keyword,.hljs-literal,.hljs-built_in,.hljs-selector-tag{color:#0550ae}
+  .hljs-string,.hljs-regexp{color:#a31515}
+  .hljs-number{color:#098658}
+  .hljs-title,.hljs-title.class_,.hljs-type{color:#267f99}
+  .hljs-title.function_{color:#795e26}
+  .hljs-attr,.hljs-attribute,.hljs-property,.hljs-variable,.hljs-params{color:#0451a5}
+  .hljs-comment,.hljs-quote{color:#4a7a3a}
+  .hljs-punctuation,.hljs-operator{color:#444}
+  .hljs-meta,.hljs-meta .hljs-keyword{color:#7a3e9d}
+}
