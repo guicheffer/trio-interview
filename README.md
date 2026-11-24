@@ -70,3 +70,7 @@ In short: the protections hold up against an honest candidate and against a curi
 ## More
 
 [docs/details.md](docs/details.md) covers sharing, interviewer mode, hiding files, exporting and troubleshooting. [AGENTS.md](AGENTS.md) is the guide for anyone changing the code.
+
+## License
+
+Copyright (C) 2026 guicheffer. Trio Interview is free software under the [GNU Affero General Public License, version 3](LICENSE). You can use, study, change and share it. If you run a changed version as a service that other people use over a network, the license asks you to offer them the source of your changes too.
