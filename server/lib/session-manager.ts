@@ -1,6 +1,6 @@
 import { ClaudeProxy } from './claude-proxy.js';
-import { resolve } from 'path';
 import { DEFAULT_MODEL, type ModelKey } from '../../shared/models.js';
+import { currentExercisePath } from './default-exercise.js';
 
 // Singleton session manager
 class SessionManager {
@@ -10,7 +10,7 @@ class SessionManager {
   getOrCreate(sessionId: string, model?: ModelKey): ClaudeProxy {
     if (!this.sessions.has(sessionId)) {
       const effectiveModel = model || DEFAULT_MODEL;
-      const exercisePath = process.env.EXERCISE_PATH || resolve(process.cwd(), 'exercises', 'fibonacci');
+      const exercisePath = currentExercisePath();
       const proxy = new ClaudeProxy(sessionId, exercisePath, effectiveModel);
 
       proxy.on('exit', () => {

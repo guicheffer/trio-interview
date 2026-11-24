@@ -4,10 +4,11 @@ import { resolve } from 'path';
 import { spawn } from 'child_process';
 import { mkdirSync, createWriteStream } from 'fs';
 import { BIN } from '../server/lib/binaries.js';
+import { currentExerciseId, currentExercisePath } from '../server/lib/default-exercise.js';
 
 // Get exercise from env (must be set)
-const EXERCISE_PATH = process.env.EXERCISE_PATH || resolve(process.cwd(), 'exercises', 'fibonacci');
-const EXERCISE_ID = process.env.EXERCISE_ID || 'fibonacci';
+const EXERCISE_PATH = currentExercisePath();
+const EXERCISE_ID = currentExerciseId(EXERCISE_PATH);
 
 console.log('Trio, live coding interviews');
 console.log('=====================================\n');

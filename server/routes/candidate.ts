@@ -1,11 +1,11 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { resolve } from 'path';
 import { candidateManager } from '../lib/candidate-manager.js';
 import { activateCandidate, getActiveSession, renameActiveSession } from '../lib/active-candidate.js';
 import { applyVisibility } from '../lib/visibility.js';
 import { isSafeCandidateName } from '../lib/candidate-name.js';
 import { roleForRequest } from './presence.js';
+import { currentExerciseId, currentExercisePath } from '../lib/default-exercise.js';
 
 function interviewerOnly(request: FastifyRequest, reply: FastifyReply): boolean {
   if (roleForRequest(request) === 'interviewer') return true;
@@ -65,8 +65,8 @@ export async function registerCandidateRoutes(server: FastifyInstance) {
       if (!mayUseWorkspace(request, n, candidateManager.candidateExists(n))) {
         return reply.status(403).send({ error: 'This name belongs to another session' });
       }
-      const templatePath = process.env.EXERCISE_PATH || resolve(process.cwd(), 'exercises', 'fibonacci');
-      const exerciseId = process.env.EXERCISE_ID || (templatePath.split('/').pop() ?? 'fibonacci');
+      const templatePath = currentExercisePath();
+      const exerciseId = currentExerciseId(templatePath);
       // 1. Initialise working directory from template
       const workPath = activateCandidate(n, templatePath, exerciseId, !!forceReset);
       // 2. Ensure state.json exists (so GET /api/candidate/:name works on reload)

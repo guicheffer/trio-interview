@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FileSandbox } from '../lib/file-sandbox.js';
-import { resolve, basename } from 'path';
+import { currentExerciseId, currentExercisePath } from '../lib/default-exercise.js';
 
 /** The first top level heading ("# Title") of the brief. Only that: "## Section" and a "#" inside a code block do not count. */
 export function titleFromBrief(brief: string): string | null {
@@ -17,8 +17,8 @@ export function titleFromBrief(brief: string): string | null {
 export async function registerExerciseRoutes(server: FastifyInstance) {
   server.get('/api/exercise', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const exercisePath = process.env.EXERCISE_PATH || resolve(process.cwd(), 'exercises', 'fibonacci');
-      const exerciseId = process.env.EXERCISE_ID || basename(exercisePath);
+      const exercisePath = currentExercisePath();
+      const exerciseId = currentExerciseId(exercisePath);
 
       const sandbox = new FileSandbox(exercisePath);
 
