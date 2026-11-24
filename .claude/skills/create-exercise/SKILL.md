@@ -7,6 +7,7 @@ description: Scaffold a new coding exercise for the interview platform (descript
 
 Read `AGENTS.md` ("Creating an exercise") first. Then:
 
+0. Look in `examples/` first and offer to start from one (`make new-exercise FROM=<example>` copies it into `exercises/`, and the example stays where it is). If the person wants an empty one, `make new-exercise TITLE="..." KIND=script|web` writes the folder with an `exercise.json` that already runs, and you fill in the files below. Exercises are ignored by git, so there is nothing to commit and the person keeps them on their machine, or in their own repository listed under `sources:` in `interview.config.yaml`.
 1. Ask for: id (kebab-case), title, difficulty, language or stack, duration, and the scenario in a few sentences. Ask whether it is a single file exercise or a web app with a `codebase/` folder.
 2. Ask whether it has phases. If yes, ask which phases should stay hidden from the candidate until the interviewer reveals them (typically everything after phase 1).
 3. Create `exercises/<id>/`:
@@ -19,5 +20,5 @@ Read `AGENTS.md` ("Creating an exercise") first. Then:
    - `assistant.context`: a short overview of the project for the AI assistant (stack, folder map, how to run and test, test users, what the product does). Never mention the bug, feature or solution of any phase.
    - `hidden` listing the hidden files (globs allowed), when the user asked for hidden phases.
 4. Check: no other exercise uses the same `serverPort`; hidden files are not mentioned in `description.md`; the start command works when run from the exercise folder.
-5. Commit the exercise on a branch (the platform reads templates from git). Do not push to master.
+5. Do not commit it to this repository: `exercises/` is ignored on purpose. To share an exercise with the project, put it in `examples/` in a pull request.
 6. Tell the user to run `make start` and pick the new exercise, and to verify it on both `localhost` and the tunnel URL.

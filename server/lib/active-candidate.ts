@@ -12,6 +12,7 @@ import { execFileSync } from 'child_process';
 import { assertSafeCandidateName } from './candidate-name.js';
 import { BIN } from './binaries.js';
 import { CONFIG_FILE } from './exercise-config.js';
+import { currentExercisePath } from './default-exercise.js';
 
 /** Copy clean template files from git HEAD into destDir */
 function copyFromGit(exerciseRelPath: string, destDir: string, cwd: string): boolean {
@@ -68,8 +69,8 @@ function cloneInstalledDependencies(templatePath: string, workPath: string, rel 
 
 interface ActiveSession {
   candidateName: string;
-  templatePath: string;  // exercises/fibonacci/ (read-only template)
-  workPath: string;      // .solutions/name/fibonacci/ (candidate's working copy)
+  templatePath: string;  // exercises/<id>/ (read-only template)
+  workPath: string;      // .solutions/<name>/<id>/ (candidate's working copy)
   exerciseId: string;
 }
 
@@ -78,7 +79,7 @@ let active: ActiveSession | null = null;
 /** Returns the candidate's working path (or template path as fallback) */
 export function getWorkPath(): string {
   if (active) return active.workPath;
-  return process.env.EXERCISE_PATH || resolve(process.cwd(), 'exercises', 'fibonacci');
+  return currentExercisePath();
 }
 
 /** Forgets the active candidate (used by tests) */

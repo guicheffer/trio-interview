@@ -39,6 +39,13 @@ tsconfig.tsbuildinfo
 # Candidate exports
 exports/
 .claude/worktrees/
+# Your exercises are yours: they stay on this machine. The ones that ship are in examples/.
+# What the platform itself keeps in exercises/ stays versioned.
+exercises/*
+!exercises/AGENTS.md
+!exercises/CLAUDE.md
+!exercises/README.md
+!exercises/_templates/
 exercises/**/node_modules/
 .planning/
 

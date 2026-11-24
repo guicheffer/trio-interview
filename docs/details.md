@@ -35,7 +35,7 @@ Before a real interview, do one dry run with a test candidate, see the [intervie
 To skip the prompt:
 
 ```bash
-EXERCISE_PATH=$(pwd)/exercises/fibonacci EXERCISE_ID=fibonacci npm run interview
+EXERCISE_PATH=$(pwd)/exercises/<id> EXERCISE_ID=<id> npm run interview
 ```
 
 ## Running an interview
@@ -161,4 +161,4 @@ docs/          Guides, and the interviewer's notes per exercise
 - Port already in use: `make stop`.
 - Chat says "Invalid model name": the ids in `shared/models.ts` must match what your gateway serves. Override with `TRIO_MODEL_<KEY>` (see Models above).
 - Exercise API crashes with EADDRINUSE: its `run.serverPort` in `exercise.json` must not be 3000, 3001 or 3099.
-- The platform runs `git checkout HEAD -- exercises/<id>` when a new candidate starts, so changes to exercise templates must be committed to take effect.
+- `exercises/` is ignored by git, so an exercise there is read from the disk and a change counts for the next candidate who starts. If you chose to version an exercise, the platform restores it from git when a new candidate starts (`git checkout HEAD -- exercises/<id>`), so commit your changes to it.

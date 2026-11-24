@@ -25,7 +25,7 @@ A candidate also needs this interview's link. `make start` makes a secret (`TRIO
 
 ## Creating an exercise
 
-Use the `create-exercise` skill (`.claude/skills/create-exercise/SKILL.md`), or follow this by hand. `make start` lists every folder in `exercises/` that has a `description.md`, so nothing else needs registering.
+Use the `create-exercise` skill (`.claude/skills/create-exercise/SKILL.md`), or follow this by hand. `make start` lists every folder in `exercises/` that has a `description.md`, so nothing else needs registering. The server uses the first exercise in `exercises/` when none was chosen (`server/lib/default-exercise.ts`), so no exercise has to exist by name.
 
 ```
 exercises/<id>/
@@ -66,7 +66,7 @@ Rules for exercises that serve a web app:
 - `serverPort` must not be 3000, 3001 or 3099 (the platform uses them). Use 3002 and up.
 - The preview is always served through the platform at `/preview/<candidate>/<exercise>/`, so the dev server needs `VITE_BASE` support. Copy `exercises/_templates/web-app/vite.config.ts` into `codebase/` (see the README next to it) and set the router `basename` to `import.meta.env.BASE_URL`. Hot reload works through the same path.
 - `run.install` is run by `make start` in the template, and the installed `node_modules` are cloned into each candidate's copy, so Run is fast. A `port` means the exercise has a preview: the tab opens (unfocused) with the exercise and the terminal shows an Open preview button.
-- Commit the exercise. Activating a candidate runs `git checkout HEAD -- exercises/<id>`, which reverts uncommitted template changes.
+- `exercises/` is ignored by git on purpose (the ones that ship are in `examples/`), so an exercise there is read from the disk and a change to it counts for the next candidate without a commit. Only an exercise that someone chose to version is restored from git on activation (`git checkout HEAD -- exercises/<id>`), which reverts its uncommitted changes. `make new-exercise` makes one, and `sources:` in `interview.config.yaml` with `make exercises` brings in a repository of them (`shared/interview-config.ts`, `scripts/exercise.ts`).
 
 ## Assistants and settings
 

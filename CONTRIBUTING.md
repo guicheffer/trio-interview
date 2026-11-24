@@ -24,13 +24,34 @@ make help         # every command
 
 ## Add an exercise
 
-An exercise is a folder in `exercises/` with a `description.md`, and `make start` lists every such folder, so nothing else needs registering. The easiest way is to let an agent ask you the questions (the animation below is an illustration of the flow, and the questions you get depend on your agent):
+Exercises you use live in `exercises/`, which git ignores, so they stay on your machine along with the work of every candidate. The ones that ship with the tool are in `examples/`, and you can start from them:
+
+```bash
+make new-exercise FROM=word-count            # copy an example into exercises/ and change it
+make new-exercise TITLE="Todo API" KIND=web   # or make an empty one that already runs
+```
+
+With no options `make new-exercise` asks, and offers the examples first. A new exercise has a working `exercise.json` from the start, so you can pick it in `make start` before there is any code in it, and fill the files in afterwards.
+
+An agent can write the content for you:
 
 ![Creating an exercise with the create-exercise skill](docs/images/create-exercise.gif)
 
-In Claude Code, OpenCode or any agent that reads files, ask it to run the `create-exercise` skill (`.claude/skills/create-exercise/SKILL.md`). It asks for the id, title, stack, duration and scenario, and whether some phases stay hidden, then writes the files. Read what it wrote, because the scenario and the starter code are your call.
+In Claude Code, OpenCode or any agent that reads files, ask it to run the `create-exercise` skill (`.claude/skills/create-exercise/SKILL.md`). It asks for the title, stack, duration and scenario, and whether some phases stay hidden, then writes the files. Read what it wrote, because the scenario and the starter code are your call. The animation is an illustration of the flow, and the questions you get depend on your agent.
 
-To do it by hand, the folder looks like this:
+### Keep your exercises in your own repository
+
+A company can keep its set in a private repository and bring it in on any machine. List the repository, or a folder, in `interview.config.yaml`:
+
+```yaml
+sources:
+  - https://github.com/your-company/interview-exercises.git
+  - ../my-exercises
+```
+
+Then run `make exercises`. It copies each folder that has a `description.md` into `exercises/`, leaves alone any exercise that is already there, and skips folders whose names are not lowercase letters, digits and dashes. A git source is cloned over https or ssh and nothing else.
+
+### What an exercise is made of
 
 ```
 exercises/<id>/
@@ -46,11 +67,11 @@ exercises/<id>/
 - Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in `docs/interviewers/`.
 - Lock `description.md` and `phases/` in `exercise.json`, plus any fixture or test the candidate must not edit.
 - A web app uses a `run.serverPort` of 3002 or higher and the `vite.config.ts` from `exercises/_templates/web-app/`, so the preview works through the tool.
-- Commit the exercise, because starting a candidate restores it from git and drops uncommitted changes.
+- To share an exercise with everyone, send it as a pull request into `examples/`, with its notes in `docs/interviewers/`.
 
-### Check it before the pull request
+### Check it before you share it
 
-![Starting an interview and revealing a hidden phase](docs/images/hidden-files.png)
+![The interviewer revealing a hidden phase](docs/images/hidden-files.png)
 
 Run `make start`, pick the exercise, open `http://localhost:3000` and enter a name. Click Run if it has an app and confirm the preview opens. Then open the candidate side in another browser profile and check that locked files are read only and hidden files are not there, and reveal one from the interviewer side to see it appear.
 

@@ -24,6 +24,7 @@ import { registerDatabaseRoutes } from './routes/database.js';
 import { registerPreviewRoutes } from './routes/preview.js';
 import { setupErrorHandler } from './lib/error-handler.js';
 import { createFileWatcher } from './lib/file-watcher.js';
+import { currentExerciseId, currentExercisePath } from './lib/default-exercise.js';
 
 const server = Fastify({
   logger: {
@@ -98,14 +99,14 @@ try {
   }
   previewServer.on('error', (err) => console.error(`Preview port ${PREVIEW_PORT} unavailable, the preview will not load:`, err.message));
   previewServer.listen(PREVIEW_PORT, '127.0.0.1');
-  console.log('Exercise path:', process.env.EXERCISE_PATH || 'exercises/fibonacci');
+  console.log('Exercise path:', currentExercisePath());
 
   // Tell the interviewer right away if the assistant will not answer the candidate's messages
   runAiHealthCheck().then(() => checkAll()).catch(() => undefined);
 
   // Start file watcher for auto-save
-  const exercisePath = process.env.EXERCISE_PATH || 'exercises/fibonacci';
-  const exerciseId = process.env.EXERCISE_ID || 'fibonacci';
+  const exercisePath = currentExercisePath();
+  const exerciseId = currentExerciseId(exercisePath);
   const candidateName = process.env.CANDIDATE_NAME || null;
 
   const watcher = createFileWatcher({

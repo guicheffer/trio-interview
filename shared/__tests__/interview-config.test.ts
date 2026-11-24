@@ -31,7 +31,7 @@ exercises:
   });
 
   test('writing the file and reading it back gives the same settings', () => {
-    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const };
+    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const, sources: ['https://github.com/acme/interview-exercises.git', '../my-exercises'] };
     expect(parseConfig(renderConfig(config))).toEqual(config);
   });
 
@@ -45,12 +45,25 @@ exercises:
   });
 
   test('the tunnel is written to the file and read back', () => {
-    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const };
+    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const, sources: [] };
     expect(parseConfig(renderConfig(config)).tunnel).toBe('cloudflared');
   });
 
   test('asks whether a tool is allowed', () => {
     expect(toolAllowed(parseConfig('tools:\n  - claude-code'), 'opencode')).toBe(false);
     expect(toolAllowed(DEFAULT_CONFIG, 'opencode')).toBe(true);
+  });
+
+  test('sources accept a git URL or a folder, and nothing that could turn into a command', () => {
+    const ok = ['https://github.com/acme/exercises.git', 'git@github.com:acme/exercises.git', '../my-exercises', '~/work/exercises', '/srv/exercises', 'team-exercises'];
+    for (const value of ok) expect(parseConfig(`sources:\n  - ${value}`).sources, value).toEqual([value]);
+    const bad = ['--upload-pack=touch /tmp/x', '-oProxyCommand=id', 'https://x.test/a b', 'https://x.test/a;rm -rf ~', 'https://x.test/$(id)', 'ext::sh -c id', 'file:///etc', 'ftp://x.test/a', 'a`id`', '', 'x'.repeat(301)];
+    for (const value of bad) expect(parseConfig(`sources:\n  - ${value}`).sources, value).toEqual([]);
+  });
+
+  test('sources are empty by default and survive a write and a read', () => {
+    expect(parseConfig('').sources).toEqual([]);
+    const config = { ...DEFAULT_CONFIG, sources: ['https://github.com/acme/exercises.git'] };
+    expect(parseConfig(renderConfig(config)).sources).toEqual(config.sources);
   });
 });

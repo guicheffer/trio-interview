@@ -1,0 +1,13 @@
+{
+  "defaultFile": "description.md",
+  "lockedFiles": ["description.md"],
+  "hidden": [],
+  "run": {
+    "start": "node wordcount.js",
+    "description": "Run the checks",
+    "port": null
+  },
+  "assistant": {
+    "context": "A single file exercise. wordcount.js has two stub functions, wordCount(text) and topWords(text, n), and a list of checks at the bottom that print pass or FAIL. It runs with `node wordcount.js` and exports both functions with module.exports. There is no test runner and no dependencies. description.md is the brief the candidate reads first."
+  }
+}

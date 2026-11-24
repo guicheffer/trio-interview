@@ -10,6 +10,7 @@ import { dirname, resolve as resolvePath } from 'path';
 import { readAiFiles } from '../lib/ai-files.js';
 import { changedSinceStart } from '../lib/changed-files.js';
 import { readFile as readFsFile, writeFile as writeFsFile } from 'fs/promises';
+import { currentExerciseId, currentExercisePath } from '../lib/default-exercise.js';
 
 async function lockedPatterns(): Promise<string[]> {
   const session = getActiveSession();
@@ -179,8 +180,8 @@ export async function registerFileRoutes(server: FastifyInstance) {
 
   const activeTemplate = () => {
     const session = getActiveSession();
-    const templatePath = session?.templatePath ?? process.env.EXERCISE_PATH ?? resolvePath(process.cwd(), 'exercises', 'fibonacci');
-    return { templatePath, exerciseId: session?.exerciseId ?? (templatePath.split('/').pop() ?? 'fibonacci') };
+    const templatePath = session?.templatePath ?? currentExercisePath();
+    return { templatePath, exerciseId: session?.exerciseId ?? currentExerciseId(templatePath) };
   };
 
   // GET /api/run-challenge - Returns the run settings of the current exercise
