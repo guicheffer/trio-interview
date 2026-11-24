@@ -28,7 +28,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0b14}
   var runButtons = S.qa('button').filter(function (b) { return /^Run/.test(b.textContent.trim()); });
   var tabDot = S.q('[role=tab][aria-selected=true] span');
 
+  var shown = 'Before';
   function setCode(which) {
+    shown = which;
     linesEl.innerHTML = F['lines' + which];
     gutterEl.innerHTML = F['gutter' + which];
     var h = (which === 'After' ? F.after : F.before).split('\n').length * 21;
@@ -92,13 +94,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0b14}
     markRun(true);
     project({ cmd: 'node fibonacci.js' });
     later(function () {
-      runCode(F.after, function (out) {
+      runCode(shown === 'After' ? F.after : F.before, function (out) {
         markRun(false);
         project({ cmd: 'node fibonacci.js', out: printOut(out) });
         if (cb) cb(out);
       });
     }, 500);
   };
+
+  // the answer already in place, for the step that is about the Run button
+  window.fibShowAnswer = function () { clear(); setCode('After'); claude('after'); project(); markRun(false); };
+  // no typing for people who asked the page not to animate
+  window.fibSkipAsk = function () { clear(); setCode('After'); claude('after'); project(); };
 
   // pressing Run in the scene does the same, whatever the code in the editor is right now
   runButtons.forEach(function (b) { b.addEventListener('click', function (e) { e.preventDefault(); window.fibRun(); }); });
