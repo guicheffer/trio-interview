@@ -38,7 +38,6 @@ import { beginLayoutGesture, isLayoutGesture, pulseLayoutGesture } from './lib/l
 import { useRemoteKey } from './hooks/useRemoteKey';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { FileTabBar } from './components/FileTabBar';
-import { LandingPage } from './components/LandingPage';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { closeShortcut, globalShortcut, mergeOpenTabs } from './lib/shortcuts';
 import { createDragGuard } from './lib/dragGuard';
@@ -128,12 +127,12 @@ function HSep({
   const pointsRight = side === 'left' ? collapsed : !collapsed;
   const icon = pointsRight ? '›' : '‹';
   return (
-    <Separator onPointerDown={beginLayoutGesture} onKeyDown={layoutKey} className="relative w-1 bg-gray-200 dark:bg-gray-700 hover:bg-green-400 dark:hover:bg-green-600 transition-colors cursor-col-resize overflow-visible z-10">
+    <Separator onPointerDown={beginLayoutGesture} onKeyDown={layoutKey} className="relative w-1 bg-gray-200 dark:bg-gray-700 hover:bg-accent-400 dark:hover:bg-accent-600 transition-colors cursor-col-resize overflow-visible z-10">
       <button
         onClick={toggle}
         onPointerDown={guard.down}
         title={collapsed ? 'Expand' : 'Collapse'}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-9 bg-gray-200 dark:bg-gray-600 hover:bg-green-400 dark:hover:bg-green-500 rounded-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-white transition-colors shadow-sm text-xs font-bold z-20"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-9 bg-gray-200 dark:bg-gray-600 hover:bg-accent-400 dark:hover:bg-accent-500 rounded-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-white transition-colors shadow-sm text-xs font-bold z-20"
         style={{ cursor: 'default' }}
       >
         {icon}
@@ -152,12 +151,12 @@ function VSep({
   const guard = useRef(createDragGuard()).current;
   const toggle = (e: React.MouseEvent) => { if (guard.isDrag(e)) { e.stopPropagation(); return; } togglePanel(e, panelRef, setCollapsed); };
   return (
-    <Separator onPointerDown={beginLayoutGesture} onKeyDown={layoutKey} className="relative h-1 bg-gray-700 dark:bg-gray-800 hover:bg-green-500 transition-colors cursor-row-resize overflow-visible z-10">
+    <Separator onPointerDown={beginLayoutGesture} onKeyDown={layoutKey} className="relative h-1 bg-gray-700 dark:bg-gray-800 hover:bg-accent-500 transition-colors cursor-row-resize overflow-visible z-10">
       <button
         onClick={toggle}
         onPointerDown={guard.down}
         title={collapsed ? 'Show terminal' : 'Hide terminal'}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-4 bg-gray-600 dark:bg-gray-700 hover:bg-green-500 rounded-sm flex items-center justify-center text-gray-300 hover:text-white transition-colors shadow-sm text-xs font-bold z-20"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-4 bg-gray-600 dark:bg-gray-700 hover:bg-accent-500 rounded-sm flex items-center justify-center text-gray-300 hover:text-white transition-colors shadow-sm text-xs font-bold z-20"
         style={{ cursor: 'default' }}
       >
         {collapsed ? '∨' : '∧'}
@@ -186,14 +185,14 @@ function CollapsedChat({ onExpand }: { onExpand: () => void }) {
   return (
     <div className="flex flex-col items-center h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 py-4 gap-3">
       <button onClick={onExpand} title="Expand AI chat"
-        className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-500 dark:text-green-400">
+        className="p-1.5 rounded hover:bg-accent-100 dark:hover:bg-accent-900/30 text-accent-600 dark:text-accent-300">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
         </svg>
       </button>
       <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_2px_rgba(34,197,94,0.6)] animate-pulse" />
-      <span className="text-xs text-green-500 dark:text-green-400 font-medium tracking-wider"
+      <span className="text-xs text-accent-600 dark:text-accent-300 font-medium tracking-wider"
         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>AI</span>
     </div>
   );
@@ -201,7 +200,6 @@ function CollapsedChat({ onExpand }: { onExpand: () => void }) {
 
 function InterviewPageContent() {
   const [sessionId] = useState(() => tabSessionId());
-  const [landingDone, setLandingDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [pendingThreadClose, setPendingThreadClose] = useState<string | null>(null);
@@ -225,7 +223,6 @@ function InterviewPageContent() {
     ['trio_cc_candidate', 'trio_cc_last_seen', 'trio_cc_role'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
     // Straight to the list of candidates, not the home page
     try {
-      localStorage.setItem('trio_cc_env_choice', JSON.stringify({ choice: 'web', timestamp: Date.now() }));
       sessionStorage.setItem('trio_cc_pick_candidate', '1');
     } catch {}
     window.location.reload();
@@ -235,8 +232,9 @@ function InterviewPageContent() {
   const [confirmInactive, setConfirmInactive] = useState(false);
   const goHome = useCallback(() => {
     const keys = localStorage.getItem('trio_cc_role') === 'interviewer'
-      ? ['trio_cc_env_choice', 'trio_cc_role', 'trio_cc_candidate', 'trio_cc_last_seen']
-      : ['trio_cc_env_choice', 'trio_cc_last_seen']; // no recent visit: the welcome screen asks "Continue as <name>" or someone else
+      ? ['trio_cc_role', 'trio_cc_candidate', 'trio_cc_last_seen']
+      
+      : ['trio_cc_last_seen']; // no recent visit: the welcome screen asks "Continue as <name>" or someone else
     keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
     window.location.reload();
   }, []);
@@ -297,12 +295,19 @@ function InterviewPageContent() {
       try { localStorage.setItem('trio_cc_candidate', target); localStorage.removeItem('trio_cc_last_seen'); } catch {}
     } else {
       // A candidate screen cannot take the interview back from someone else: leave to the first page
-      ['trio_cc_env_choice', 'trio_cc_last_seen'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
+      ['trio_cc_last_seen'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
     }
     window.location.reload();
   }, [sessionStatus.active]);
   // Base key scoped to candidate + exercise
   const baseKey = useUiStateSync(candidateName ?? undefined, currentExerciseId);
+  // The title of the exercise, from the first heading of its brief. The header shows it next to the logo.
+  const [exerciseTitle, setExerciseTitle] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/exercise').then(r => (r.ok ? r.json() : null)).then(d => { if (!cancelled && typeof d?.title === 'string') setExerciseTitle(d.title); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [candidateName, currentExerciseId]);
   // A preview URL left in sessionStorage by another candidate must not leak into this one
   useEffect(() => {
     if (!candidateName || !previewUrl) return;
@@ -724,7 +729,7 @@ function InterviewPageContent() {
         <button onClick={reloadPreview}
           className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors" title="Reload preview">↺</button>
         <button onClick={() => pinPreview(!previewPinned)}
-          className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded transition-colors ${previewPinned ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded transition-colors ${previewPinned ? 'bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300' : 'text-gray-400 hover:text-gray-600'}`}
           title={previewPinned ? 'Unpin the preview from the editor' : 'Keep the preview open next to the editor'}>
           <svg className="mr-1 inline h-3 w-3" viewBox="0 0 24 24" fill={previewPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinejoin="round"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v6" strokeLinecap="round" /></svg>
           {previewPinned ? 'Unpin' : 'Pin'}
@@ -769,7 +774,7 @@ function InterviewPageContent() {
                               pointerEvents: 'none',
                             }} />
                             {/* Badge */}
-                            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-green-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-lg">
+                            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-accent-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-lg">
                               <span className="w-1.5 h-1.5 bg-white rounded-full inline-block" style={{ animation: 'trio-edit-pulse 0.8s ease-in-out infinite' }} />
                               Agent is editing…
                             </div>
@@ -980,10 +985,6 @@ function InterviewPageContent() {
       : paletteActions
   ), [paletteActions, paletteFiles, paletteMode, openFile]);
 
-  if (!landingDone) {
-    return <LandingPage onWebInterface={() => setLandingDone(true)} onInterviewer={() => { try { localStorage.setItem('trio_cc_env_choice', JSON.stringify({ choice: 'web', timestamp: Date.now() })); } catch {} setStartAsInterviewer(true); setLandingDone(true); }} />;
-  }
-
   if (!sessionReady) {
     return (
       <WelcomeScreen
@@ -1009,7 +1010,7 @@ function InterviewPageContent() {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent" />
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-accent-500 border-r-transparent" />
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">Opening the workspace...</p>
         </div>
       </div>
@@ -1023,7 +1024,7 @@ function InterviewPageContent() {
           onCancel={() => setShowEditName(false)} isLoading={false} error={null} />
       )}
 
-      <Header isConnected={isConnected && collabOpen} inactive={!sessionStatus.isActive} onResolveInactive={() => setConfirmInactive(true)} exerciseTitle="Live Coding Challenge"
+      <Header isConnected={isConnected && collabOpen} inactive={!sessionStatus.isActive} onResolveInactive={() => setConfirmInactive(true)} exerciseTitle={exerciseTitle}
         candidateName={candidateName} onEditName={() => setShowEditName(true)}
         interviewerView={interviewerView} onSwitchCandidate={switchCandidate} onGoHome={() => setConfirmHome(true)}
         onSave={async () => {
@@ -1088,8 +1089,8 @@ function InterviewPageContent() {
         }}>
         {following && (
           // A frame around the whole workspace (files, editor, preview, chat) while Follow is on
-          <div data-testid="follow-frame" className="pointer-events-none absolute inset-0 z-30 rounded-sm border-2 border-purple-500">
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-t-md bg-purple-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
+          <div data-testid="follow-frame" className="pointer-events-none absolute inset-0 z-30 rounded-sm border-2 border-pink-500">
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-t-md bg-pink-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
               Following the {interviewerView ? 'candidate' : 'interviewer'}
             </span>
           </div>

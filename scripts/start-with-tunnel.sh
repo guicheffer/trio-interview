@@ -324,7 +324,7 @@ else
     echo -e "  Candidate           ${DIM}no tunnel installed (brew install ngrok)${NC}"
 fi
 echo -e "${DIM}Tip: ask the candidate to share their screen too, it is more real time than Follow.${NC}"
-echo -e "${DIM}The assistant is Claude Code only for now; OpenCode is planned.${NC}"
+echo -e "${DIM}The candidate picks the assistant (the chat, Claude Code or OpenCode) from what make config allows.${NC}"
 echo ""
 
 cleanup() {

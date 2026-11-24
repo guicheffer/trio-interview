@@ -67,7 +67,7 @@ const SLASH_COMMANDS = [
 ] as const;
 
 const AGENT_COLORS = [
-  'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-700',
+  'bg-pink-100 text-pink-800 border-pink-300 dark:bg-pink-900/40 dark:text-pink-200 dark:border-pink-700',
   'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-700',
   'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/40 dark:text-orange-200 dark:border-orange-700',
   'bg-pink-100 text-pink-800 border-pink-300 dark:bg-pink-900/40 dark:text-pink-200 dark:border-pink-700',
@@ -205,7 +205,7 @@ function QuestionPanel({ questions, stateKey, pinnedKey, readOnly, onSubmit, onD
     commit({ picked: { ...picked, [step]: [] }, other: { ...other, [step]: '' } });
     advance();
   };
-  const ring = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-800';
+  const ring = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-800';
 
   if (state.dismissed) return null;
   return (
@@ -217,7 +217,7 @@ function QuestionPanel({ questions, stateKey, pinnedKey, readOnly, onSubmit, onD
       className="mx-3 mb-2 max-h-[55%] overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
       <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-        <svg aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-green-700 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-accent-700 dark:text-accent-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h4 id="q-title" className="text-sm font-semibold">Questions</h4>
@@ -235,7 +235,7 @@ function QuestionPanel({ questions, stateKey, pinnedKey, readOnly, onSubmit, onD
           {q.options.map(opt => {
             const on = (picked[step] ?? []).includes(opt);
             return (
-              <label key={opt} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-green-500 ${on ? 'border-green-600 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700/50'}`}>
+              <label key={opt} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent-500 ${on ? 'border-green-600 bg-accent-50 dark:bg-accent-900/20' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-700/50'}`}>
                 <input type={multi ? 'checkbox' : 'radio'} name={`q-${step}`} checked={on} disabled={readOnly} onChange={() => toggle(opt)} className="mt-0.5 h-4 w-4 flex-shrink-0 accent-green-600 focus:outline-none" />
                 <span className="text-gray-900 dark:text-gray-100">{opt}</span>
               </label>
@@ -253,7 +253,7 @@ function QuestionPanel({ questions, stateKey, pinnedKey, readOnly, onSubmit, onD
         onChange={e => commit({ other: { ...other, [step]: e.target.value } })}
         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && answered && !readOnly) { e.preventDefault(); advance(); } }}
         placeholder={readOnly ? '' : 'Or type your own answer (Shift+Enter for a new line)'}
-        className="mt-2 w-full resize-none overflow-hidden rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm leading-5 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 read-only:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 dark:read-only:bg-gray-800"
+        className="mt-2 w-full resize-none overflow-hidden rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm leading-5 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 read-only:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 dark:read-only:bg-gray-800"
       />
       {!readOnly && <div className="mt-2 flex items-center justify-end gap-2">
         <button type="button" onClick={skip} aria-label={last ? 'Skip this question and finish' : 'Skip this question'} className={`rounded-lg px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 ${ring}`}>Skip</button>
@@ -263,7 +263,7 @@ function QuestionPanel({ questions, stateKey, pinnedKey, readOnly, onSubmit, onD
           onClick={advance}
           aria-label={last ? 'Submit answers' : 'Next question'}
           title={answered ? undefined : 'Pick or type an answer first'}
-          className={`rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50 ${ring}`}
+          className={`rounded-lg bg-accent-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-800 disabled:cursor-not-allowed disabled:opacity-50 ${ring}`}
         >
           {last ? 'Submit' : 'Next'}
         </button>
@@ -575,7 +575,7 @@ export function ChatInterface({
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               AI Assistant
             </h3>
-            <p className="text-xs text-purple-600 dark:text-purple-400 font-mono mt-0.5">
+            <p className="text-xs text-pink-600 dark:text-pink-400 font-mono mt-0.5">
               {getModelOption(selectedModel).id}
             </p>
           </div>
@@ -595,7 +595,7 @@ export function ChatInterface({
                 onClick={() => onSendMessage(
                   'Please read the @AGENTS.md file in this directory and give me a friendly welcome message summarizing the key interface tips. Be concise and encouraging. Use bullet points.'
                 )}
-                className="text-xs bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg font-medium transition-colors shadow-sm"
+                className="text-xs bg-accent-500 hover:bg-accent-600 text-white px-2.5 py-1.5 rounded-lg font-medium transition-colors shadow-sm"
                 title="Start session, the agent will introduce the interface"
               >
                 ▶ Start
@@ -635,7 +635,7 @@ export function ChatInterface({
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] rounded-lg px-4 py-2.5 ${
               msg.role === 'user'
-                ? 'bg-green-500 text-white dark:bg-green-600'
+                ? 'bg-accent-500 text-white dark:bg-accent-600'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             }`}>
               {msg.role === 'user' ? (
@@ -660,7 +660,7 @@ export function ChatInterface({
                         if (!target) return <a href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>;
                         return (
                           <button type="button" data-testid="file-link" title={`Open ${target.file}`} onClick={() => onOpenFile?.(target.file)}
-                            className="cursor-pointer font-medium text-green-700 underline decoration-dotted underline-offset-2 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+                            className="cursor-pointer font-medium text-accent-700 underline decoration-dotted underline-offset-2 hover:text-accent-800 dark:text-accent-300 dark:hover:text-accent-200">
                             {children}
                           </button>
                         );
@@ -698,8 +698,8 @@ export function ChatInterface({
         })}
         {remoteDraft && remoteDraft.thread === threadKey && (
           <div className="flex justify-end">
-            <div className={`max-w-[85%] rounded-lg border border-dashed px-4 py-2.5 ${remoteDraft.role === 'interviewer' ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : 'border-green-500 bg-green-50 dark:bg-green-900/20'}`}>
-              <div className={`mb-0.5 text-[10px] font-semibold ${remoteDraft.role === 'interviewer' ? 'text-purple-600 dark:text-purple-300' : 'text-green-700 dark:text-green-300'}`}>
+            <div className={`max-w-[85%] rounded-lg border border-dashed px-4 py-2.5 ${remoteDraft.role === 'interviewer' ? 'border-pink-400 bg-pink-50 dark:bg-pink-900/20' : 'border-accent-500 bg-accent-50 dark:bg-accent-900/20'}`}>
+              <div className={`mb-0.5 text-[10px] font-semibold ${remoteDraft.role === 'interviewer' ? 'text-pink-600 dark:text-pink-300' : 'text-green-700 dark:text-green-300'}`}>
                 {remoteDraft.label} is typing
               </div>
               <div className="text-sm whitespace-pre-wrap break-words text-gray-800 dark:text-gray-100">{remoteDraft.text}</div>
@@ -742,7 +742,7 @@ export function ChatInterface({
                   key={c.name}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); setInput(`/${c.name}${c.arg ? ' ' : ''}`); inputRef.current?.focus(); }}
-                  className={`flex w-full items-baseline gap-3 px-3 py-1.5 text-left text-xs ${i === Math.min(slashIndex, slashMatches.length - 1) ? 'bg-green-50 dark:bg-green-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  className={`flex w-full items-baseline gap-3 px-3 py-1.5 text-left text-xs ${i === Math.min(slashIndex, slashMatches.length - 1) ? 'bg-accent-50 dark:bg-accent-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                   <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">/{c.name}</span>
                   <span className="text-gray-500 dark:text-gray-400">{c.hint}</span>
@@ -767,7 +767,7 @@ export function ChatInterface({
             className={`w-full px-3 md:px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 text-sm transition-colors resize-none overflow-hidden leading-5 ${
               planMode
                 ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-400'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-green-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-accent-500'
             }`}
             style={{ minHeight: '36px', maxHeight: '120px' }}
           />
@@ -794,7 +794,7 @@ export function ChatInterface({
               value={selectedModel}
               onChange={(e) => onModelChange?.(e.target.value as ClaudeModel)}
               disabled={isThinking}
-              className="flex-shrink-0 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+              className="flex-shrink-0 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
               title="Select model"
             >
               {(['Claude'] as const).map(group => (
@@ -841,7 +841,7 @@ export function ChatInterface({
                   <button
                     type="button"
                     onClick={() => { setPlanMode(false); setModeMenuOpen(false); if (selectedModel === PLAN_MODEL) onModelChange?.(DEFAULT_MODEL); }}
-                    className={`w-full flex items-start gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!planMode ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
+                    className={`w-full flex items-start gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!planMode ? 'bg-accent-50 dark:bg-accent-900/20' : ''}`}
                   >
                     <span className="text-base mt-0.5"></span>
                     <div>

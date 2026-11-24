@@ -263,7 +263,7 @@ export function TerminalManager(props: TerminalManagerProps) {
               }}
               className={`${draggedTab === tab.id ? 'opacity-50 ' : ''}${dragOverTab === tab.id ? 'border-l-2 border-l-blue-500 ' : ''}group relative flex items-center gap-1 px-3 py-1 text-xs cursor-pointer select-none flex-shrink-0 transition-colors ${
                 tab.id === activeTabId
-                  ? 'bg-gray-900 dark:bg-gray-950 text-green-400 border-t-2 border-green-500'
+                  ? 'bg-gray-900 dark:bg-gray-950 text-green-400 border-t-2 border-accent-500'
                   : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200 border-t-2 border-transparent'
               }`}
             >

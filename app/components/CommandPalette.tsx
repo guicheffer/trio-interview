@@ -130,7 +130,7 @@ export function CommandPalette({ open, mode, actions, onClose }: CommandPaletteP
               type="button"
               onMouseEnter={() => setIndex(i)}
               onClick={() => execute(a)}
-              className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm ${i === index ? 'bg-green-50 text-gray-900 dark:bg-green-900/30 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}
+              className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm ${i === index ? 'bg-accent-50 text-gray-900 dark:bg-accent-900/30 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}
             >
               <span className="truncate">{a.title}</span>
               <span className="flex flex-shrink-0 items-center gap-2">

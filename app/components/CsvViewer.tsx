@@ -125,7 +125,7 @@ export function CsvViewer({ filePath }: CsvViewerProps) {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center gap-2">
         <span className="text-sm font-mono text-gray-700 dark:text-gray-300">{filePath}</span>
-        <span className="text-xs px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-medium">
+        <span className="text-xs px-2 py-0.5 rounded bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 font-medium">
           CSV ({rows.length} rows)
         </span>
         {saving && <span className="text-xs text-gray-400 ml-auto">Saving…</span>}

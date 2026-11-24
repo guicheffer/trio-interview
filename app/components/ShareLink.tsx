@@ -73,9 +73,9 @@ export function ShareLink({ candidateName }: { candidateName: string }) {
         aria-expanded={open}
         aria-controls={boxId}
         title="Copy the link to send the candidate"
-        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 ${
+        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500 ${
           highlight
-            ? 'animate-pulse border-purple-400 bg-purple-100 text-purple-800 ring-2 ring-purple-400 dark:border-purple-500 dark:bg-purple-900/50 dark:text-purple-200'
+            ? 'animate-pulse border-pink-400 bg-pink-100 text-pink-800 ring-2 ring-pink-400 dark:border-pink-500 dark:bg-pink-900/50 dark:text-pink-200'
             : 'border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
         }`}
       >
@@ -106,7 +106,7 @@ export function ShareLink({ candidateName }: { candidateName: string }) {
               <button
                 type="button"
                 onClick={copy}
-                className="flex-shrink-0 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+                className="flex-shrink-0 rounded-md bg-pink-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
               >
                 {copied ? 'Copied' : 'Copy'}
               </button>

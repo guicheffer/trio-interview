@@ -153,14 +153,13 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
           </div>
 
           <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Live Coding Challenge
+            Welcome
           </h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            Engineering Interview Platform
-          </p>
-          <p className="mx-auto mt-3 max-w-xs text-xs text-gray-500 dark:text-gray-400">
-            The AI assistant edits and saves your files as it goes. You can keep or undo each change.
-          </p>
+          {!interviewerMode && (
+            <p className="mx-auto mt-3 max-w-xs text-xs text-gray-500 dark:text-gray-400">
+              Your interviewer sees your work live. You will pick the assistant you want to work with once you are in.
+            </p>
+          )}
         </div>
 
         <div className="px-8 pb-8">
@@ -171,14 +170,14 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
           {/* Returning user */}
           {existingName && !showNewInput && (
             <div className="space-y-3">
-              <div className="p-3.5 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
-                <p className="text-xs text-green-600 dark:text-green-400">Welcome back</p>
-                <p className="text-sm font-bold text-green-900 dark:text-green-200 mt-0.5">{existingName}</p>
+              <div className="p-3.5 bg-accent-50 dark:bg-accent-900/20 rounded-xl border border-accent-100 dark:border-accent-800">
+                <p className="text-xs text-accent-600 dark:text-accent-300">Welcome back</p>
+                <p className="text-sm font-bold text-accent-900 dark:text-accent-200 mt-0.5">{existingName}</p>
               </div>
 
               <button
                 onClick={() => activateAndProceed(existingName, false)}
-                className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors text-sm"
+                className="w-full py-2.5 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-xl transition-colors text-sm"
               >
                 Continue as {existingName}
               </button>
@@ -205,7 +204,7 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
                   placeholder="Your name (e.g. Jane Smith)"
                   autoFocus
                   className={`w-full px-3.5 py-2.5 border rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                    placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm transition-colors ${
+                    placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm transition-colors ${
                     error ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
@@ -274,7 +273,7 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
                 <button
                   onClick={checkAndCreate}
                   disabled={checking || !slug}
-                  className="w-full py-2.5 bg-green-500 hover:bg-green-600 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm"
+                  className="w-full py-2.5 bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm"
                 >
                   {checking ? 'Checking...' : 'Start Challenge →'}
                 </button>
@@ -294,7 +293,7 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
               {isLocalHost && (
                 <button
                   onClick={() => setInterviewerMode(true)}
-                  className="mt-4 w-full rounded-xl border border-gray-200 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-purple-400 hover:text-purple-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-purple-500 dark:hover:text-purple-400"
+                  className="mt-4 w-full rounded-xl border border-gray-200 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-pink-400 hover:text-pink-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-pink-500 dark:hover:text-pink-400"
                 >
                   I&apos;m an interviewer
                 </button>
