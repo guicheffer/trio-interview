@@ -38,7 +38,7 @@ export function AgentModePicker({ canChoose, tools, onChoose, onRecheck }: Agent
   };
 
   const card = 'flex w-full items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800';
-  const hover = canChoose ? 'hover:border-green-500' : '';
+  const hover = canChoose ? 'hover:border-accent-500' : '';
   // Only tools the interviewer allowed are offered, and the candidate sees nothing about why one cannot open
   const offered = tools.filter(t => t.allowed);
   const problems = canChoose ? [] : offered.filter(t => t.ok === false);
@@ -55,7 +55,7 @@ export function AgentModePicker({ canChoose, tools, onChoose, onRecheck }: Agent
 
         <div className="mt-4 space-y-2">
           <button onClick={() => choose('agent')} disabled={!canChoose || busy !== null} className={`${card} ${hover}`}>
-            <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded bg-green-500 text-[10px] font-bold text-white">A</span>
+            <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded bg-accent-500 text-[10px] font-bold text-white">A</span>
             <span>
               <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">Agent mode</span>
               <span className="block text-xs text-gray-500 dark:text-gray-400">The chat panel, with model choice and plan mode.</span>

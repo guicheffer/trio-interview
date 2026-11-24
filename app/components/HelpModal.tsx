@@ -87,7 +87,7 @@ export function HelpModal({ role, animated = false, onClose }: HelpModalProps) {
         <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3 dark:border-gray-700">
           <div className="flex gap-1.5" aria-hidden="true">
             {steps.map((s, i) => (
-              <span key={s.title} className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+              <span key={s.title} className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-accent-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
             ))}
           </div>
           <div className="flex gap-2">
@@ -97,7 +97,7 @@ export function HelpModal({ role, animated = false, onClose }: HelpModalProps) {
             <button
               autoFocus
               onClick={last ? close : () => setIndex(index + 1)}
-              className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+              className="rounded-lg bg-accent-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-accent-700"
             >
               {last ? 'Done' : 'Next'}
             </button>

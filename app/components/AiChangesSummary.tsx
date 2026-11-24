@@ -62,8 +62,8 @@ export function AiChangesSummary({ changes, busy, onOpenFile }: { changes: AiCha
         <ul className="border-t border-amber-200 px-3 py-1 dark:border-amber-800">
           {counts.map(c => (
             <li key={c.file} className="flex items-center gap-2 py-0.5">
-              <button type="button" onClick={() => onOpenFile?.(c.file)} className="truncate font-mono text-green-700 underline decoration-dotted hover:text-green-800 dark:text-green-400">{c.file}</button>
-              <span className="ml-auto font-mono text-green-700 dark:text-green-400">+{c.added}</span>
+              <button type="button" onClick={() => onOpenFile?.(c.file)} className="truncate font-mono text-accent-700 underline decoration-dotted hover:text-accent-800 dark:text-accent-300">{c.file}</button>
+              <span className="ml-auto font-mono text-accent-700 dark:text-accent-300">+{c.added}</span>
               <span className="font-mono text-red-700 dark:text-red-400">-{c.removed}</span>
             </li>
           ))}

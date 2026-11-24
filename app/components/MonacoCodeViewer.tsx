@@ -527,7 +527,7 @@ export function MonacoCodeViewer({ filePath, readOnly = false, aiLocked = false,
               <button
                 onClick={() => onRunFile(cmd)}
                 title={`Run: ${cmd}`}
-                className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-500 hover:bg-green-600 text-white transition-colors font-medium"
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-accent-500 hover:bg-accent-600 text-white transition-colors font-medium"
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
@@ -556,7 +556,7 @@ export function MonacoCodeViewer({ filePath, readOnly = false, aiLocked = false,
             prose-headings:mb-3 prose-headings:mt-4 prose-p:my-2 prose-li:my-0.5
             prose-code:bg-gray-100 prose-code:dark:bg-gray-800 prose-code:px-1.5 prose-code:rounded
             prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:p-4 prose-pre:rounded-xl
-            prose-a:text-green-600 prose-a:dark:text-green-400 prose-strong:font-semibold
+            prose-a:text-accent-600 prose-a:dark:text-accent-300 prose-strong:font-semibold
             prose-table:border prose-th:border prose-td:border prose-th:px-3 prose-th:py-1.5 prose-td:px-3 prose-td:py-1.5
           ">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>

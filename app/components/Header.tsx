@@ -45,12 +45,12 @@ function FollowSwitch({ interviewerView }: { interviewerView?: boolean }) {
         : 'Not following: you navigate on your own. Content and cursors stay live. Click to follow the other person.'}
       className={`hidden flex-shrink-0 items-center gap-2 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-colors md:inline-flex ${
         following
-          ? 'border-purple-400 bg-purple-100 text-purple-800 dark:border-purple-500 dark:bg-purple-900/40 dark:text-purple-200'
+          ? 'border-pink-400 bg-pink-100 text-pink-800 dark:border-pink-500 dark:bg-pink-900/40 dark:text-pink-200'
           : 'border-gray-300 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
       }`}
     >
       Follow {interviewerView ? 'candidate' : 'interviewer'}
-      <span className={`relative inline-block h-3.5 w-6 rounded-full transition-colors ${following ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+      <span className={`relative inline-block h-3.5 w-6 rounded-full transition-colors ${following ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
         <span className={`absolute top-0.5 h-2.5 w-2.5 rounded-full bg-white shadow transition-all ${following ? 'left-3' : 'left-0.5'}`} />
       </span>
     </button>
@@ -141,7 +141,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
             {otherOnline && <FollowSwitch interviewerView={interviewerView} />}
             {interviewerView && (
               <>
-                <span className="hidden flex-shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 md:inline">
+                <span className="hidden flex-shrink-0 rounded-full bg-pink-100 px-2 py-0.5 text-[11px] font-semibold text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 md:inline">
                   Interviewer view
                 </span>
                 <button
@@ -208,7 +208,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
         ) : (
           <div className="flex items-center space-x-1.5 lg:space-x-2">
             <div className={`w-2 h-2 rounded-full ${!isConnected ? 'bg-red-500' : interviewerView && !otherOnline ? 'bg-gray-400' : 'bg-green-500'}`} />
-            <span className="text-xs lg:text-sm text-gray-600 dark:text-green-300 hidden sm:inline">
+            <span className="text-xs lg:text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">
               {!isConnected ? 'Disconnected' : interviewerView && !otherOnline ? 'Candidate offline' : 'Connected'}
             </span>
           </div>
@@ -295,7 +295,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
               >
                 <span className="flex items-center gap-3 whitespace-nowrap text-left"><svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2"><path d="M4 3l7 17 2.5-7.5L21 10z" strokeLinejoin="round"/></svg>
                 Show {interviewerView ? "candidate's" : "interviewer's"} cursor</span>
-                <span className={`relative inline-block h-4 w-7 rounded-full transition-colors ${showCursors ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                <span className={`relative inline-block h-4 w-7 rounded-full transition-colors ${showCursors ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
                   <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all ${showCursors ? 'left-3.5' : 'left-0.5'}`} />
                 </span>
               </button>
@@ -308,7 +308,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
                   <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   Follow {interviewerView ? 'candidate' : 'interviewer'}
                 </span>
-                <span className={`relative inline-block h-4 w-7 rounded-full transition-colors ${following ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                <span className={`relative inline-block h-4 w-7 rounded-full transition-colors ${following ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
                   <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all ${following ? 'left-3.5' : 'left-0.5'}`} />
                 </span>
               </button>

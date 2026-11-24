@@ -210,7 +210,7 @@ export function AiChangesBar({ changes, filePath, handleRef }: Props) {
         <div key={toast.id} className="relative overflow-hidden rounded-lg border border-gray-300 bg-white py-1.5 pl-3 pr-2 text-xs text-gray-800 shadow dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100" role="status" data-testid="ai-undo-toast">
           <div className="flex items-center gap-3">
             <span>{toast.label}</span>
-            <button onClick={takeBack} className="rounded px-2 py-0.5 font-semibold text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-gray-700">Undo</button>
+            <button onClick={takeBack} className="rounded px-2 py-0.5 font-semibold text-accent-700 hover:bg-accent-50 dark:text-accent-300 dark:hover:bg-gray-700">Undo</button>
           </div>
           <div className="absolute bottom-0 left-0 h-0.5 bg-green-500" style={{ width: '100%', animation: `trio-toast-timer ${TOAST_MS}ms linear forwards` }} />
         </div>
@@ -218,9 +218,9 @@ export function AiChangesBar({ changes, filePath, handleRef }: Props) {
       {visible.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 shadow dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100" data-testid="ai-changes-bar">
           <span className="font-semibold">AI changed this file</span>
-          <span className="font-mono text-green-700 dark:text-green-400">+{added}</span>
+          <span className="font-mono text-accent-700 dark:text-accent-300">+{added}</span>
           <span className="font-mono text-red-700 dark:text-red-400">-{removed}</span>
-          <button onClick={keepAll} className="rounded bg-green-600 px-2 py-0.5 font-semibold text-white hover:bg-green-700">Keep all</button>
+          <button onClick={keepAll} className="rounded bg-accent-600 px-2 py-0.5 font-semibold text-white hover:bg-accent-700">Keep all</button>
           <button onClick={undoAll} className="rounded border border-amber-400 px-2 py-0.5 font-semibold hover:bg-amber-100 dark:hover:bg-amber-900">Undo all</button>
         </div>
       )}

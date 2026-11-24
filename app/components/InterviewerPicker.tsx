@@ -113,7 +113,7 @@ export function InterviewerPicker({ onPick, onBack }: InterviewerPickerProps) {
               <>
                 <button
                   onClick={() => onPick(row, rows)}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5 text-left transition-colors hover:border-green-400 hover:bg-green-50 dark:border-gray-700 dark:hover:border-green-600 dark:hover:bg-green-900/20"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5 text-left transition-colors hover:border-accent-400 hover:bg-accent-50 dark:border-gray-700 dark:hover:border-green-600 dark:hover:bg-green-900/20"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{row.name}</p>

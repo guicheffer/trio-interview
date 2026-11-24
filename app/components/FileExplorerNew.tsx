@@ -39,7 +39,7 @@ const EXT_COLORS: Record<string, string> = {
   md: 'text-teal-500',
   css: 'text-pink-500', scss: 'text-pink-400',
   html: 'text-red-400',
-  sql: 'text-purple-500',
+  sql: 'text-pink-500',
   go: 'text-cyan-500',
   rs: 'text-orange-500',
   sh: 'text-gray-400', bash: 'text-gray-400',
@@ -79,7 +79,7 @@ function pickFirstFile(files: FileNode[], defaultFile?: string): FileNode | unde
 const NEW_FILE_HIGHLIGHT_MS = 12000;
 
 function rowStateClass(selected: boolean, justCreated: boolean): string {
-  if (selected) return 'bg-green-500 text-white dark:bg-green-600';
+  if (selected) return 'bg-accent-500 text-white dark:bg-accent-600';
   if (justCreated) return 'bg-emerald-100 ring-1 ring-emerald-400 dark:bg-emerald-900/40 animate-pulse';
   return 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-100';
 }
@@ -517,7 +517,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
       )}
 
       {isInterviewer && visibility.managed.length > 0 && (
-        <div className="mx-2 mt-2 flex items-center justify-between gap-2 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-[11px] text-purple-800 dark:border-purple-800 dark:bg-purple-900/20 dark:text-purple-200">
+        <div className="mx-2 mt-2 flex items-center justify-between gap-2 rounded-lg border border-pink-200 bg-pink-50 px-2.5 py-1.5 text-[11px] text-pink-800 dark:border-pink-800 dark:bg-pink-900/20 dark:text-pink-200">
           <span>{visibility.hidden.length} of {visibility.managed.length} hidden from the candidate</span>
           <span className="flex gap-2 font-semibold">
             {visibility.hidden.length > 0
@@ -572,7 +572,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                       commitGhost();
                     }}
                     placeholder={ghost.type === 'file' ? 'filename.ts' : 'folder-name'}
-                    className="flex-1 min-w-0 text-sm font-mono bg-white dark:bg-gray-800 border border-green-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none"
+                    className="flex-1 min-w-0 text-sm font-mono bg-white dark:bg-gray-800 border border-accent-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none"
                   />
                 </div>
               </li>
@@ -599,7 +599,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                         if (e.key === 'Escape') { setRenamingPath(null); setRenameValue(''); }
                       }}
                       onBlur={() => commitRename(file.path, renameValue)}
-                      className="flex-1 min-w-0 text-sm font-mono bg-white dark:bg-gray-800 border border-green-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none"
+                      className="flex-1 min-w-0 text-sm font-mono bg-white dark:bg-gray-800 border border-accent-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none"
                     />
                   </div>
                 ) : (
@@ -658,7 +658,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                         </span>
                       )}
                       {file.hidden && (
-                        <span className="flex-shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">hidden</span>
+                        <span className="flex-shrink-0 rounded bg-pink-100 px-1.5 py-0.5 text-[10px] font-semibold text-pink-700 dark:bg-pink-900/40 dark:text-pink-300">hidden</span>
                       )}
                       {isLockedPath(file.path, lockedFiles) && (
                         <svg className="w-3 h-3 text-amber-500 flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -700,7 +700,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                       <button
                         onClick={(e) => { e.stopPropagation(); changeVisibility(visibility.hidden.includes(file.path) ? 'reveal' : 'hide', [file.path]); }}
                         title={visibility.hidden.includes(file.path) ? 'Reveal to the candidate' : 'Hide from the candidate'}
-                        className="flex-shrink-0 p-1.5 rounded text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/40"
+                        className="flex-shrink-0 p-1.5 rounded text-pink-500 hover:bg-pink-100 dark:hover:bg-pink-900/40"
                       >
                         {visibility.hidden.includes(file.path) ? (
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
@@ -715,7 +715,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                         title="Rename"
                         className={`flex-shrink-0 p-1.5 mr-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
                           selectedFile === file.path
-                            ? 'hover:bg-green-400 text-white'
+                            ? 'hover:bg-accent-400 text-white'
                             : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                         }`}
                       >

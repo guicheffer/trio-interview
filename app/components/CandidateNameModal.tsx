@@ -67,7 +67,7 @@ export function CandidateNameModal({ onSubmit, isLoading, error }: CandidateName
               }}
               placeholder="john-doe"
               disabled={isLoading}
-              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 ${
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50 ${
                 localError || error
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 dark:border-gray-600'
@@ -88,7 +88,7 @@ export function CandidateNameModal({ onSubmit, isLoading, error }: CandidateName
           <button
             type="submit"
             disabled={isLoading || !name.trim()}
-            className="w-full px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-6 py-3 bg-accent-500 text-white rounded-lg font-medium hover:bg-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
