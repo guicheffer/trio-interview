@@ -61,6 +61,8 @@
   }
   function choose(i) { go(i, true); scrollToStep(Math.max(0, Math.min(plan.length - 1, i))); }
   tabs.forEach(function (t, k) { t.addEventListener('click', function () { choose(k); }); });
+  var runit = document.getElementById('runit');
+  if (runit) runit.addEventListener('click', function () { call(by.fib, 'fibRun'); });
   prev.addEventListener('click', function () { choose(cur - 1); });
   next.addEventListener('click', function () { choose(cur + 1); });
   document.addEventListener('keydown', function (e) {
