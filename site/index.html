@@ -11,153 +11,22 @@
 <meta property="og:image" content="https://guicheffer.github.io/trio-interview/img/share.png">
 <link rel="canonical" href="https://guicheffer.github.io/trio-interview/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<style>
-@font-face{font-family:"Geist";src:url(fonts/geist-latin.woff2) format("woff2");font-weight:100 900;font-display:swap}
-@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:swap}
-:root{
-  --bg:#0a0a12; --bg2:#101019; --line:#23232f; --text:#f2f2f7; --mute:#9a9aae;
-  --purple:#5850f8; --purple-l:#a39fff; --green:#00c068; --pink:#e0529c;
-  --sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-}
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){--bg:#fbfbfd;--bg2:#f2f2f7;--line:#dcdce6;--text:#16161d;--mute:#62627a;--purple-l:#4a43e0}
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:400 18px/1.6 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
-a{color:inherit}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-.small{font-size:.9rem;color:var(--mute)}
-h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.035em;line-height:1.04}
-h1{font-size:clamp(2.8rem,8.2vw,6.4rem)}
-h2{font-size:clamp(2rem,5vw,3.6rem)}
-h3{font-size:1.2rem;letter-spacing:-.02em;line-height:1.25}
-p{margin:0 0 1.1em}
-code{font-family:var(--mono);font-size:.88em}
-
-/* bar */
-.bar{position:fixed;inset:0 0 auto 0;z-index:30;height:56px;display:flex;align-items:center;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
-.bar .wrap{display:flex;align-items:center;justify-content:space-between;width:100%}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;font-size:.98rem}
-.brand img{height:22px}
-.bar nav{display:flex;align-items:center;gap:26px;font-size:.88rem;color:var(--mute)}
-.bar nav a{text-decoration:none}
-.bar nav a:hover{color:var(--text)}
-
-/* github star, plain */
-.star{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:.82rem;line-height:1;text-decoration:none;color:var(--text);background:var(--bg2)}
-.star span{display:flex;align-items:center;gap:7px;padding:7px 10px}
-.star span+span{border-left:1px solid var(--line);font-variant-numeric:tabular-nums}
-.star svg{width:15px;height:15px;fill:currentColor}
-.star:hover{border-color:var(--mute)}
-.star .on{fill:#e3b341}
-
-/* hero */
-.hero{min-height:100svh;display:flex;align-items:center;position:relative;overflow:hidden;padding:120px 0 80px}
-.hero .wrap{position:relative;z-index:1}
-.hero h1{max-width:12ch}
-.hero .sub{max-width:34rem;margin:28px 0 0;font-size:1.3rem;line-height:1.5;color:var(--mute)}
-.hero .sub b{color:var(--text);font-weight:500}
-.pron{font:500 .9rem var(--mono);color:var(--mute);margin-top:34px}
-.acts{display:flex;align-items:center;gap:26px;margin-top:34px;flex-wrap:wrap}
-.btn{display:inline-block;padding:12px 18px;border-radius:6px;background:var(--text);color:var(--bg);font-weight:600;font-size:.95rem;text-decoration:none}
-.btn:hover{opacity:.88}
-.link{font-size:.98rem;text-decoration:none;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:2px}
-.link:hover{border-color:var(--text)}
-.shape{position:absolute;border-radius:999px;will-change:transform;pointer-events:none}
-.h1{width:560px;height:170px;background:var(--purple);right:-300px;top:16%;transform:rotate(121deg)}
-.h2{width:560px;height:170px;background:var(--green);right:-250px;top:52%;transform:rotate(59deg)}
-@supports (animation-timeline: scroll()){
-  .h1{animation:h1 linear both;animation-timeline:scroll(root);animation-range:0 100svh}
-  .h2{animation:h2 linear both;animation-timeline:scroll(root);animation-range:0 100svh}
-  @keyframes h1{to{transform:rotate(121deg) translateX(-240px)}}
-  @keyframes h2{to{transform:rotate(59deg) translateX(180px)}}
-}
-
-/* sticky product stage */
-.stage{position:relative}
-.stage .pin{position:sticky;top:0;height:100svh;display:grid;grid-template-columns:minmax(230px,300px) 1fr;gap:36px;align-items:center;max-width:1600px;margin:0 auto;padding:56px 28px 0}
-.copy{position:relative;height:340px}
-.step{position:absolute;inset:0;opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
-.step.on{opacity:1;transform:none;pointer-events:auto}
-.step .who{font:600 .75rem var(--mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.step .who i{width:8px;height:8px;border-radius:50%;display:inline-block}
-.step h2{font-size:clamp(1.6rem,2.5vw,2.2rem);margin-bottom:16px}
-.step p{color:var(--mute);font-size:1rem;margin:0}
-.dots{position:absolute;left:0;bottom:-34px;display:flex;gap:8px}
-.dots b{width:22px;height:3px;border-radius:2px;background:var(--line);transition:background .4s}
-.dots b.on{background:var(--text)}
-
-.frame{position:relative;width:100%;aspect-ratio:1440/900;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#0b0b14;box-shadow:0 40px 100px -30px rgba(0,0,0,.6)}
-.frame .bar2{position:absolute;inset:0 0 auto 0;height:30px;background:#14141f;border-bottom:1px solid #23232f;display:flex;align-items:center;gap:7px;padding:0 12px;z-index:3}
-.frame .bar2 i{width:9px;height:9px;border-radius:50%;background:#2c2c3c}
-.frame .bar2 span{margin:0 auto;font:500 11px var(--mono);color:#7d7d92;transform:translateX(-24px)}
-.screen{position:absolute;left:0;right:0;top:30px;bottom:0;overflow:hidden}
-.screen iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;opacity:0;transition:opacity .45s ease;background:#0b0b14}
-.screen iframe.on{opacity:1}
-@supports (animation-timeline: view()){
-  .frame{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
-  @keyframes rise{from{transform:translateY(60px) scale(.94)}to{transform:none}}
-}
-.beats{position:relative;margin-top:calc(-100svh + 0px)}
-.beat{height:72svh}
-.beat:first-child{height:100svh}
-
-/* regular sections */
-section.s{padding:140px 0}
-section.s.alt{background:var(--bg2);border-block:1px solid var(--line)}
-.kicker{font:600 .75rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--purple-l);margin-bottom:22px}
-.lead{max-width:44rem}
-.lead h2{margin-bottom:28px}
-.lead p{color:var(--mute);font-size:1.15rem}
-.lead p a{color:var(--text)}
-.twocol{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
-.cmds{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:56px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.cmd{padding:26px 26px 30px;border-left:1px solid var(--line)}
-.cmd:first-child{border-left:0}
-.cmd .n{font:500 .78rem var(--mono);color:var(--mute);margin-bottom:12px}
-.cmd pre{margin:18px 0 0;font:500 1rem var(--mono);color:var(--green)}
-.cmd pre:before{content:"$ ";color:var(--mute)}
-.cmd p{color:var(--mute);font-size:.98rem;margin:8px 0 0}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:8px}
-.pair h3{margin-bottom:10px}
-.pair p{color:var(--mute);font-size:1.02rem}
-.ledger{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:1rem}
-.ledger div{display:flex;justify-content:space-between;gap:20px;padding:17px 22px;border-top:1px solid var(--line)}
-.ledger div:first-child{border-top:0}
-.ledger span{color:var(--mute)}
-.ledger b{font-weight:500;font-family:var(--mono);font-size:.92rem}
-footer{border-top:1px solid var(--line);padding:56px 0 70px;color:var(--mute);font-size:.95rem}
-footer .wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px}
-footer a{display:block;text-decoration:none;margin-bottom:8px}
-footer a:hover{color:var(--text)}
-
-@media (max-width:900px){
-  .stage .pin{grid-template-columns:1fr;gap:18px;align-content:start;padding-top:72px}
-  .copy{height:210px;order:2}
-  .step h2{font-size:1.6rem;margin-bottom:10px}
-  .step p{font-size:.98rem}
-  .dots{display:none}
-  .twocol,.pair,.cmds,footer .wrap{grid-template-columns:1fr}
-  .cmd{border-left:0;border-top:1px solid var(--line)}
-  .cmd:first-child{border-top:0}
-  section.s{padding:84px 0}
-  .bar nav a:not(.star){display:none}
-  .h1,.h2{opacity:.4}
-}
-@media (prefers-reduced-motion: reduce){
-  html{scroll-behavior:auto}
-  .h1,.h2,.frame{animation:none!important}
-  .step,.screen iframe{transition:none}
-}
-</style>
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="agent" viewBox="0 0 279 241">
+    <rect x="3.80" y="171.95" width="192.00" height="68.10" rx="34.05" fill="currentColor" transform="rotate(0.0 99.80 206.00)"/>
+    <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
+  </symbol>
+  <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
+  <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
+</svg>
 <header class="bar"><div class="wrap">
-  <a class="brand" href="#top"><img src="img/symbol.svg" alt="" height="22"> Trio Interview</a>
+  <a class="brand" href="./"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/><use href="#interviewer"/><use href="#candidate"/></svg> Trio Interview</a>
   <nav>
-    <a href="#how">How it works</a><a href="#why">Why open source</a><a href="#start">Get started</a>
+    <a href="#how">How it works</a><a href="#parts">The three of you</a><a href="#why">Why this</a><a href="docs/">Docs</a>
     <a class="star" href="https://github.com/guicheffer/trio-interview" target="_blank" rel="noopener" aria-label="Star Trio Interview on GitHub">
       <span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Star</span><span class="cnt" style="display:none"></span>
     </a>
@@ -170,151 +39,108 @@ footer a:hover{color:var(--text)}
   <div class="wrap">
     <h1>Interviews that look like work</h1>
     <p class="sub">Trio Interview is a live coding room that runs on your own machine. You send a link, the candidate opens it in a browser, and the two of you work in the same editor and terminal while an AI assistant helps them <b>in plain sight</b>.</p>
-    <div class="acts"><a class="btn" href="#start">Get started</a><a class="link" href="#how">See how it works</a></div>
-    <p class="pron">Trio Interview, say it "TREE-oh IN-ter-vyoo": the interviewer, the candidate and the assistant</p>
+    <div class="acts"><a class="btn" href="#how">See it work</a><a class="link" href="#start">Run it yourself</a></div>
+    <p class="pron"><em>Trio Interview</em>, say it "TREE-oh IN-ter-vyoo": the interviewer, the candidate and the assistant</p>
   </div>
 </section>
 
 <section class="stage" id="how" aria-label="How a session goes">
   <div class="pin">
     <div class="copy">
-      <div class="step on" data-i="0"><div class="who"><i style="background:var(--green)"></i>Candidate</div><h2>It starts with a link and a name</h2><p>You send the link that <code>make start</code> prints. The candidate opens it, types a name and lands in the workspace, with nothing to install on their side.</p></div>
-      <div class="step" data-i="1"><div class="who"><i style="background:var(--green)"></i>Candidate</div><h2>They work with the assistant out in the open</h2><p>The exercise, the files, a real terminal and the assistant they chose are all in one screen. Whatever they ask it, and whatever it answers, is saved for you to review.</p></div>
-      <div class="step" data-i="2"><div class="who"><i style="background:var(--pink)"></i>Interviewer</div><h2>You see who is online</h2><p>Open <code>localhost</code> on your machine and pick the candidate from the list. The role is decided by where you connect from, and the candidate's link cannot open this side.</p></div>
-      <div class="step" data-i="3"><div class="who"><i style="background:var(--pink)"></i>Interviewer</div><h2>The same screen, live</h2><p>You see the candidate's files, editor, terminal and chat as they move. You can follow their view or look around on your own, and edit files too, while the later phases stay out of their reach.</p></div>
-      <div class="step" data-i="4"><div class="who"><i style="background:var(--pink)"></i>Interviewer</div><h2>Release the next phase when they are ready</h2><p>One click reveals the hidden phases, and they appear in the candidate's file tree at that moment. You set the pace of the interview, and not the tool.</p></div>
-      <div class="dots" aria-hidden="true"><b class="on"></b><b></b><b></b><b></b><b></b></div>
+      <div class="tabs" role="tablist" aria-label="Steps">
+        <button role="tab" class="tab on" data-i="0" aria-selected="true"><b>1</b>Link</button>
+        <button role="tab" class="tab" data-i="1" aria-selected="false"><b>2</b>Ask</button>
+        <button role="tab" class="tab" data-i="2" aria-selected="false"><b>3</b>Run</button>
+        <button role="tab" class="tab" data-i="3" aria-selected="false"><b>4</b>Online</button>
+        <button role="tab" class="tab" data-i="4" aria-selected="false"><b>5</b>Watch</button>
+        <button role="tab" class="tab" data-i="5" aria-selected="false"><b>6</b>Release</button>
+      </div>
+      <div class="steps">
+        <div class="step on" data-i="0"><div class="who c"><i></i>Candidate</div><h2>Open a link, type a name</h2><p>The candidate needs nothing installed. The workspace opens with the exercise, the files and a terminal.</p></div>
+        <div class="step" data-i="1"><div class="who c"><i></i>Candidate</div><h2>Ask the assistant</h2><p>It reads the file, changes it and says what it did. Everything it was asked, and everything it answered, is saved for you.</p></div>
+        <div class="step" data-i="2"><div class="who c"><i></i>Candidate</div><h2>Run it</h2><p>The code in the editor really runs, here in your browser, and prints what Node would. Press the button, or Run inside the screen.</p><button class="runit" id="runit" type="button">Run fibonacci.js</button></div>
+        <div class="step" data-i="3"><div class="who i"><i></i>Interviewer</div><h2>You see who is online</h2><p>Open <code>localhost</code> on your machine and pick the candidate. The candidate's link cannot open this side.</p></div>
+        <div class="step" data-i="4"><div class="who i"><i></i>Interviewer</div><h2>The same screen, live</h2><p>Their files, editor, terminal and chat as they move. Follow them or look around, and edit files too.</p></div>
+        <div class="step" data-i="5"><div class="who i"><i></i>Interviewer</div><h2>Release the next phase</h2><p>One click reveals the hidden phases in the candidate's file tree. You set the pace.</p></div>
+      </div>
+      <div class="pager"><button class="pg" id="prev" aria-label="Previous step">&larr;</button><span id="count">1 / 6</span><button class="pg" id="next" aria-label="Next step">&rarr;</button></div>
     </div>
     <div class="frame" id="frame">
-      <div class="bar2"><i></i><i></i><i></i><span id="url">your-link.ngrok.app</span></div>
+      <div class="bar2"><i></i><i></i><i></i><span id="url">your-link.ngrok.app</span><em id="note">replica</em></div>
       <div class="screen" id="screen">
-        <iframe data-scene="welcome" data-url="your-link.ngrok.app" src="app/scene-welcome.html" title="The name screen" class="on" tabindex="-1" loading="eager"></iframe>
-        <iframe data-scene="work" data-url="your-link.ngrok.app" src="app/scene-work.html" title="The candidate's workspace" tabindex="-1" loading="eager"></iframe>
-        <iframe data-scene="picker" data-url="localhost:3000" src="app/scene-picker.html" title="The list of candidates" tabindex="-1" loading="eager"></iframe>
-        <iframe data-scene="view" data-url="localhost:3000" src="app/scene-view.html" title="The interviewer's view" tabindex="-1" loading="eager"></iframe>
+        <iframe data-scene="welcome" data-url="your-link.ngrok.app" src="app/scene-welcome.html" title="The name screen" class="on" tabindex="-1"></iframe>
+        <iframe data-scene="fib" data-url="your-link.ngrok.app" src="app/scene-fib.html" title="The candidate's workspace with the Fibonacci exercise" tabindex="-1"></iframe>
+        <iframe data-scene="picker" data-url="localhost:3000" src="app/scene-picker.html" title="The list of candidates" tabindex="-1"></iframe>
+        <iframe data-scene="view" data-url="localhost:3000" src="app/scene-view.html" title="The interviewer's view" tabindex="-1"></iframe>
       </div>
     </div>
   </div>
-  <div class="beats" aria-hidden="true"><div class="beat" data-i="0"></div><div class="beat" data-i="1"></div><div class="beat" data-i="2"></div><div class="beat" data-i="3"></div><div class="beat" data-i="4"></div></div>
+  <div class="beats" aria-hidden="true"><div class="beat" data-i="0"></div><div class="beat" data-i="1"></div><div class="beat" data-i="2"></div><div class="beat" data-i="3"></div><div class="beat" data-i="4"></div><div class="beat" data-i="5"></div></div>
 </section>
 
-<section class="s" id="why">
+<section class="parts" id="parts">
+  <div class="pin"><div class="wrap">
+    <div class="kicker">The name</div>
+    <h2>Three of you in one room</h2>
+    <p class="lede">Every session has an interviewer, a candidate and an assistant, and the logo is made of the three. Keep scrolling and they come together, one by one.</p>
+    <div class="trio" id="trio" aria-label="The three parts of the logo">
+      <div class="slot" aria-hidden="true"></div>
+      <div class="part pa"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/></svg><div class="txt"><h3>The assistant</h3><p>An AI agent: a model that reads the files, changes them and runs commands to do what it is asked. Here it works in plain sight, and every step is saved.</p></div></div>
+      <div class="part pi"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#interviewer"/></svg><div class="txt"><h3>The interviewer</h3><p>You. You watch the same screen, release the next phase and read how the candidate worked with the assistant.</p></div></div>
+      <div class="part pc"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#candidate"/></svg><div class="txt"><h3>The candidate</h3><p>They choose how to work, with the chat or a terminal assistant, and solve the exercise as they would at work.</p></div></div>
+    </div>
+  </div></div>
+</section>
+
+<section class="s alt" id="why">
   <div class="wrap twocol">
     <div class="lead">
-      <div class="kicker">Why open source</div>
-      <h2>The room should run where you can see it</h2>
-      <p>Hosted tools such as <a href="https://coderpad.io/">CoderPad</a>, <a href="https://www.hackerrank.com/">HackerRank</a> and <a href="https://codesignal.com/">CodeSignal</a> run the interview on their servers, and what they offer and what they ask for is on their own sites. Trio Interview takes the other road, where the room runs on your machine, the code is open so a company can read what runs its interviews, and your exercises stay yours.</p>
-      <p>There is nothing to subscribe to, because the tool is free and what it costs you is the assistant account you already pay for. Nothing of ours sits in the middle, so what travels is the link, through a free ngrok or Cloudflare tunnel, and what the candidate says to the assistant, which goes to the provider of the account you signed in with, so a company can use it on an internal setup without paying anyone for a seat. The maintenance belongs to the people who use it, and if something is missing for your team, you can add it.</p>
+      <div class="kicker">Why this</div>
+      <h2>An interview that looks like the job</h2>
+      <p>People work with assistants now, so the room lets them, and shows you how. It runs on your machine, so the code is yours to read and the exercises stay yours. There is no seat to buy, and the maintenance belongs to the people who use it.</p>
+      <p class="small">Other tools exist, such as <a href="https://coderpad.io/">CoderPad</a>, <a href="https://www.hackerrank.com/">HackerRank</a> and <a href="https://codesignal.com/">CodeSignal</a>, and what they offer is on their own sites.</p>
     </div>
     <div class="ledger" aria-label="What runs where">
-      <div><span>Room</span><b>your machine</b></div>
-      <div><span>Candidate's code</span><b>your machine</b></div>
-      <div><span>Conversations</span><b>your machine</b></div>
+      <div><span>The room</span><b>your machine</b></div>
+      <div><span>The candidate's code</span><b>your machine</b></div>
       <div><span>Exercises</span><b>your repository</b></div>
       <div><span>Seats to buy</span><b>none</b></div>
-      <div><span>Sent to the assistant provider</span><b>the chat</b></div>
-    </div>
-  </div>
-</section>
-
-<section class="s alt">
-  <div class="wrap">
-    <div class="lead">
-      <div class="kicker">The assistant is part of it</div>
-      <h2>Watch how they work with it, instead of banning it</h2>
-      <p>The candidate picks how to work, with the chat panel or with Claude Code or OpenCode in a real terminal, from the ones you allowed. They run with a private configuration so none of your own setup comes along, and everything said to the assistant is saved with the code, so at the end you read how someone prompts, checks an answer and fixes what is wrong.</p>
+      <div><span>Sent to the assistant's provider</span><b>the chat</b></div>
     </div>
   </div>
 </section>
 
 <section class="s" id="start">
   <div class="wrap">
-    <div class="lead"><div class="kicker">Get started</div><h2>Three commands and a link</h2>
-    <p>You need Node 25 and Claude Code signed in. OpenCode and a tunnel are optional, and the setup checks all of it for you.</p></div>
+    <div class="lead"><div class="kicker">For the interviewer</div><h2>Three commands, then send the link</h2>
+    <p>These run on your machine, and the candidate only ever sees the link. You need Node 25 and Claude Code signed in, and the setup checks the rest.</p></div>
     <div class="cmds">
       <div class="cmd"><div class="n">1</div><h3>Check the machine</h3><p>Installs dependencies and tells you what is missing.</p><pre>make install</pre></div>
       <div class="cmd"><div class="n">2</div><h3>Say what is allowed</h3><p>Choose the assistants, exercises and tunnel, once.</p><pre>make config</pre></div>
       <div class="cmd"><div class="n">3</div><h3>Share the link</h3><p>Pick an exercise and send the candidate the link it prints.</p><pre>make start</pre></div>
     </div>
-    <div class="lead" style="margin-top:56px"><p>The link carries a private part that is new for every interview, so an old link or a guessed address gets nothing. When you are done, <code>make stop</code> shuts it all down and <code>make export</code> zips the code and every conversation for review.</p></div>
+    <div class="acts"><a class="btn" href="docs/">Read the docs</a><a class="link" href="https://github.com/guicheffer/trio-interview">See the code</a></div>
   </div>
 </section>
 
-<section class="s alt">
-  <div class="wrap">
-    <div class="pair">
-      <div><h3>How people reach it</h3><p>With <code>ngrok</code> the address stays the same and every assistant works. With <code>cloudflared</code> there is no account and the address is new each time, but the chat panel does not get its live answers through it, so the candidate should pick a terminal assistant. The setup asks which one you want and checks what it still needs.</p></div>
-      <div><h3>What it is not</h3><p>It is a guard rail and not a sandbox, because a candidate's code runs as your user and nothing filters what it sends out. Use a machine and an account without production credentials, supervise the interview, and for stronger isolation use a virtual machine or a container.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="s" id="help">
+<section class="s alt" id="help">
   <div class="wrap">
     <div class="lead">
       <div class="kicker">Contribute</div>
       <h2>Help it get better</h2>
-      <p>The easiest first contribution needs no code, since you can write an exercise from your own field and share it. After that there is room for a second tunnel option, more assistants and better ways to review what candidates did. The guide shows the whole path with a recording, from branch to pull request, and small changes that do one thing are the easiest to review.</p>
-      <div class="acts"><a class="btn" href="https://github.com/guicheffer/trio-interview/blob/main/CONTRIBUTING.md">Read the contributing guide</a>
-        <a class="star" href="https://github.com/guicheffer/trio-interview" target="_blank" rel="noopener"><span><svg class="on" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>Star on GitHub</span><span class="cnt" style="display:none"></span></a></div>
+      <p>The easiest first contribution is an exercise from your own field, and there is room for more tunnels, more assistants and better ways to review what candidates did.</p>
+      <div class="acts"><a class="btn" href="docs/contributing.html">How to contribute</a><a class="link" href="https://github.com/guicheffer/trio-interview/issues">Open an issue</a></div>
     </div>
   </div>
 </section>
 </main>
 
 <footer><div class="wrap">
-  <div><strong style="color:var(--text)">Trio Interview</strong><br>Free software under the AGPL-3.0.<br><br><span class="small">I started this while working at a company, as a way to interview people with an AI assistant in the room. Most of it I built outside working hours, so I opened it and keep it going as a project of its own.</span></div>
-  <div><a href="https://github.com/guicheffer/trio-interview">Source code</a><a href="https://github.com/guicheffer/trio-interview/blob/main/README.md">README</a><a href="https://github.com/guicheffer/trio-interview/issues">Issues</a></div>
-  <div><a href="https://github.com/guicheffer/trio-interview/blob/main/CONTRIBUTING.md">Contributing</a><a href="https://github.com/guicheffer/trio-interview/blob/main/LICENSE">License</a></div>
+  <div><strong>Trio Interview</strong><br>Free software under the AGPL-3.0.</div>
+  <div><a href="docs/">Docs</a><a href="docs/contributing.html">Contributing</a><a href="https://github.com/guicheffer/trio-interview">Source code</a></div>
+  <div><a href="https://github.com/guicheffer/trio-interview/issues">Issues</a><a href="https://github.com/guicheffer/trio-interview/blob/main/LICENSE">License</a></div>
 </div></footer>
 
-<script>
-(function(){
-  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var frames=[].slice.call(document.querySelectorAll('.screen iframe'));
-  var steps=[].slice.call(document.querySelectorAll('.step')), dots=[].slice.call(document.querySelectorAll('.dots b'));
-  var screen=document.getElementById('screen'), urlEl=document.getElementById('url');
-  var by={}; frames.forEach(function(f){by[f.dataset.scene]=f});
-
-  function fit(){ var s=screen.clientWidth/1440; frames.forEach(function(f){f.style.transform='scale('+s+')'}) }
-  fit(); addEventListener('resize',fit);
-
-  // what each of the five steps shows, using the real scenes of the app
-  var plan=[
-    {scene:'welcome'},
-    {scene:'work',chat:2},
-    {scene:'picker'},
-    {scene:'view',reveal:false},
-    {scene:'view',reveal:true}
-  ];
-  function call(f,fn,arg){ try{ f.contentWindow[fn](arg) }catch(e){} }
-  var cur=-1, timers=[];
-  function go(i){
-    if(i===cur) return; cur=i; timers.forEach(clearTimeout); timers=[];
-    var p=plan[i];
-    frames.forEach(function(f){f.classList.toggle('on',f===by[p.scene])});
-    urlEl.textContent=by[p.scene].dataset.url;
-    steps.forEach(function(s,k){s.classList.toggle('on',k===i)});
-    dots.forEach(function(d,k){d.classList.toggle('on',k===i)});
-    if(p.scene==='work'){ call(by.work,'setChat',0); if(reduce){call(by.work,'setChat',2)} else {timers.push(setTimeout(function(){call(by.work,'setChat',1)},500),setTimeout(function(){call(by.work,'setChat',2)},1500))} }
-    if(p.scene==='view'){ call(by.view,'reveal',false); if(p.reveal){ if(reduce) call(by.view,'reveal',true); else timers.push(setTimeout(function(){call(by.view,'reveal',true)},900)) } }
-  }
-  var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) go(+e.target.dataset.i) }) },{rootMargin:'-45% 0px -45% 0px'});
-  [].forEach.call(document.querySelectorAll('.beat'),function(b){io.observe(b)});
-
-  // stars, from the public GitHub API with no sign in. The number stays hidden if the API cannot be reached
-  var cnts=[].slice.call(document.querySelectorAll('.cnt'));
-  function show(n){ var t=n>=1000?(n/1000).toFixed(1)+'k':String(n); cnts.forEach(function(c){c.textContent=t;c.style.display=''}) }
-  cnts.forEach(function(c){c.style.display='none'});
-  var KEY='trio_stars', cached=null;
-  try{ cached=JSON.parse(sessionStorage.getItem(KEY)||'null') }catch(e){}
-  if(cached && Date.now()-cached.at<36e5){ show(cached.n) }
-  else fetch('https://api.github.com/repos/guicheffer/trio-interview').then(function(r){return r.ok?r.json():null}).then(function(d){
-    if(!d||typeof d.stargazers_count!=='number') return;
-    try{ sessionStorage.setItem(KEY,JSON.stringify({n:d.stargazers_count,at:Date.now()})) }catch(e){}
-    show(d.stargazers_count);
-  }).catch(function(){});
-})();
-</script>
+<script src="site.js"></script>
 </body>
 </html>

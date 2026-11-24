@@ -30,7 +30,7 @@ nvm use
 make start
 ```
 
-Before a real interview, do one dry run with a test candidate, see the [interviewer guide](interviewer-guide.md#test-it-once-before-a-real-interview).
+Before a real interview, do one dry run with a test candidate, see the [interviewer guide](interviewer-guide.md#test-it-once).
 
 To skip the prompt:
 
@@ -122,7 +122,7 @@ The address is not what keeps strangers out. `make start` makes a new secret for
 | fibonacci | Node | 20 min |
 | gearshare (in `examples/`, added by `make config`) | React, Express, SQLite | 60 min |
 
-Each exercise has a `description.md`, an optional `phases/` folder and an `exercise.json` file whose `run` section tells the platform how to start it (`port` for the frontend, `serverPort` for the API). To add one, follow [CONTRIBUTING.md](CONTRIBUTING.md).
+Each exercise has a `description.md`, an optional `phases/` folder and an `exercise.json` file whose `run` section tells the platform how to start it (`port` for the frontend, `serverPort` for the API). To add one, follow [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Commands
 

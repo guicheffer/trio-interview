@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sharing, hiding files and exporting | Trio Interview docs</title>
+<meta name="description" content="Sharing, hiding files and exporting: Trio Interview, free and open source live coding interviews with an AI assistant.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="agent" viewBox="0 0 279 241">
+    <rect x="3.80" y="171.95" width="192.00" height="68.10" rx="34.05" fill="currentColor" transform="rotate(0.0 99.80 206.00)"/>
+    <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
+  </symbol>
+  <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
+  <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
+</svg>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="../"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/><use href="#interviewer"/><use href="#candidate"/></svg> Trio Interview</a>
+  <nav><a href="../#how">How it works</a><a href="../#why">Why this</a><a href="./" aria-current="page">Docs</a>
+    <a class="star" href="https://github.com/guicheffer/trio-interview" target="_blank" rel="noopener" aria-label="Star Trio Interview on GitHub"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Star</span><span class="cnt" style="display:none"></span></a>
+  </nav>
+</div></header>
+<div class="docs">
+  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html" aria-current="page">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html">Contributing</a></li></ul></aside>
+  <main class="doc">
+    <article class="md"><h1 id="details">Details</h1>
+<p>Everything that did not fit on the front page. Back to the <a href="https://github.com/guicheffer/trio-interview/blob/main/README.md" target="_blank" rel="noopener">README</a>.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>Two local servers:</p>
+<ul>
+<li>Next.js frontend on port 3000 (editor, terminal, chat, file tree)</li>
+<li>Fastify backend on port 3001 (files, terminal, Claude proxy, previews)</li>
+</ul>
+<p>Each candidate gets their own copy of the exercise in <code>.solutions/&lt;name&gt;/&lt;exercise&gt;/</code>. Claude and the terminal are sandboxed to that folder. The exercise template in <code>exercises/</code> is never edited by candidates.</p>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>Node 25 (see <code>.nvmrc</code>, run <code>nvm use</code>)</li>
+<li>The <strong>Claude Code CLI</strong>, installed and signed in (<code>npm install -g @anthropic-ai/claude-code</code>, then run <code>claude</code> once). The chat and the Claude Code terminal both run on it, with your login, so your account pays for what candidates use.</li>
+<li>Optional: <strong>OpenCode 2</strong> (<code>brew install anomalyco/tap/opencode-v2</code>), signed in to a provider with a default model. Version 1 is not supported.</li>
+<li>Optional, to share with a remote candidate, one of: <code>ngrok</code> (needs a free account and an authtoken: sign up at <a href="https://dashboard.ngrok.com/signup" target="_blank" rel="noopener">https://dashboard.ngrok.com/signup</a>, then <code>ngrok config add-authtoken &lt;token&gt;</code>; on the free plan candidates see a one time &quot;Visit Site&quot; page) or <code>cloudflared</code> (<code>brew install cloudflared</code>, no account needed). <code>make config</code> asks which and checks what it still needs from you.</li>
+<li>Some budget on the account the assistants are signed in to: candidates spend yours.</li>
+</ul>
+<p><code>make install</code> installs the dependencies and checks all of this: Node, Claude Code, OpenCode and the tunnel (including whether ngrok is logged in). In a terminal it offers to install what it can.</p>
+<p><code>make config</code> then asks which assistants and exercises you allow. <code>make start</code> installs dependencies when <code>node_modules</code> is missing or <code>package-lock.json</code> changed, refuses to start if Claude Code is missing, and reports (without stopping) when something you allowed is not ready.</p>
+<h2 id="run-it">Run it</h2>
+<pre><code class="language-bash">nvm use
+make start
+</code></pre>
+<p>Before a real interview, do one dry run with a test candidate, see the <a href="index.html#test-it-once">interviewer guide</a>.</p>
+<p>To skip the prompt:</p>
+<pre><code class="language-bash">EXERCISE_PATH=$(pwd)/exercises/&lt;id&gt; EXERCISE_ID=&lt;id&gt; npm run interview
+</code></pre>
+<h2 id="running-an-interview">Running an interview</h2>
+<ol>
+<li>Open <a href="http://localhost:3000" target="_blank" rel="noopener">http://localhost:3000</a>, click &quot;Use Web Interface&quot;, enter the candidate name.</li>
+<li>The candidate reads <code>description.md</code> and the files in <code>phases/</code>.</li>
+<li>In the terminal panel, the Run button installs dependencies, migrates the DB and starts the exercise app. A preview link shows up when it is ready.</li>
+<li>Candidate work is saved to <code>.solutions/&lt;name&gt;/&lt;exercise&gt;/</code>.</li>
+</ol>
+<h2 id="what-the-candidate-gets">What the candidate gets</h2>
+<ul>
+<li>Progress is kept on the interviewer&#39;s machine, per candidate and exercise, in <code>.solutions/&lt;name&gt;/state.json</code>: open files, the active file, open folders, chats (and which model each used), terminal tabs and the pinned preview. Reconnecting through a new tunnel URL or another browser restores it once the candidate types the same name.</li>
+<li>Terminals live on the server. Reloading the page, or opening a second screen, reattaches to the same shell with its full history, and a running app keeps streaming its log. Closing a terminal tab that was used, or a chat that has messages, asks for confirmation.</li>
+<li>The Run button types the command and presses Enter, so <code>npm install</code> output shows up right away in a real TTY.</li>
+<li>Closing the preview tab no longer stops the app; use Stop in the terminal. Web exercises open the preview tab unfocused with the first file, and an Open preview button appears next to Stop once the app runs. Hot reload works through the tunnel.</li>
+<li>Files autosave a few seconds after typing stops, only when something changed. The editor header shows the state (unsaved, saving, saved at a time), and Ctrl+S or Cmd+S saves immediately.</li>
+<li>The chat streams answers as they are written, shows the tokens used by the conversation, and renders the assistant&#39;s questions as buttons (type your own answer too). Files the assistant changed get a small sparkle in the file tree until someone opens them. Agent tabs can be dragged to reorder, and the order is remembered.</li>
+<li>New chats use Sonnet 5.5; switching to &quot;Plan first&quot; selects Opus 5.5 and the assistant asks clarifying questions before planning.</li>
+<li>The preview can be pinned next to the editor (Pin button on the Preview tab) with a draggable divider. The chevron hides it and the Preview tab still opens it full size. The preview always lives at <code>/preview/&lt;name&gt;/&lt;exercise&gt;/</code>, on localhost and on a tunnel alike.</li>
+<li>The burger menu can hide or show the other person&#39;s cursor (remembered per browser).</li>
+<li>On start the server asks the assistant for one tiny answer. If it fails (for example no login, or no budget left) it logs a clear warning, also available at <code>/api/ai-status</code>. Set <code>TRIO_SKIP_HEALTHCHECK=1</code> to skip it.</li>
+</ul>
+<h2 id="command-palette">Command palette</h2>
+<p>Cmd+K (Ctrl+K elsewhere, also Cmd+Shift+P) opens a palette with about 70 actions, searchable by name: focus the chat, terminal or editor, new terminal, chat, file or folder, run or stop the app, toggle any panel, pin the preview, switch model, plan or instant mode, compact or undo the AI, editor actions (find, go to line, format, fold), go to any open tab or chat, and for the interviewer reveal hidden files or switch candidate. Cmd+P goes to a file, Cmd+B toggles the sidebar, <code>?</code> lists the shortcuts and the terminal commands. New actions are registered in <code>app/page-client.tsx</code> (<code>paletteActions</code>) and handled by the component that owns the behaviour through <code>useAction</code> in <code>app/lib/actions.ts</code>.</p>
+<h2 id="after-the-interview">After the interview</h2>
+<p><code>make export</code> writes a zip of the candidate&#39;s code, every conversation and a self-contained <code>viewer.html</code> to <code>exports/</code>. To evaluate it, ask your agent (Claude Code, OpenCode or any agent that reads files) to run the <code>evaluate-candidate</code> skill (<code>.claude/skills/evaluate-candidate/SKILL.md</code>) on that export: it reports what was built, how far the candidate got and how they used the AI assistant.</p>
+<h2 id="interviewer-mode">Interviewer mode</h2>
+<p>Anyone opening the tool through <code>localhost</code> is the interviewer. The sign in screen there has an &quot;I&#39;m an interviewer&quot; button with the list of candidates (online ones first, refreshed every 30 seconds). Opening a candidate gives the exact same workspace they have, live and in both directions:</p>
+<ul>
+<li>open files, active file, editor scroll, open folders, panel layout, terminal tabs and their output, chats (including the thinking state), and the pinned preview stay in sync between the two screens. Either side can type, edit, run and chat.</li>
+<li>live editing: carets, selections and typing in any text file show up on the other screen as you type (labelled &quot;Interviewer&quot; or the candidate&#39;s name), and what either side types in the chat box is visible to the other.</li>
+<li>follow switch: both sides start with Follow off (header pill and burger menu). Off means each screen navigates on its own: open files and tabs, scroll, preview, terminal and chat tabs, layout and folders are not mirrored. Content stays live either way (file text, terminal output, chat messages, cursors and carets). Turning Follow on mirrors the other person&#39;s navigation.</li>
+<li>cursors: the interviewer sees the candidate&#39;s cursor with their tag, the candidate only sees one tagged &quot;Interviewer&quot;. Candidates never see each other. Cursors work over the preview too.</li>
+<li>the tool serves one candidate at a time. Opening a different candidate while another one is online asks for confirmation.</li>
+</ul>
+<h3 id="hiding-files-from-the-candidate">Hiding files from the candidate</h3>
+<p>An exercise can start with files the candidate cannot see (the assistant cannot see them either; the interviewer reveals them from the file tree, there is a &quot;Reveal all&quot; button). List them under <code>hidden</code> in <code>exercises/&lt;id&gt;/exercise.json</code>:</p>
+<pre><code class="language-json">&quot;hidden&quot;: [&quot;phases/phase-2-bug-finding.md&quot;, &quot;phases/phase-3-implementation.md&quot;, &quot;phases/phase-4-optimization.md&quot;]
+</code></pre>
+<p>Paths may use <code>*</code> and <code>**</code>. Hidden files are moved out of the candidate&#39;s folder (to <code>.solutions/&lt;name&gt;/.hidden/&lt;exercise&gt;/</code>), so the file tree, the terminal and the AI assistant cannot read them. In the interviewer&#39;s file tree they show with a &quot;hidden&quot; badge, an eye button per file and &quot;Reveal all / Hide all&quot; for the whole set, and the candidate&#39;s tree updates within a couple of seconds. Both shipped exercises hide phases 2 to 4.</p>
+<h2 id="assistants-and-models">Assistants and models</h2>
+<p>The candidate picks the assistant from what you allowed in <code>interview.config.yaml</code>: the chat, Claude Code or OpenCode. The interviewer sees the same options, disabled, and the choice once it is made. See <a href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a> for how the terminal assistants are kept apart from your own setup.</p>
+<p>The chat runs the Claude Code CLI on your machine, through whatever login that CLI uses. Every message a candidate sends is paid for by that account, so make sure it has enough left.</p>
+<p>The chat&#39;s model list lives in <code>shared/models.ts</code> and feeds both the server and the dropdown: Opus 5.5, Sonnet 5.5 and Haiku 4.5. Sonnet 5.5 is the default and Plan first switches to Opus 5.5. If your account or gateway names a model differently, override it for one run:</p>
+<pre><code class="language-bash">TRIO_MODEL_OPUS=my-opus-id make start
+</code></pre>
+<p>The terminal assistants start on Sonnet 5.5.</p>
+<p>Subagents (the Task tool) work. The server sets <code>CLAUDE_CODE_SUBAGENT_MODEL</code> to the model the candidate picked.</p>
+<h2 id="sharing-with-a-remote-candidate">Sharing with a remote candidate</h2>
+<p>The candidate only ever uses one URL, the tunnel URL. It serves exactly the same tool as <a href="http://localhost:3000" target="_blank" rel="noopener">http://localhost:3000</a>: the editor, terminal websocket, chat and the exercise preview (<code>/preview/&lt;name&gt;/&lt;exercise&gt;/</code>) all go through port 3000. Nothing in the browser talks to ports 3001, 5173 or 3002 directly. The one exception is the interviewer&#39;s own preview frame, which loads the candidate&#39;s app from port 3099 (a second port of the same server, so that code the candidate wrote runs in a different origin than the interviewer&#39;s page).</p>
+<p><code>make start</code> opens the tunnel you chose in <code>make config</code> (<code>tunnel:</code> in <code>interview.config.yaml</code>: <code>ngrok</code>, <code>cloudflared</code> or <code>none</code>; ngrok when the file says nothing).</p>
+<p>With <code>ngrok</code>, the free plan needs an account (once), always gives the same address (the private part of the link is what changes), and shows a one time &quot;You are about to visit&quot; page that the candidate clicks through once. Everything works through it.</p>
+<p>With <code>cloudflared</code> a quick tunnel needs no account and gives a new address every time, and a link just made can take a little while to open on the candidate&#39;s side while the name spreads. It carries the terminal assistants (Claude Code and OpenCode) and everything else that uses a WebSocket, but not the chat&#39;s live answers: they travel as server sent events, which a quick tunnel holds back, so the chat would stay empty. Tell the candidate to pick a terminal assistant. <code>make start</code> says so under the link.</p>
+<p>The address is not what keeps strangers out. <code>make start</code> makes a new secret for every interview and prints the link as <code>https://&lt;tunnel-address&gt;/#k=&lt;secret&gt;</code>. The page trades the secret for an HttpOnly cookie (12 hours) and removes it from the address bar; the backend (<code>server/lib/access-gate.ts</code>) answers a candidate only with that cookie, WebSockets and the preview included. The secret lives only in the environment of the servers and in the printed link, never on disk or in a log, and the next <code>make start</code> replaces it. Without <code>make start</code> (plain <code>npm run dev</code>) there is no secret and nothing is asked for.</p>
+<h2 id="exercises">Exercises</h2>
+<table>
+<thead>
+<tr>
+<th>Exercise</th>
+<th>Stack</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>fibonacci</td>
+<td>Node</td>
+<td>20 min</td>
+</tr>
+<tr>
+<td>gearshare (in <code>examples/</code>, added by <code>make config</code>)</td>
+<td>React, Express, SQLite</td>
+<td>60 min</td>
+</tr>
+</tbody></table>
+<p>Each exercise has a <code>description.md</code>, an optional <code>phases/</code> folder and an <code>exercise.json</code> file whose <code>run</code> section tells the platform how to start it (<code>port</code> for the frontend, <code>serverPort</code> for the API). To add one, follow <a href="contributing.html">CONTRIBUTING.md</a>.</p>
+<h2 id="commands">Commands</h2>
+<pre><code class="language-bash">make start        # interactive start
+make stop         # stop the servers, exercise apps and tunnel
+make test         # unit tests
+make typecheck    # tsc --noEmit
+make reset        # reset exercises to original state
+make config       # choose the assistants and exercises you allow
+</code></pre>
+<h2 id="exporting-a-candidate">Exporting a candidate</h2>
+<p><code>make export</code> lists the candidates in <code>.solutions/</code>, lets you pick one and writes <code>exports/&lt;name&gt;-&lt;exercise&gt;-&lt;date&gt;.zip</code>.
+For a non interactive run: <code>make export CANDIDATE=name EXERCISE=fibonacci</code>.
+The zip has <code>code/</code>, <code>conversations/*.md</code> (Claude Code sessions with subagents, plus in-app chat threads), <code>data.json</code> and <code>viewer.html</code>.
+<code>viewer.html</code> is a single static file: open it from disk or host the unzipped folder on any static host.</p>
+<h2 id="project-layout">Project layout</h2>
+<pre><code>app/           Next.js frontend
+server/        Fastify backend (routes, Claude proxy, sandbox)
+shared/        Code used by both (model catalog, settings file, file lock rules)
+cli/           Entry point for `npm run interview`
+scripts/       Start, stop, setup check and export scripts
+exercises/     Exercise templates and their shared rules
+.claude/skills/  create-exercise and evaluate-candidate
+examples/      Exercises that make config can add
+docs/          Guides, and the interviewer&#39;s notes per exercise
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul>
+<li>Port already in use: <code>make stop</code>.</li>
+<li>Chat says &quot;Invalid model name&quot;: the ids in <code>shared/models.ts</code> must match what your gateway serves. Override with <code>TRIO_MODEL_&lt;KEY&gt;</code> (see Models above).</li>
+<li>Exercise API crashes with EADDRINUSE: its <code>run.serverPort</code> in <code>exercise.json</code> must not be 3000, 3001 or 3099.</li>
+<li><code>exercises/</code> is ignored by git, so an exercise there is read from the disk and a change counts for the next candidate who starts. If you chose to version an exercise, the platform restores it from git when a new candidate starts (<code>git checkout HEAD -- exercises/&lt;id&gt;</code>), so commit your changes to it.</li>
+</ul>
+</article>
+    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/details.md" target="_blank" rel="noopener">Edit this page on GitHub</a></p>
+  </main>
+  <nav class="toc" aria-label="On this page"><h4>On this page</h4><ul><li><a href="#how-it-works">How it works</a></li><li><a href="#requirements">Requirements</a></li><li><a href="#run-it">Run it</a></li><li><a href="#running-an-interview">Running an interview</a></li><li><a href="#what-the-candidate-gets">What the candidate gets</a></li><li><a href="#command-palette">Command palette</a></li><li><a href="#after-the-interview">After the interview</a></li><li><a href="#interviewer-mode">Interviewer mode</a></li><li><a href="#assistants-and-models">Assistants and models</a></li><li><a href="#sharing-with-a-remote-candidate">Sharing with a remote candidate</a></li><li><a href="#exercises">Exercises</a></li><li><a href="#commands">Commands</a></li><li><a href="#exporting-a-candidate">Exporting a candidate</a></li><li><a href="#project-layout">Project layout</a></li><li><a href="#troubleshooting">Troubleshooting</a></li></ul></nav>
+</div>
+<script src="../site.js"></script>
+</body>
+</html>

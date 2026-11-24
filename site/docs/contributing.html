@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contributing | Trio Interview docs</title>
+<meta name="description" content="Contributing: Trio Interview, free and open source live coding interviews with an AI assistant.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="agent" viewBox="0 0 279 241">
+    <rect x="3.80" y="171.95" width="192.00" height="68.10" rx="34.05" fill="currentColor" transform="rotate(0.0 99.80 206.00)"/>
+    <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
+  </symbol>
+  <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
+  <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
+</svg>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="../"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/><use href="#interviewer"/><use href="#candidate"/></svg> Trio Interview</a>
+  <nav><a href="../#how">How it works</a><a href="../#why">Why this</a><a href="./" aria-current="page">Docs</a>
+    <a class="star" href="https://github.com/guicheffer/trio-interview" target="_blank" rel="noopener" aria-label="Star Trio Interview on GitHub"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Star</span><span class="cnt" style="display:none"></span></a>
+  </nav>
+</div></header>
+<div class="docs">
+  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html" aria-current="page">Contributing</a></li></ul></aside>
+  <main class="doc">
+    <article class="md"><h1 id="contributing">Contributing</h1>
+<p>Thank you for wanting to help. There are two ways in, and the first needs no code: you can add an exercise, or you can change the tool itself. Small pull requests that do one thing are the easiest to review, so start there.</p>
+<h2 id="set-up">Set up</h2>
+<pre><code class="language-bash">nvm use           # Node 25, see .nvmrc
+make install      # installs dependencies and checks Claude Code, OpenCode and the tunnel
+make help         # every command
+</code></pre>
+<p><code>make dev</code> starts the frontend and the backend with hot reload, <code>make test</code> runs the unit tests and <code>make typecheck</code> the type check. <a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> explains how the tool is put together, and it is the file to give any AI agent that works on this repository.</p>
+<h2 id="send-a-change">Send a change</h2>
+<p><img src="images/contribute.gif" alt="Branch, check, commit and open a pull request" loading="lazy"></p>
+<ol>
+<li>Fork the repository and branch from <code>main</code> with a short name (<code>feature/</code>, <code>fix/</code> or <code>chore/</code> followed by what it does). Nobody pushes to <code>main</code> directly.</li>
+<li>Make the change with a test. Logic goes in small functions that are easy to test, and the files that need a real process, terminal, socket or assistant stay thin.</li>
+<li>Run <code>npm run lint</code>, <code>make typecheck</code>, <code>make test</code> and <code>npx next build</code>. The pull request runs the same checks.</li>
+<li>If you changed something people see, try it in the browser on both sides: <code>http://localhost:3000</code> is the interviewer, and <code>http://candidate.localhost:3000</code> (or the tunnel link in another browser profile) is the candidate.</li>
+<li>Open the pull request and say what changed and how you checked it. A screenshot helps for anything visual.</li>
+</ol>
+<h2 id="add-an-exercise">Add an exercise</h2>
+<p>Exercises you use live in <code>exercises/</code>, which git ignores, so they stay on your machine along with the work of every candidate. The ones that ship with the tool are in <code>examples/</code>, and you can start from them:</p>
+<pre><code class="language-bash">make new-exercise FROM=word-count            # copy an example into exercises/ and change it
+make new-exercise TITLE=&quot;Todo API&quot; KIND=web   # or make an empty one that already runs
+</code></pre>
+<p>With no options <code>make new-exercise</code> asks, and offers the examples first. A new exercise has a working <code>exercise.json</code> from the start, so you can pick it in <code>make start</code> before there is any code in it, and fill the files in afterwards.</p>
+<p>An agent can write the content for you:</p>
+<p><img src="images/create-exercise.gif" alt="Creating an exercise with the create-exercise skill" loading="lazy"></p>
+<p>In Claude Code, OpenCode or any agent that reads files, ask it to run the <code>create-exercise</code> skill (<code>.claude/skills/create-exercise/SKILL.md</code>). It asks for the title, stack, duration and scenario, and whether some phases stay hidden, then writes the files. Read what it wrote, because the scenario and the starter code are your call. The animation is an illustration of the flow, and the questions you get depend on your agent.</p>
+<h3 id="keep-your-exercises-in-your-own-repository">Keep your exercises in your own repository</h3>
+<p>A company can keep its set in a private repository and bring it in on any machine. List the repository, or a folder, in <code>interview.config.yaml</code>:</p>
+<pre><code class="language-yaml">sources:
+  - https://github.com/your-company/interview-exercises.git
+  - ../my-exercises
+</code></pre>
+<p>Then run <code>make exercises</code>. It copies each folder that has a <code>description.md</code> into <code>exercises/</code>, leaves alone any exercise that is already there, and skips folders whose names are not lowercase letters, digits and dashes. A git source is cloned over https or ssh and nothing else.</p>
+<h3 id="what-an-exercise-is-made-of">What an exercise is made of</h3>
+<pre><code>exercises/&lt;id&gt;/
+  description.md     the H1 is the title in the start menu, and the candidate reads it first
+  exercise.json      locked files, hidden files, first file, assistant overview, how Run starts the app
+  phases/            phase briefs (optional)
+  codebase/          the starting code, or a single starter file for small exercises
+</code></pre>
+<p><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> has the details of every file in &quot;Creating an exercise&quot;. The rules that matter most:</p>
+<ul>
+<li><code>description.md</code> must not name or describe hidden phases. Hidden files are moved out of the candidate&#39;s folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.</li>
+<li>Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in <code>docs/interviewers/</code>.</li>
+<li>Lock <code>description.md</code> and <code>phases/</code> in <code>exercise.json</code>, plus any fixture or test the candidate must not edit.</li>
+<li>A web app uses a <code>run.serverPort</code> of 3002 or higher and the <code>vite.config.ts</code> from <code>exercises/_templates/web-app/</code>, so the preview works through the tool.</li>
+<li>To share an exercise with everyone, send it as a pull request into <code>examples/</code>, with its notes in <code>docs/interviewers/</code>.</li>
+</ul>
+<h3 id="check-it-before-you-share-it">Check it before you share it</h3>
+<p><img src="images/hidden-files.png" alt="The interviewer revealing a hidden phase" loading="lazy"></p>
+<p>Run <code>make start</code>, pick the exercise, open <code>http://localhost:3000</code> and enter a name. Click Run if it has an app and confirm the preview opens. Then open the candidate side in another browser profile and check that locked files are read only and hidden files are not there, and reveal one from the interviewer side to see it appear.</p>
+<h2 id="things-worth-knowing">Things worth knowing</h2>
+<p>When you change who may do what (roles, the choice of assistant, what a terminal assistant can reach), add a test that tries to break it. <code>server/routes/__tests__/agent.test.ts</code> is the example, because it calls the API the way a candidate could and not through the page.</p>
+<p>The assistants that candidates talk to run on the interviewer&#39;s machine, so changes to <code>server/lib/assistant-prompt.ts</code>, to the flags in <code>server/lib/claude-proxy.ts</code> or <code>server/lib/agent-pty.ts</code>, or to what <code>server/lib/opencode-pty.ts</code> copies in, change what a candidate can do. Say what the effect is in the pull request.</p>
+<p>Candidate data (<code>.solutions/</code>, <code>exports/</code>) and tokens never go in the repository, and git already ignores them.</p>
+<h2 id="house-rules">House rules</h2>
+<p>English for code, docs and commit messages, short and plain, no emojis, and no dashes in prose. Never skip the git hooks. The tool is licensed under the AGPL-3.0, and by sending a change you agree that it is shared under the same license.</p>
+</article>
+    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Edit this page on GitHub</a></p>
+  </main>
+  <nav class="toc" aria-label="On this page"><h4>On this page</h4><ul><li><a href="#set-up">Set up</a></li><li><a href="#send-a-change">Send a change</a></li><li><a href="#add-an-exercise">Add an exercise</a></li><li><a href="#things-worth-knowing">Things worth knowing</a></li><li><a href="#house-rules">House rules</a></li></ul></nav>
+</div>
+<script src="../site.js"></script>
+</body>
+</html>

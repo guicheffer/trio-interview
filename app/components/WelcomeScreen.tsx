@@ -149,7 +149,7 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
         <div className="px-8 pt-8 pb-6 text-center relative">
           {/* The Trio logo follows the theme by itself */}
           <div className="mb-5 flex justify-center">
-            <TrioLogo size={36} />
+            <TrioLogo size={36} animate />
           </div>
 
           <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
