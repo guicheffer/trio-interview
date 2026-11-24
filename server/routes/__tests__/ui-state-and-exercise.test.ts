@@ -25,6 +25,18 @@ describe('ui-state and exercise routes', () => {
     expect(res.json()).toMatchObject({ id: 'demo', title: 'Demo', description: '# Demo\nDo the thing.' });
   });
 
+  test('the title is the first heading of the brief, and the id is only the fallback', async () => {
+    const { writeFileSync } = await import('fs');
+    const { join } = await import('path');
+    const brief = join(ws.exercise, 'description.md');
+    writeFileSync(brief, '# Fibonacci Sequence Generator\n\nBody.');
+    expect((await app.inject({ method: 'GET', url: '/api/exercise' })).json().title).toBe('Fibonacci Sequence Generator');
+    writeFileSync(brief, 'No heading here, only text.');
+    expect((await app.inject({ method: 'GET', url: '/api/exercise' })).json().title).toBe('Demo');
+    writeFileSync(brief, '## A second level heading is not the title\n\n# The real title\n');
+    expect((await app.inject({ method: 'GET', url: '/api/exercise' })).json().title).toBe('The real title');
+  });
+
   test('stores and returns ui state per candidate and exercise', async () => {
     const put = await app.inject({
       method: 'PUT',
@@ -51,5 +63,17 @@ describe('ui-state and exercise routes', () => {
 
     const missing = await app.inject({ method: 'POST', url: '/api/ui-state', payload: { candidate: 'maria', exercise: 'demo', updatedAt: 1 } });
     expect(missing.statusCode).toBe(400);
+  });
+});
+
+describe('titleFromBrief', () => {
+  test('reads the first top level heading and ignores code blocks and deeper headings', async () => {
+    const { titleFromBrief } = await import('../exercise.js');
+    expect(titleFromBrief('# GearShare\n\ntext')).toBe('GearShare');
+    expect(titleFromBrief('intro\n\n# Title with trailing marks ##\n')).toBe('Title with trailing marks');
+    expect(titleFromBrief('```sh\n# a comment in a code block\n```\n# Real\n')).toBe('Real');
+    expect(titleFromBrief('## Only a section\n### Another')).toBeNull();
+    expect(titleFromBrief('#NoSpace is not a heading')).toBeNull();
+    expect(titleFromBrief('')).toBeNull();
   });
 });

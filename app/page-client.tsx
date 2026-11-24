@@ -303,6 +303,13 @@ function InterviewPageContent() {
   }, [sessionStatus.active]);
   // Base key scoped to candidate + exercise
   const baseKey = useUiStateSync(candidateName ?? undefined, currentExerciseId);
+  // The title of the exercise, from the first heading of its brief. The header shows it next to the logo.
+  const [exerciseTitle, setExerciseTitle] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/exercise').then(r => (r.ok ? r.json() : null)).then(d => { if (!cancelled && typeof d?.title === 'string') setExerciseTitle(d.title); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [candidateName, currentExerciseId]);
   // A preview URL left in sessionStorage by another candidate must not leak into this one
   useEffect(() => {
     if (!candidateName || !previewUrl) return;
@@ -1023,7 +1030,7 @@ function InterviewPageContent() {
           onCancel={() => setShowEditName(false)} isLoading={false} error={null} />
       )}
 
-      <Header isConnected={isConnected && collabOpen} inactive={!sessionStatus.isActive} onResolveInactive={() => setConfirmInactive(true)} exerciseTitle="Live Coding Challenge"
+      <Header isConnected={isConnected && collabOpen} inactive={!sessionStatus.isActive} onResolveInactive={() => setConfirmInactive(true)} exerciseTitle={exerciseTitle}
         candidateName={candidateName} onEditName={() => setShowEditName(true)}
         interviewerView={interviewerView} onSwitchCandidate={switchCandidate} onGoHome={() => setConfirmHome(true)}
         onSave={async () => {

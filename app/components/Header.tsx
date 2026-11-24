@@ -104,10 +104,14 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
       {/* Left: Logo */}
       <div className="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
         <TrioLogo size={28} />
-        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 hidden md:block" />
-        <h1 className="text-sm lg:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[150px] lg:max-w-none hidden md:block">
-          {exerciseTitle || 'Live Coding Interview'}
-        </h1>
+        {exerciseTitle && (
+          <>
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 hidden md:block" />
+            <h1 className="text-sm lg:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[150px] lg:max-w-none hidden md:block">
+              {exerciseTitle}
+            </h1>
+          </>
+        )}
         {candidateName && (
           <>
             <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 hidden md:block" />
