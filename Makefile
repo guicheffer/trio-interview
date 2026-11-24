@@ -1,4 +1,4 @@
-.PHONY: help install config start start-log stop start-prod dev dev-frontend dev-backend test typecheck clean reset check-node export delete
+.PHONY: help install config start start-log stop start-prod dev dev-frontend dev-backend test typecheck clean reset check-node export delete new-exercise exercises
 
 # Default target
 help:
@@ -8,6 +8,8 @@ help:
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make start' 'Check setup, pick an exercise, start everything and share a tunnel URL'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make start LOG=1' 'Same, but show the full server logs (also: make start-log)'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make config' 'Choose which assistants, exercises and settings this machine allows'
+	@printf '  \033[36m%-22s\033[0m %s\n' 'make new-exercise' 'Make an exercise that runs right away, or copy an example'
+	@printf '  \033[36m%-22s\033[0m %s\n' 'make exercises' 'Bring in exercises from the sources in interview.config.yaml'
 	@printf '  \033[2m%-22s %s\033[0m\n' '' 'Check only, no questions: make config CHECK=1'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make stop' 'Stop the servers, exercise apps and tunnel'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make export' 'Export a candidate as a zip (code, conversations, viewer.html)'
@@ -36,6 +38,14 @@ install:
 # Choose what this machine allows (assistants, exercises, retention). Writes interview.config.yaml, ignored by git.
 config:
 	@npx tsx scripts/config.ts $(if $(CHECK),--check,)
+
+# Make a new exercise that runs right away, or copy an example: make new-exercise [FROM=gearshare] [TITLE="Word count" KIND=script|web]
+new-exercise:
+	@npx tsx scripts/exercise.ts new $(if $(FROM),--from "$(FROM)",) $(if $(TITLE),--title "$(TITLE)",) $(if $(KIND),--kind "$(KIND)",) $(if $(ID),--id "$(ID)",)
+
+# Bring in the exercises of the sources listed in interview.config.yaml (a git repository or a folder)
+exercises:
+	@npx tsx scripts/exercise.ts sync
 
 # Start interview (interactive exercise selection)
 start:
