@@ -7,6 +7,8 @@ on:
       - main
     paths:
       - site/**
+      - docs/**
+      - CONTRIBUTING.md
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -29,8 +31,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Only what the page needs goes online: the inputs of the build (source/) and the notes for contributors stay in the repository
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The docs pages are made from the same markdown files GitHub shows, so they are rebuilt here and never fall behind
+      - run: node scripts/build-docs.mjs
+      - name: Collect what is published
+        run: |
+          mkdir -p _site
+          rsync -a --exclude source --exclude README.md site/ _site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

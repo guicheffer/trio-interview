@@ -31,3 +31,22 @@ describe('links in the docs pages', () => {
     for (const page of PAGES) expect(existsSync(`${__dirname}/../../${page.from}`), page.from).toBe(true);
   });
 });
+
+describe('the pages kept in the repository', () => {
+  test('are the ones the markdown files make, so the site never shows older docs than GitHub', async () => {
+    const { mkdtempSync, readFileSync, readdirSync, rmSync, cpSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+    const { spawnSync } = await import('child_process');
+    const root = join(__dirname, '..', '..');
+    const before = join(mkdtempSync(join(tmpdir(), 'trio-docs-')), 'docs');
+    cpSync(join(root, 'site', 'docs'), before, { recursive: true });
+    try {
+      const run = spawnSync('node', ['scripts/build-docs.mjs'], { cwd: root, encoding: 'utf-8' });
+      expect(run.status, run.stderr).toBe(0);
+      for (const file of readdirSync(before).filter(f => f.endsWith('.html'))) {
+        expect(readFileSync(join(root, 'site', 'docs', file), 'utf-8'), `${file} is out of date: run node scripts/build-docs.mjs`).toBe(readFileSync(join(before, file), 'utf-8'));
+      }
+    } finally { rmSync(join(before, '..'), { recursive: true, force: true }); }
+  });
+});
