@@ -17,13 +17,28 @@ export interface InterviewConfig {
   exercises: string[];
   /** The tunnel `make start` opens to share the link. */
   tunnel: Tunnel;
+  /** Other places exercises come from (a git repository or a folder), copied into exercises/ by `make exercises`. */
+  sources: string[];
 }
 
 export const DEFAULT_CONFIG: InterviewConfig = {
   tools: ['agent', 'claude-code', 'opencode'],
   exercises: [],
   tunnel: 'ngrok',
+  sources: [],
 };
+
+/**
+ * A source is a git URL (https or ssh) or a path to a folder. Anything else is dropped, because the value ends up
+ * as an argument to `git clone`: no spaces, no leading dash, no shell characters.
+ */
+export function isSource(value: string): boolean {
+  if (!value || value.length > 300 || value.startsWith('-')) return false;
+  if (/[\s;&|`$<>"'\\]/.test(value)) return false;
+  if (/^https:\/\/[A-Za-z0-9._~:/?#@!*+,%=-]+$/.test(value)) return true;
+  if (/^git@[A-Za-z0-9.-]+:[A-Za-z0-9._/-]+$/.test(value)) return true;
+  return /^(~|\.{1,2}|\/)[A-Za-z0-9._~/-]*$/.test(value) || /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(value);
+}
 
 function isTunnel(value: unknown): value is Tunnel {
   return typeof value === 'string' && (TUNNELS as readonly string[]).includes(value);
@@ -44,10 +59,11 @@ function unquote(value: string): string {
  * Anything it does not understand is ignored and the default stays, so a typo never stops an interview.
  */
 export function parseConfig(text: string): InterviewConfig {
-  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [], tunnel: DEFAULT_CONFIG.tunnel };
+  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [], tunnel: DEFAULT_CONFIG.tunnel, sources: [] };
   let listKey = '';
   let tools: Tool[] | null = null;
   const exercises: string[] = [];
+  const sources: string[] = [];
 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.replace(/\s+#.*$/, '').trimEnd();
@@ -59,6 +75,7 @@ export function parseConfig(text: string): InterviewConfig {
       const item = unquote(body.slice(2));
       if (listKey === 'tools' && isTool(item)) (tools ??= []).push(item);
       else if (listKey === 'exercises' && /^[A-Za-z0-9_.-]+$/.test(item)) exercises.push(item);
+      else if (listKey === 'sources' && isSource(item)) sources.push(item);
       continue;
     }
 
@@ -75,7 +92,7 @@ export function parseConfig(text: string): InterviewConfig {
     }
 
     if (indent === 0 && value === '') {
-      if (key === 'tools' || key === 'exercises') { listKey = key; if (key === 'tools') tools = tools ?? []; }
+      if (key === 'tools' || key === 'exercises' || key === 'sources') { listKey = key; if (key === 'tools') tools = tools ?? []; }
       continue;
     }
   }
@@ -84,6 +101,7 @@ export function parseConfig(text: string): InterviewConfig {
   // The chat is always available, so a candidate is never left without an assistant
   if (!config.tools.includes('agent')) config.tools = ['agent', ...config.tools];
   config.exercises = exercises;
+  config.sources = sources;
   return config;
 }
 
@@ -98,6 +116,9 @@ ${list(config.tools)}
 
 # Exercise folders to offer. Leave empty to offer every folder in exercises/ that has a description.md
 exercises:${config.exercises.length ? '\n' + list(config.exercises) : ''}
+
+# Other places exercises come from, a git URL or a folder. \`make exercises\` copies them into exercises/
+sources:${config.sources.length ? '\n' + list(config.sources) : ''}
 
 # How the candidate reaches this machine: ngrok (checked), cloudflared (see SECURITY.md before relying on it) or none
 tunnel: ${config.tunnel}

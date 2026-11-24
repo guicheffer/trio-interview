@@ -117,6 +117,8 @@ async function main() {
       ok(`Added exercises/${id}`);
     }
   }
+  if (current.sources.length) note(`Your sources (${current.sources.length}) are brought in by make exercises, which asks nothing and copies only what is not here yet.`);
+  else note('To use exercises from your own repository, list it under sources: in interview.config.yaml and run make exercises.');
   const folders = exercisesIn('exercises');
   console.log(`  Found: ${folders.join(', ') || 'none'}`);
   const answer = await ask('Offer which? (comma separated, or "all")', current.exercises.length ? current.exercises.join(',') : 'all');
@@ -134,7 +136,7 @@ async function main() {
   if (!status.ready) { warn(status.message); if (status.fix) note(status.fix); }
   rl.close();
 
-  const config: InterviewConfig = { tools, exercises, tunnel };
+  const config: InterviewConfig = { tools, exercises, tunnel, sources: current.sources };
   writeFileSync(file, renderConfig(config));
   console.log(`\n  Saved ${c(1, 'interview.config.yaml')} ${c(2, '(ignored by git, edit it any time)')}`);
   const ready = report(config);
