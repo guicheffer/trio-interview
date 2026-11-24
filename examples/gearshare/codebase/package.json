@@ -1,0 +1,38 @@
+{
+  "name": "gearshare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "NODE_NO_WARNINGS=1 tsx watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "NODE_NO_WARNINGS=1 tsx src/server/index.ts",
+    "db:migrate": "NODE_NO_WARNINGS=1 tsx src/server/db/migrate.ts",
+    "test": "NODE_NO_WARNINGS=1 vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "express": "^4.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.6",
+    "@types/express": "^4.17.21",
+    "@types/node": "^25.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/supertest": "^6.0.2",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.1.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^3.2.7"
+  }
+}
