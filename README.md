@@ -1,12 +1,17 @@
 # Trio Interview
 
-Live coding interviews in the browser, with an AI assistant, free and open source. You run it on your machine, the candidate opens a link, and nothing is installed on their side. Say it "TREE-oh IN-ter-vyoo": the name is the three of you in one session, the interviewer, the candidate and the assistant.
+[![Checks](https://github.com/guicheffer/trio-interview/actions/workflows/pr-branch-checks.yml/badge.svg?branch=main)](https://github.com/guicheffer/trio-interview/actions/workflows/pr-branch-checks.yml)
+[![Landing page](https://img.shields.io/badge/landing%20page-live-5850F8)](https://guicheffer.github.io/trio-interview/)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-00C068)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/guicheffer/trio-interview?style=flat&color=5850F8)](https://github.com/guicheffer/trio-interview/stargazers)
+
+Live coding interviews in the browser with an AI assistant, free and open source. You run it on your machine, the candidate opens a link, and nothing is installed on their side. Say it *"TREE-oh IN-ter-vyoo"*: the name is the three of you in one session, the interviewer, the candidate and the assistant.
+
+[**Take the tour**](https://guicheffer.github.io/trio-interview/) to see it work, scrolling through the real screens.
 
 ![The workspace: files, editor, terminal and the assistant](docs/images/workspace.png)
 
-A short tour, with a running replica of the workspace, is at [guicheffer.github.io/trio-interview](https://guicheffer.github.io/trio-interview/).
-
-There is no account to create, no seat to buy and no server of ours in the middle, because everything runs on your machine, and what travels is the link you share and what the candidate says to the assistant, which goes to the provider of the account you signed in with. It is an alternative to hosted tools such as [CoderPad](https://coderpad.io/), [HackerRank](https://www.hackerrank.com/) and [CodeSignal](https://codesignal.com/), for teams that want to read what runs their interviews, keep their exercises to themselves and see how a candidate works with an assistant instead of banning it.
+There is no account to create, no seat to buy and no server of ours in the middle. What travels is the link you share and what the candidate says to the assistant, which goes to the provider of the account you signed in with. It is an alternative to hosted tools such as [CoderPad](https://coderpad.io/), [HackerRank](https://www.hackerrank.com/) and [CodeSignal](https://codesignal.com/), for teams that want to read what runs their interviews and see how a candidate works with an assistant instead of banning it.
 
 ![The candidate types a name, picks an assistant and starts working](docs/images/candidate-flow.gif)
 
@@ -19,21 +24,25 @@ make start      # pick an exercise, get the link, interview
 make stop       # when you are done
 ```
 
-`make start` prints a link for the candidate with a private part that is new for every interview, so an old link or a guessed address gets nothing.
+You need Node 25 and Claude Code signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). OpenCode 2 and a tunnel are optional, and `make config` checks what your choices still need. The assistant a candidate uses is paid by the account you signed in with, so use one with a limit.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  A["make start"] --> B["Pick an exercise"]
-  B --> C["Servers + tunnel"]
-  C --> D["You<br/>localhost:3000"]
-  C --> E["Candidate<br/>tunnel link"]
-  D & E --> F["Editor, terminal and assistant<br/>live for both of you"]
-  F --> G["make export"] --> H["evaluate-candidate skill"]
+  A["make start"]:::tool --> B["Pick an exercise"]:::tool
+  B --> C["Servers and tunnel"]:::tool
+  C --> D["You<br/>localhost:3000"]:::interviewer
+  C --> E["Candidate<br/>tunnel link"]:::candidate
+  D & E --> F["Editor, terminal and assistant<br/>live for both of you"]:::agent
+  F --> G["make export"]:::tool --> H["evaluate-candidate skill"]:::tool
+  classDef interviewer fill:#5850F8,stroke:#5850F8,color:#fff
+  classDef candidate fill:#00C068,stroke:#00C068,color:#fff
+  classDef agent fill:#0B0B14,stroke:#5850F8,color:#fff,stroke-width:2px
+  classDef tool fill:#1a1a2b,stroke:#3b3b56,color:#ecebf5
 ```
 
-The candidate picks the assistant from what you allowed, either the chat or Claude Code or OpenCode running in a real terminal, and you see the same screen they see, with cursors and typing on both sides. You can follow them or look around, edit files too, hide later phases of the exercise and reveal them when the candidate is ready. At the end `make export` zips their code and every conversation, and the `evaluate-candidate` skill turns it into a review.
+The candidate picks the assistant from the ones you allowed, the chat or Claude Code or OpenCode in a real terminal, and you see the same screen they do. You can follow them, look around on your own, edit files, and reveal the later phases of an exercise when they are ready. At the end `make export` zips their code and every conversation for the `evaluate-candidate` skill to review.
 
 <table>
   <tr>
@@ -46,52 +55,40 @@ The candidate picks the assistant from what you allowed, either the chat or Clau
   </tr>
 </table>
 
-## What you need
-
-Node 25 (`nvm use` reads `.nvmrc`) and Claude Code signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once), because both the chat and the Claude Code terminal run on it. OpenCode 2 is optional (`brew install anomalyco/tap/opencode-v2`, signed in to a provider once), and the version matters because the older install command gives version 1, which is not supported. The assistant a candidate uses is paid for by the account you signed in with, so use one with a limit.
-
-To share the link with someone outside your network you need a tunnel, and `make config` asks which one. With `ngrok` (`brew install ngrok`, a free account, then `ngrok config add-authtoken <token>`, once) the address stays the same and every assistant works. With `cloudflared` (`brew install cloudflared`) there is no account and the address is new each time, but the chat does not get its live answers through it, so the candidate should pick Claude Code or OpenCode. `make config` checks what your choice still needs from you.
-
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `make install` | Install and check your setup (once) |
-| `make config` | Choose assistants, exercises and tunnel (`make config CHECK=1` only reports) |
+| `make install` | Install and check your setup |
+| `make config` | Choose assistants, exercises and tunnel |
 | `make new-exercise` | Make an exercise that runs right away, or copy an example |
 | `make exercises` | Bring in the exercises of the `sources:` in your settings |
-| `make start` | Start an interview (`make start LOG=1` for full logs) |
+| `make start` | Start an interview |
 | `make stop` | Stop everything |
 | `make export` | Zip a candidate's code and chats |
-| `make delete` | Delete a candidate and their exercise folder (asks twice) |
 | `make help` | All commands |
-
-## Try it once before a real interview
-
-Do a full dry run on the machine and network you will use, which takes about ten minutes. Run `make start`, pick GearShare and open the **Dry run (candidate)** link it prints, enter a name like `test-candidate`, click **Run** in the terminal and ask the assistant something. Then open `http://localhost:3000`, click **I'm an interviewer**, pick the candidate and check that you see what they do, turn **Follow** on and off, and reveal the next phase. To check the tunnel too, open the candidate link in a private window or on your phone. Run `make stop` afterwards, because the link of a test stops working and the real interview gets a new one.
 
 ## Exercises
 
-| Exercise | What it is | Time |
-| --- | --- | --- |
-| `fibonacci` (in `examples/`) | One file and no app, a warm up | 20 min |
-| `word-count` (in `examples/`) | A short algorithm with edge cases and ties, in one file | 20 min |
-| `gearshare` (in `examples/`) | A neighbourhood lending app with React, Express and SQLite, in four phases: read the code, fix three bugs, add a feature, review it together | 60 min |
-
-Your exercises live in `exercises/`, which git ignores, so they and the candidates' work stay on your machine. `make config` copies an example there when you say yes, `make new-exercise` makes an empty one that already runs or copies an example to change, and a company can keep its own set in a repository, list it under `sources:` in `interview.config.yaml` and bring it in with `make exercises`. The interviewer's notes for each one are in [docs/interviewers/](docs/interviewers/README.md), outside the folder the candidate can read, and [CONTRIBUTING.md](CONTRIBUTING.md) shows how to write your own.
+Three come as examples: `fibonacci` (one file, 20 min), `word-count` (a short algorithm with edge cases, 20 min) and `gearshare` (a lending app with React, Express and SQLite, in four phases, 60 min). Yours live in `exercises/`, which git ignores, so they and the candidates' work stay on your machine, and a company can keep its own set in a repository and list it under `sources:` in `interview.config.yaml`. The interviewer's notes are in [docs/interviewers/](docs/interviewers/README.md), outside what the candidate can read.
 
 ## Security
 
-Everything listens on loopback and the tunnel is the only way in, every interview has its own link with a private part, the candidate's role is decided on the server, and file access stays inside the candidate's folder. The candidate's code does run as your user, so this is a guard rail and not a sandbox: use a machine and an account without production credentials, supervise the interview, and for stronger isolation use a virtual machine or a container.
+This is a guard rail and not a sandbox, because a candidate's code runs as your user. Use a machine and an account without production credentials, supervise the interview, and use a virtual machine or a container for stronger isolation.
 
-## More
+## Contribute
 
-[docs/interviewer-guide.md](docs/interviewer-guide.md) is for people running interviews, [docs/candidate-guide.md](docs/candidate-guide.md) is what to send candidates, [docs/details.md](docs/details.md) covers sharing, hiding files, exporting and troubleshooting, and [AGENTS.md](AGENTS.md) explains the code. To help, see [CONTRIBUTING.md](CONTRIBUTING.md).
+The project is open for pull requests, and the code you change is mostly front end and server. Two easy ways in:
+
+- **A new exercise.** Run `make new-exercise`, or ask your agent to run the `create-exercise` skill, and send it to `examples/`.
+- **The tool itself.** Fork, branch, run `npm run lint`, `make typecheck` and `make test`, and open a pull request.
+
+[CONTRIBUTING.md](CONTRIBUTING.md) has the steps with recordings, and [AGENTS.md](AGENTS.md) explains how the code is put together. For running interviews, see the [interviewer guide](docs/interviewer-guide.md), the [candidate guide](docs/candidate-guide.md) and [more details](docs/details.md).
 
 ## Where this came from
 
-I started this tool while working at a company, as a way to interview people with an AI assistant in the room. Most of it, though, I built outside working hours, so I decided to open it and keep it going as a project of its own, free for anyone to use and improve.
+I started this tool while working at a company, as a way to interview people with an AI assistant in the room. Most of it I built outside working hours, so I decided to open it and keep it going as a project of its own.
 
 ## License
 
-Copyright (C) 2026 guicheffer. Trio Interview is free software under the [GNU Affero General Public License, version 3](LICENSE), so you can use, study, change and share it, and if you run a changed version as a service that other people use over a network, the license asks you to offer them the source of your changes too.
+Copyright (C) 2026 guicheffer. Free software under the [GNU Affero General Public License, version 3](LICENSE): you can use, study, change and share it, and if you run a changed version as a service that other people use over a network, you offer them the source of your changes too.
