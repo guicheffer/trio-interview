@@ -91,9 +91,9 @@ export function InterviewerPicker({ onPick, onBack }: InterviewerPickerProps) {
       </div>
 
       {error && <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
-      {!rows && !error && <p className="py-6 text-center text-xs text-gray-400">Loading...</p>}
+      {!rows && !error && <p className="py-6 text-xs text-gray-400">Loading...</p>}
       {rows && rows.length === 0 && (
-        <p className="rounded-lg bg-gray-50 p-4 text-center text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        <p className="rounded-lg bg-gray-50 p-4 text-xs leading-relaxed text-gray-500 dark:bg-gray-800 dark:text-gray-400">
           No candidates yet. They show up here as soon as they enter their name.
         </p>
       )}
