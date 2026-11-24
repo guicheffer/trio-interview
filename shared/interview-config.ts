@@ -6,17 +6,28 @@
 export const TOOLS = ['agent', 'claude-code', 'opencode'] as const;
 export type Tool = (typeof TOOLS)[number];
 
+/** How the candidate reaches this machine. `none` keeps everything local (a dry run, or a network the candidate is already on). */
+export const TUNNELS = ['ngrok', 'cloudflared', 'none'] as const;
+export type Tunnel = (typeof TUNNELS)[number];
+
 export interface InterviewConfig {
   /** The assistants a candidate may pick from. Agent mode (the chat) is always there. */
   tools: Tool[];
   /** Exercise folders under exercises/ that `make start` offers. Empty means every folder that has a description.md. */
   exercises: string[];
+  /** The tunnel `make start` opens to share the link. */
+  tunnel: Tunnel;
 }
 
 export const DEFAULT_CONFIG: InterviewConfig = {
   tools: ['agent', 'claude-code', 'opencode'],
   exercises: [],
+  tunnel: 'ngrok',
 };
+
+function isTunnel(value: unknown): value is Tunnel {
+  return typeof value === 'string' && (TUNNELS as readonly string[]).includes(value);
+}
 
 function isTool(value: unknown): value is Tool {
   return typeof value === 'string' && (TOOLS as readonly string[]).includes(value);
@@ -33,7 +44,7 @@ function unquote(value: string): string {
  * Anything it does not understand is ignored and the default stays, so a typo never stops an interview.
  */
 export function parseConfig(text: string): InterviewConfig {
-  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [] };
+  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [], tunnel: DEFAULT_CONFIG.tunnel };
   let listKey = '';
   let tools: Tool[] | null = null;
   const exercises: string[] = [];
@@ -56,6 +67,12 @@ export function parseConfig(text: string): InterviewConfig {
     const key = body.slice(0, colon).trim();
     const value = body.slice(colon + 1).trim();
     if (indent === 0) listKey = '';
+
+    if (indent === 0 && key === 'tunnel') {
+      const chosen = unquote(value).toLowerCase();
+      if (isTunnel(chosen)) config.tunnel = chosen;
+      continue;
+    }
 
     if (indent === 0 && value === '') {
       if (key === 'tools' || key === 'exercises') { listKey = key; if (key === 'tools') tools = tools ?? []; }
@@ -81,6 +98,9 @@ ${list(config.tools)}
 
 # Exercise folders to offer. Leave empty to offer every folder in exercises/ that has a description.md
 exercises:${config.exercises.length ? '\n' + list(config.exercises) : ''}
+
+# How the candidate reaches this machine: ngrok (checked), cloudflared (see SECURITY.md before relying on it) or none
+tunnel: ${config.tunnel}
 `;
 }
 

@@ -189,9 +189,16 @@ step_install() {
 }
 STEP_LIMIT=300 run_step "Installing the exercise" step_install
 
+# interview.config.yaml (made by make config) says which tunnel to open: ngrok (the default), cloudflared or none
+configured_tunnel() {
+  local value=""
+  [ -f interview.config.yaml ] && value=$(awk '/^tunnel:/ {sub(/^tunnel:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/["'"'"']/, ""); print tolower($0); exit}' interview.config.yaml)
+  case "$value" in ngrok|cloudflared|none) echo "$value" ;; *) echo "ngrok" ;; esac
+}
+WANTED_TUNNEL=$(configured_tunnel)
 TUNNEL_TYPE="none"
-if command -v ngrok &> /dev/null; then
-    TUNNEL_TYPE="ngrok"
+if [ "$WANTED_TUNNEL" != "none" ] && command -v "$WANTED_TUNNEL" &> /dev/null; then
+    TUNNEL_TYPE="$WANTED_TUNNEL"
 fi
 
 npm run interview > .logs/startup.log 2>&1 &
@@ -243,13 +250,21 @@ rm -f "$TUNNEL_URL_FILE"
 if [ "$TUNNEL_TYPE" = "ngrok" ]; then
     ngrok http 3000 --log=stdout > .logs/ngrok.log 2>&1 &
     TUNNEL_PID=$!
+elif [ "$TUNNEL_TYPE" = "cloudflared" ]; then
+    # A quick tunnel: no account. http2 because many networks block the UDP that QUIC needs, which delays the connection.
+    cloudflared tunnel --url http://127.0.0.1:3000 --protocol http2 --no-autoupdate > .logs/cloudflared.log 2>&1 &
+    TUNNEL_PID=$!
 fi
 
 step_tunnel() {
   [ "$TUNNEL_TYPE" = "none" ] && return 0
   local url=""
   for i in $(seq 1 15); do
-    url=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null | grep -o '"public_url":"https://[^"]*' | head -1 | cut -d'"' -f4)
+    if [ "$TUNNEL_TYPE" = "cloudflared" ]; then
+      url=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' .logs/cloudflared.log 2>/dev/null | head -1)
+    else
+      url=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null | grep -o '"public_url":"https://[^"]*' | head -1 | cut -d'"' -f4)
+    fi
     if [ -z "$url" ] && grep -q "ERR_NGROK_4018\|authentication failed" .logs/ngrok.log 2>/dev/null; then
       echo "auth" > "$TUNNEL_URL_FILE"; return 0
     fi
@@ -259,7 +274,7 @@ step_tunnel() {
   [ -n "$url" ] && echo "$url" > "$TUNNEL_URL_FILE"
   return 0
 }
-STEP_LIMIT=45 run_step "Opening the tunnel" step_tunnel
+STEP_LIMIT=60 run_step "Opening the tunnel" step_tunnel
 
 [ -n "$TAIL_PID" ] && kill $TAIL_PID 2>/dev/null
 finish_bar
@@ -317,11 +332,18 @@ if [ -n "$TUNNEL_URL" ]; then
     echo ""
     print_box "SEND THIS LINK TO THE CANDIDATE ($TUNNEL_TYPE)" "${TUNNEL_URL}/#k=${TRIO_ACCESS_TOKEN}"
     echo -e "  ${DIM}Send the whole link. It is new for every interview and the old ones stop working.${NC}"
+    if [ "$TUNNEL_TYPE" = "cloudflared" ]; then
+        echo -e "  ${YELLOW}A cloudflared quick tunnel holds back the chat's live stream (Agent mode). Claude Code and OpenCode in the terminal work. See SECURITY.md.${NC}"
+    fi
 elif [ "$TUNNEL_TYPE" != "none" ]; then
     echo -e "  Candidate           ${YELLOW}tunnel URL not detected, see .logs/${TUNNEL_TYPE}.log${NC}"
     help_hint
 else
-    echo -e "  Candidate           ${DIM}no tunnel installed (brew install ngrok)${NC}"
+    if [ "$WANTED_TUNNEL" = "none" ]; then
+        echo -e "  Candidate           ${DIM}no tunnel (tunnel: none in interview.config.yaml)${NC}"
+    else
+        echo -e "  Candidate           ${DIM}$WANTED_TUNNEL is not installed (brew install $WANTED_TUNNEL), or run make config to pick another${NC}"
+    fi
 fi
 echo -e "${DIM}Tip: ask the candidate to share their screen too, it is more real time than Follow.${NC}"
 echo -e "${DIM}The candidate picks the assistant (the chat, Claude Code or OpenCode) from what make config allows.${NC}"

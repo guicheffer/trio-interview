@@ -31,8 +31,22 @@ exercises:
   });
 
   test('writing the file and reading it back gives the same settings', () => {
-    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'] };
+    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const };
     expect(parseConfig(renderConfig(config))).toEqual(config);
+  });
+
+  test('the tunnel defaults to ngrok, accepts the known ones, and ignores anything else instead of stopping the interview', () => {
+    expect(parseConfig('').tunnel).toBe('ngrok');
+    expect(parseConfig('tunnel: cloudflared').tunnel).toBe('cloudflared');
+    expect(parseConfig('tunnel: "none"').tunnel).toBe('none');
+    expect(parseConfig('tunnel: Cloudflared  # my choice').tunnel).toBe('cloudflared');
+    expect(parseConfig('tunnel: localtunnel').tunnel).toBe('ngrok');
+    expect(parseConfig('tunnel:').tunnel).toBe('ngrok');
+  });
+
+  test('the tunnel is written to the file and read back', () => {
+    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const };
+    expect(parseConfig(renderConfig(config)).tunnel).toBe('cloudflared');
   });
 
   test('asks whether a tool is allowed', () => {
