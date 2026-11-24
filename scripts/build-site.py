@@ -20,7 +20,31 @@ def blocks(text):
                 yield text[start:i + 1]; start = i + 1
         i += 1
 
+# The editor and the terminals make classes while they run (colours, bracket levels, line numbers), so what the
+# captured markup happens to use is not the whole list. Their rules are all kept, the rest is pruned by the markup.
+ALWAYS = re.compile(r'monaco|\.mtk\d|bracket-|\.codicon|\.xterm|line-numbers|\.minimap|\.decorationsOverviewRuler|\.scrollbar|\.margin-view|\.glyph-margin|\.overflow-guard|\.view-|\.lines-content|\.cursors-layer|\.core-guide|\.selected-text|\.current-line')
+
+
+def split_selectors(head):
+    """A selector list cut at its top level commas only. `:is(.a, .b)` and `[x="a,b"]` keep their commas, because cutting
+    inside them leaves an open parenthesis, which makes the browser swallow every rule that follows."""
+    parts, depth, quote, buf = [], 0, '', ''
+    for ch in head:
+        if quote:
+            buf += ch
+            if ch == quote: quote = ''
+            continue
+        if ch in '"\'': quote = ch
+        elif ch in '([': depth += 1
+        elif ch in ')]': depth = max(0, depth - 1)
+        if ch == ',' and depth == 0: parts.append(buf); buf = ''
+        else: buf += ch
+    if buf.strip(): parts.append(buf)
+    return parts
+
+
 def keep_selector(sel):
+    if ALWAYS.search(sel): return True
     if re.search(r'^(\*|:root|html|body|::|\[data|\.dark|\.light)', sel.strip()) and not re.search(r'\.[\w\\:\[\]/.%-]+', sel): return True
     cl = set(re.findall(r'\.((?:\\.|[\w-])+)', sel))
     cl = {re.sub(r'\\(.)', r'\1', c) for c in cl}
@@ -41,9 +65,20 @@ def prune(text):
             p = prune(inner)
             if p.strip(): res.append(head + '{' + p + '}')
             continue
-        sels = [x for x in head.split(',') if keep_selector(x)]
+        sels = [x for x in split_selectors(head) if keep_selector(x)]
         if sels: res.append(','.join(sels) + b[b.index('{'):])
     return '\n'.join(res)
+
+# The editor's own stylesheet comes from a CDN, so the browser will not let a page read its rules (cssRules throws for another
+# origin) and a capture made from document.styleSheets silently has none of them. It is kept in the repository instead.
+VENDOR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'site', 'vendor', 'monaco', 'editor.main.css')
+vendor = open(VENDOR).read() if os.path.exists(VENDOR) else ''
+if not vendor: print('warning: site/vendor/monaco/editor.main.css is missing, the editor will be drawn without its layout')
+css = vendor + '\n' + css
+
+# The icon font (162 KB as base64) and the 66 KB of variables that name its glyphs draw nothing in a still picture of the editor
+css = re.sub(r'@font-face\s*\{[^}]*font-family:\s*codicon[^}]*\}', '', css)
+css = re.sub(r':root\s*\{(?:\s*--vscode-icon-[^;]*;)+\s*\}', '', css)
 
 pruned = prune(css)
 pruned = re.sub(r'url\(/__nextjs_font/([^)]+)\)', r'url(../fonts/\1)', pruned)
