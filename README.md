@@ -61,6 +61,12 @@ This tool is built to be used with care, and it is clear about where that care s
 > [!WARNING]
 > **This is a guard rail, not a sandbox.** A candidate's code runs as your user, the assistants are kept on the exercise by instructions and not by the operating system, and nothing filters what the candidate's code sends out. Run it on a machine and account without production credentials, supervise the interview and have the candidate share their screen. A VM or container is the stronger setup. The full list of limits is in [SECURITY.md](SECURITY.md).
 
+## How far to trust it
+
+Trio is built around a short list of protocols, and each one is written down and tested: who can reach it, who can change what the assistants do, what the assistants and the candidate's code can touch, what is stored, and what leaves your machine. [SECURITY.md](SECURITY.md) maps each question to the part of the tool that answers it, and lists the limits that stay open.
+
+In short: the protections hold up against an honest candidate and against a curious one, which is what a supervised interview needs. They are not a promise against a determined attacker with time. For that, run it in a virtual machine or a container, with an account that has no production access.
+
 ## More
 
 [docs/details.md](docs/details.md) covers sharing, interviewer mode, hiding files, exporting and troubleshooting. [AGENTS.md](AGENTS.md) is the guide for anyone changing the code.
