@@ -1,15 +1,29 @@
 # The landing page
 
-`index.html` is the page, and `app/` holds the replica of the app that the page scrolls through. Nothing in `app/` is a screenshot: each `scene-*.html` is the real markup and the real, pruned stylesheet of the running app, so the replica looks exactly like it.
+`index.html` is the page. `app/` holds what the page scrolls through: each `scene-*.html` is the real markup and the real, pruned stylesheet of the running app, so the replica looks like it. Nothing in there is a screenshot.
 
-## Rebuild the replica after the app changes
+## Rebuild after the app changes
 
-1. Run the app (`make start`, or `npm run dev`) with a candidate named like the demo one and open each screen: the name page, the list of candidates, the candidate's workspace, and the interviewer's view with the phases hidden and then revealed.
-2. Save the rendered document of each screen as `workspace.html`, `welcome.html`, `picker.html`, `interviewer.html` and `revealed.html` with its stylesheet inlined, then run `python3 scripts/build-site.py` on the workspace one to prune the stylesheet into `site/app/app.css`.
-3. Put the markup of each screen in `site/app/<name>.frag.html`, then run `python3 scripts/build-landing.py` to write the four `scene-*.html` files.
+The scenes are made from what was captured out of the running app, kept in `source/`:
 
-Compare the pruned page with the real one pixel by pixel before you publish, as a stylesheet that is pruned too much loses the dark mode first.
+| File | What it is |
+| --- | --- |
+| `welcome.html`, `picker.html`, `workspace.html`, `interviewer.html`, `revealed.html` | The rendered markup of each screen |
+| `fibonacci-workspace.html` | The workspace with the exercise file open, editor and terminals included |
+| `fibonacci-session.json` | The exercise file before and after the assistant's change, and the two terminals as the app drew them |
 
-## Fonts
+```bash
+python3 scripts/build-site.py <capture with the app's stylesheet inlined> site/app   # prunes the stylesheet into app.css
+python3 scripts/build-landing.py                                                     # writes the scene-*.html files
+npx vitest run scripts/__tests__                                                     # checks them against the real editor and Node
+```
 
-`fonts/` has the Geist and Geist Mono files the app itself uses, under the SIL Open Font License 1.1 (https://openfontlicense.org/).
+To capture a screen, open it in the app, serialize the document with the stylesheets inlined and read the editor's own stylesheet from `vendor/monaco/`. A page cannot read the rules of a stylesheet that comes from another origin (the editor's comes from a CDN), so a capture made from `document.styleSheets` silently lacks them.
+
+## What is real and what is a script
+
+The editor draws the exercise file with the same classes and colours as the app, and the Run button runs the code that is in it, in a Worker, and prints what it logs the way Node does. The request to the assistant and its answer are a script, copied from a session on the real tool.
+
+## Credits
+
+`fonts/` holds the Geist fonts the app uses (SIL Open Font License 1.1) and `vendor/monaco/` the stylesheet of monaco-editor 0.55.1 (MIT, see its LICENSE).

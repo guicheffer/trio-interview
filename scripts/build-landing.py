@@ -5,10 +5,11 @@ import os, re
 
 SITE = os.path.join(os.path.dirname(__file__), '..', 'site')
 A = os.path.join(SITE, 'app')
+SRC = os.path.join(SITE, 'source')
 
 
 def frag(name):
-    return open(os.path.join(A, name + '.frag.html')).read()
+    return open(os.path.join(SRC, name + '.html')).read()
 
 
 def scene(name, body, extra_js=''):
@@ -75,6 +76,37 @@ SCENE_VIEW = COMMON_JS + r'''
 '''
 
 
+# --- the fibonacci scene: the real editor and terminals, driven by the script of what really happened ----------
+import json, importlib.util as _u, sys as _sys
+
+_sys.path.insert(0, os.path.dirname(__file__))
+_spec = _u.spec_from_file_location('monaco_view', os.path.join(os.path.dirname(__file__), 'monaco_view.py'))
+mv = _u.module_from_spec(_spec); _spec.loader.exec_module(mv)
+
+def fib_page():
+    """The workspace of the fibonacci exercise as the app drew it, with the machine specific bits made neutral"""
+    page = open(os.path.join(SRC, 'fibonacci-workspace.html')).read()
+    return page.replace('/\u2026/.solutions/maya/fibonacci', '~/interviews/fibonacci')
+
+
+def build_fib():
+    session = json.load(open(os.path.join(SRC, 'fibonacci-session.json')))
+    src_before, src_after, terms = session['before'], session['after'], session['terminals']
+    neutral = lambda rows: [r.replace('/\u2026/.solutions/maya/fibonacci', '~/interviews/fibonacci') for r in rows]
+    page = mv.swap_code(fib_page(), src_before)
+    data = {
+        'before': src_before, 'after': src_after,
+        'linesBefore': mv.lines_markup(src_before), 'linesAfter': mv.lines_markup(src_after),
+        'gutterBefore': mv.gutter_markup(src_before, mv.foldable_lines(src_before)), 'gutterAfter': mv.gutter_markup(src_after, mv.foldable_lines(src_after)),
+        'claudeAfter': neutral(terms['fibafter_claude']),
+        'claudeBefore': neutral(terms['fibbefore_claude']),
+        'inspectLite': open(os.path.join(os.path.dirname(__file__), 'inspect-lite.cjs')).read(),
+    }
+    js = open(os.path.join(os.path.dirname(__file__), 'fib-scene.js')).read()
+    scene('fib', page, 'window.FIB=' + json.dumps(data, ensure_ascii=False).replace('</', '<\\/') + ';\n' + COMMON_JS + js)
+    print('fibonacci scene written')
+
+
 def build():
     iv, rv, wc, pk, wk = frag('interviewer'), frag('revealed'), frag('welcome'), frag('picker'), frag('workspace')
     scene('welcome', wc)
@@ -82,6 +114,7 @@ def build():
     scene('work', wk, SCENE_WORK)
     both = ('<div id="st-hidden">' + iv + '</div><div id="st-revealed" style="display:none">' + rv + '</div>')
     scene('view', both, SCENE_WORK + SCENE_VIEW)
+    build_fib()
     print('scenes written')
 
 
