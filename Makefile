@@ -1,4 +1,4 @@
-.PHONY: help install start start-log stop start-prod dev dev-frontend dev-backend test typecheck clean reset check-node export delete
+.PHONY: help install config start start-log stop start-prod dev dev-frontend dev-backend test typecheck clean reset check-node export delete
 
 # Default target
 help:
@@ -7,6 +7,8 @@ help:
 	@printf '\033[1;32mInterview\033[0m\n'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make start' 'Check setup, pick an exercise, start everything and share a tunnel URL'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make start LOG=1' 'Same, but show the full server logs (also: make start-log)'
+	@printf '  \033[36m%-22s\033[0m %s\n' 'make config' 'Choose which assistants, exercises and settings this machine allows'
+	@printf '  \033[2m%-22s %s\033[0m\n' '' 'Check only, no questions: make config CHECK=1'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make stop' 'Stop the servers, exercise apps and tunnel'
 	@printf '  \033[36m%-22s\033[0m %s\n' 'make export' 'Export a candidate as a zip (code, conversations, viewer.html)'
 	@printf '  \033[2m%-22s %s\033[0m\n' '' 'Non interactive: make export CANDIDATE=name EXERCISE=id'
@@ -29,6 +31,11 @@ install:
 	@echo "Installing dependencies..."
 	@npm install --no-audit --no-fund
 	@node scripts/doctor.mjs
+	@if [ ! -f interview.config.yaml ] && [ -t 0 ]; then echo ""; echo "No interview settings yet. Choosing them now (run make config again any time)."; npx tsx scripts/config.ts || true; fi
+
+# Choose what this machine allows (assistants, exercises, retention). Writes interview.config.yaml, ignored by git.
+config:
+	@npx tsx scripts/config.ts $(if $(CHECK),--check,)
 
 # Start interview (interactive exercise selection)
 start:

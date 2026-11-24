@@ -96,10 +96,18 @@ echo -e "${BOLD}Trio, live coding interviews${NC}"
 echo ""
 
 # Newest exercises first (last commit touching the folder)
+# interview.config.yaml (made by make config) can limit the list. No file, or no "exercises:" entries, offers all of them.
+configured_exercises() {
+  [ -f interview.config.yaml ] || return 0
+  awk '/^exercises:/ {on=1; next} /^[^ #-]/ {on=0} on && /^[[:space:]]*-[[:space:]]/ {sub(/^[[:space:]]*-[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print}' interview.config.yaml
+}
+CONFIGURED_EXERCISES=$(configured_exercises)
+
 list_exercises() {
   for dir in exercises/*/; do
     id=$(basename "$dir")
     [ -f "$dir/description.md" ] || continue
+    if [ -n "$CONFIGURED_EXERCISES" ] && ! echo "$CONFIGURED_EXERCISES" | grep -qx -- "$id"; then continue; fi
     ts=$(git log -1 --format=%ct -- "$dir" 2>/dev/null)
     title=$(grep -m1 '^# ' "$dir/description.md" | sed 's/^# *//')
     printf '%s\t%s\t%s\n' "${ts:-0}" "$id" "${title:-$id}"
@@ -149,6 +157,9 @@ export EXERCISE_ID
 
 step_preflight() { node scripts/preflight.mjs; }
 STEP_LIMIT=90 run_step "Checking your setup" step_preflight || exit 1
+# Reports whether the settings in interview.config.yaml match this machine. It only warns, it never stops an interview.
+step_config() { npx tsx scripts/config.ts --check; }
+if [ "$LOG_MODE" = "1" ]; then step_config || true; else step_config > .logs/config-check.log 2>&1 || echo -e "${YELLOW}Some interview settings need a look (run: make config CHECK=1)${NC}"; fi
 export TRIO_PREFLIGHT_DONE=1
 
 # A new secret for every interview. It lives only in the environment of the servers and in the link below, never on disk.
