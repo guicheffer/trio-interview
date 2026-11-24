@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build
+dist/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+
+# Testing
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary
+*.log
+.tmp/
+
+# Interview platform
+.logs/
+.solutions/
+
+# Candidate scorecards and hiring docs (sensitive)
+scorecards/
+download.txt
+tsconfig.tsbuildinfo
+
+# Candidate exports
+exports/
+.claude/worktrees/
+exercises/**/node_modules/
+.planning/
+
+# Local assistant state
+.claude.json
+exercises/**/.claude/
+
+# Local interview settings made by make config
+interview.config.yaml
+
+# Exercise databases made by db:migrate
+examples/**/data/*.db
+exercises/**/data/*.db

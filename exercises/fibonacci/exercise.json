@@ -1,0 +1,15 @@
+{
+  "defaultFile": "description.md",
+  "lockedFiles": [
+    "description.md"
+  ],
+  "hidden": [],
+  "run": {
+    "start": "node fibonacci.js",
+    "description": "Run the Fibonacci solution",
+    "port": null
+  },
+  "assistant": {
+    "context": "A single file exercise. fibonacci.js has stub functions fibonacci(n) (first n Fibonacci numbers as an array) and fibonacciUpTo(limit) (numbers below limit) plus a few console.log checks at the bottom. It runs with `node fibonacci.js` and exports both functions with module.exports. There is no test runner and no dependencies. description.md is the brief the candidate reads first."
+  }
+}

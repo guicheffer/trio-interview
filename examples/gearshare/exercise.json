@@ -1,0 +1,22 @@
+{
+  "defaultFile": "description.md",
+  "lockedFiles": [
+    "description.md",
+    "phases/"
+  ],
+  "hidden": [
+    "phases/phase-2-bug-fixing.md",
+    "phases/phase-3-feature-development.md",
+    "phases/phase-4-pair-review.md"
+  ],
+  "assistant": {
+    "context": "GearShare is a small neighbourhood lending app. Stack: React 18 + Vite client, Express 4 API, SQLite through Node's built-in node:sqlite (no native module), TypeScript, Vitest with supertest. Everything lives in codebase/. Run with `cd codebase && npm install && npm run db:migrate && npm run dev` (client on 5173, API on 3002; the platform sets PORT). Tests: `cd codebase && npm test`. Server: src/server/index.ts starts app.ts, which mounts three routers from src/server/routes/ (session, items, loans) under /api. The business rules live outside the routes: src/server/pricing.ts (dates, overlap, price) and src/server/loans.ts (creating a loan and moving it through requested, approved, active, returned, declined or cancelled). RuleError carries an HTTP status. Login is a demo: a cookie holds the user id, set by /api/session/login. Database: src/server/db/ (schema.ts, connection.ts, seed.ts); tables users, items, loans; money is stored in cents; dates are YYYY-MM-DD text. Client: src/client/ with App.tsx, api.ts (all fetch calls), and pages/ (LoginPage, ItemsPage, LoansPage). Demo users: ana@example.test, ben@example.test, chloe@example.test, dev@example.test (pick one on the login page)."
+  },
+  "run": {
+    "start": "cd codebase && npm install && npm run db:migrate && npm run dev",
+    "description": "Install deps, migrate DB, start dev server",
+    "port": 5173,
+    "serverPort": 3002,
+    "install": "cd codebase && npm install"
+  }
+}
