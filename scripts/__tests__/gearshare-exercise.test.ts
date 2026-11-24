@@ -24,6 +24,23 @@ describe('the GearShare exercise', () => {
     expect(key).toContain('loan.borrower_id !== actorId && item.owner_id !== actorId');
   });
 
+  test('no comment or brief the candidate reads spells out a rule that a bug breaks', () => {
+    const { readdirSync, statSync } = require('fs') as typeof import('fs');
+    const walk = (dir: string): string[] => readdirSync(join(root, dir)).flatMap(name => {
+      const rel = join(dir, name);
+      if (name === 'node_modules' || name === 'package-lock.json') return [];
+      return statSync(join(root, rel)).isDirectory() ? walk(rel) : [rel];
+    });
+    const files = walk('.').filter(f => /\.(ts|tsx|md|json|sql)$/.test(f) && !f.startsWith('phases/phase-2') && !f.startsWith('phases/phase-3') && !f.startsWith('phases/phase-4') && f !== 'exercise.json' && !f.endsWith('.test.ts'));
+    expect(files.length).toBeGreaterThan(5);
+    // the discount thresholds and the overlap rule are what two of the bugs get wrong, so no sentence may state them
+    const giveAway = [/\b(10|20)\s?%\s*off\b/i, /\bfrom\s+(7|14)\s+days\b/i, /\b(7|14)\s+days?\s+(or more|and over|gets)/i, /back to back|end(s|ing)? on the day (another|the next|a loan)? ?start/i];
+    for (const file of files) {
+      const text = read(file);
+      for (const rule of giveAway) expect(text, `${file} states a rule a bug breaks (${rule})`).not.toMatch(rule);
+    }
+  });
+
   test('the answer key is not inside the folder the candidate can read', () => {
     expect(key.length).toBeGreaterThan(0);
     expect(() => readFileSync(join(root, 'docs', 'gearshare.md'), 'utf-8')).toThrow();

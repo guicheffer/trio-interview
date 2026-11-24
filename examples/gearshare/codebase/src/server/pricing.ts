@@ -4,7 +4,7 @@ export function daysBetween(start: string, end: string): number {
   return Math.round(ms / 86_400_000);
 }
 
-/** Two date ranges overlap when each starts before the other ends. Ending on the day another starts is fine. */
+/** Whether two date ranges, given as YYYY-MM-DD, share any time. */
 export function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
   return aStart <= bEnd && bStart <= aEnd;
 }
