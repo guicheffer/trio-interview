@@ -4,6 +4,8 @@ Live coding interviews in the browser, with an AI assistant, free and open sourc
 
 ![The workspace: files, editor, terminal and the assistant](docs/images/workspace.png)
 
+A short tour, with a running replica of the workspace, is at [guicheffer.github.io/trio-interview](https://guicheffer.github.io/trio-interview/).
+
 There is no account to create, no seat to buy and no server of ours in the middle, because everything runs on your machine and the only thing that leaves it is the link you share. It is an alternative to hosted tools such as [CoderPad](https://coderpad.io/), [HackerRank](https://www.hackerrank.com/) and [CodeSignal](https://codesignal.com/), for teams that want to read what runs their interviews, keep their exercises to themselves and see how a candidate works with an assistant instead of banning it.
 
 ![The candidate types a name, picks an assistant and starts working](docs/images/candidate-flow.gif)
