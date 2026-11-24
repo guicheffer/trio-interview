@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Live-edit overlay animations */
+@keyframes trio-edit-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes trio-edit-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+@keyframes trio-edit-scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes trio-edit-border {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(34,197,94,0.4), 0 0 24px rgba(34,197,94,0.08); }
+  50%       { box-shadow: inset 0 0 0 2px rgba(34,197,94,0.7), 0 0 32px rgba(34,197,94,0.18); }
+}
+
+/* Animated gradient for the login screen */
+@keyframes trio-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.trio-login-bg-light {
+  background-image: linear-gradient(
+    135deg,
+    #f0fdf4 0%,
+    #ffffff 25%,
+    #dcfce7 50%,
+    #f0fdf4 75%,
+    #bbf7d0 100%
+  );
+  background-size: 300% 300%;
+  animation: trio-gradient 12s ease infinite;
+}
+
+.trio-login-bg-dark {
+  background-image: linear-gradient(
+    135deg,
+    #0a0f0a 0%,
+    #0f2210 25%,
+    #0d1a17 50%,
+    #091209 75%,
+    #162d1a 100%
+  );
+  background-size: 300% 300%;
+  animation: trio-gradient 12s ease infinite;
+}
+
+/* Remote carets and selections in the editor */
+.trio-rc { position: relative; border-left: 2px solid currentColor; margin-left: -1px; pointer-events: none; }
+.trio-rc::after {
+  position: absolute; left: -2px; top: -1.35em; padding: 0 5px; border-radius: 4px 4px 4px 0;
+  font-size: 10px; line-height: 1.35em; font-weight: 600; color: #fff; white-space: nowrap; opacity: .92;
+}
+.trio-rc-interviewer { color: #7c3aed; }
+.trio-rc-interviewer::after { background: #7c3aed; }
+.trio-rc-candidate { color: #16a34a; }
+.trio-rc-candidate::after { background: #16a34a; }
+.trio-rc-typing::after { outline: 2px solid currentColor; outline-offset: 1px; }
+.trio-rsel-interviewer { background: rgba(124, 58, 237, .22); }
+.trio-rsel-candidate { background: rgba(22, 163, 74, .22); }
+
+@keyframes trio-caret-blink { 0%, 49% { border-left-color: currentColor; } 50%, 100% { border-left-color: transparent; } }
+.trio-rc { animation: trio-caret-blink 1s steps(1) infinite; }
+.trio-rc-typing { animation: none; }
+
+/* Lines the AI added, drawn inside the editor */
+.trio-ai-added { background: rgba(34, 197, 94, 0.16); }
+.trio-ai-added-gutter { border-left: 3px solid #22c55e; margin-left: 3px; }
+
+@keyframes trio-toast-timer { from { width: 100%; } to { width: 0%; } }
