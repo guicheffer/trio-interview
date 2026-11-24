@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The exercises | Trio Interview docs</title>
+<meta name="description" content="The exercises: Trio Interview, free and open source live coding interviews with an AI assistant.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="agent" viewBox="0 0 279 241">
+    <rect x="3.80" y="171.95" width="192.00" height="68.10" rx="34.05" fill="currentColor" transform="rotate(0.0 99.80 206.00)"/>
+    <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
+  </symbol>
+  <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
+  <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
+</svg>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="../"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/><use href="#interviewer"/><use href="#candidate"/></svg> Trio Interview</a>
+  <nav><a href="../#how">How it works</a><a href="../#why">Why this</a><a href="./" aria-current="page">Docs</a>
+    <a class="star" href="https://github.com/guicheffer/trio-interview" target="_blank" rel="noopener" aria-label="Star Trio Interview on GitHub"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Star</span><span class="cnt" style="display:none"></span></a>
+  </nav>
+</div></header>
+<div class="docs">
+  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html" aria-current="page">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html">Contributing</a></li></ul></aside>
+  <main class="doc">
+    <article class="md"><h1 id="interviewer-notes">Interviewer notes</h1>
+<p>For interviewers only. This folder is not part of any exercise, so a candidate&#39;s workspace, terminal and AI assistant never contain it. Keep it that way: do not move these files into <code>exercises/</code>.</p>
+<p>How to run the tool itself is in the <a href="index.html">interviewer guide</a>. This folder is about the exercises.</p>
+<h2 id="which-exercise-to-use">Which exercise to use</h2>
+<table>
+<thead>
+<tr>
+<th>Exercise</th>
+<th>Use it for</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewers/gearshare.md" target="_blank" rel="noopener">GearShare</a> (in <code>examples/</code>, add it with <code>make config</code> or <code>make new-exercise</code>)</td>
+<td>A full interview: read the code, fix bugs, build a feature, review it</td>
+<td>60 min</td>
+</tr>
+<tr>
+<td><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewers/fibonacci.md" target="_blank" rel="noopener">Fibonacci</a></td>
+<td>Trying the tool, demos, checking your setup</td>
+<td>20 min</td>
+</tr>
+<tr>
+<td><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewers/word-count.md" target="_blank" rel="noopener">Word count</a></td>
+<td>A short algorithm warm up with edge cases, or a first real exercise</td>
+<td>20 min</td>
+</tr>
+</tbody></table>
+<h2 id="running-an-interview">Running an interview</h2>
+<p>Before:</p>
+<ol>
+<li><code>make install</code> once, then <code>make config</code> to choose what is allowed. Candidates spend your assistant&#39;s account, so check it has enough left.</li>
+<li><code>make start</code>, pick the exercise, open <code>http://localhost:3000</code> to confirm it loads.</li>
+<li>Send the candidate the link that <code>make start</code> prints. Ask them to share their screen too, it is more real time than Follow.</li>
+</ol>
+<p>During (about 60 minutes for GearShare):</p>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Phase</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5 min</td>
+<td>Intro and ice breaker</td>
+</tr>
+<tr>
+<td>5 min</td>
+<td>Code comprehension</td>
+</tr>
+<tr>
+<td>15 min</td>
+<td>Bug fixing</td>
+</tr>
+<tr>
+<td>20 min</td>
+<td>Feature</td>
+</tr>
+<tr>
+<td>15 min</td>
+<td>Pair review</td>
+</tr>
+</tbody></table>
+<ul>
+<li>Phases 2 to 4 are hidden from the candidate, including from their terminal and AI assistant. When they are ready, reveal the next file from the file tree (&quot;Reveal all&quot; shows everything at once).</li>
+<li>The candidate picks the assistant (the chat, Claude Code or OpenCode). You see the same screen, and in the terminal ones you see the same terminal.</li>
+<li>You see their editor, terminal and assistant live. Follow is off by default; turn it on to mirror their open file and scroll.</li>
+<li>Files you edit while the candidate is watching change live for them, so prefer the chat or your voice for hints.</li>
+</ul>
+<p>After:</p>
+<ol>
+<li><code>make stop</code>, then <code>make export CANDIDATE=&lt;name&gt; EXERCISE=&lt;id&gt;</code>.</li>
+<li>Ask your agent to run the <code>evaluate-candidate</code> skill on the zip for a summary of what was built, how far they got and how they used the assistant.</li>
+</ol>
+</article>
+    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewers/README.md" target="_blank" rel="noopener">Edit this page on GitHub</a></p>
+  </main>
+  
+</div>
+<script src="../site.js"></script>
+</body>
+</html>
