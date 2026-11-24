@@ -6,7 +6,7 @@ How to run an interview with Trio, from setup to export. The notes for each exer
 
 1. **Node 25** (`nvm use`).
 2. **Claude Code**, signed in. The assistants run on your machine with your login, so your account pays for everything a candidate does. Use one with a limit.
-3. **A tunnel** for a remote candidate: `ngrok`, with a free account (see [details](details.md#requirements)).
+3. **A tunnel** for a remote candidate: `ngrok` with a free account, or `cloudflared` with none (see [details](details.md#requirements)). `make config` asks which and checks it.
 4. **OpenCode 2**, if you want candidates to be able to pick it.
 
 `make install` checks all of this and offers to fix what it can. `make config` then asks which assistants and exercises you allow.

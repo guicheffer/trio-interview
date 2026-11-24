@@ -25,7 +25,7 @@ make start       # pick an exercise, start everything, share the link
 
 - **Node 25.** `nvm use` reads `.nvmrc`.
 - **Claude Code**, signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). The chat and the Claude Code terminal both run on it.
-- **A tunnel to share the link.** `ngrok` is the one that is checked (`brew install ngrok`, then a free account and `ngrok config add-authtoken <token>`, once). Other tunnels may work, but they have not been tested. Quick tunnels from `cloudflared` were found not to deliver the chat stream.
+- **A tunnel to share the link.** `make config` asks which one: `ngrok` (`brew install ngrok`, then a free account and `ngrok config add-authtoken <token>`, once) keeps the same address between interviews and works with every assistant, and `cloudflared` (`brew install cloudflared`) needs no account but gives a new address each time and does not carry the chat's live answers, so with it the candidate should pick Claude Code or OpenCode. `make config` checks what the one you chose still needs from you. Other tunnels have not been tried.
 - **OpenCode 2, optional.** `brew install anomalyco/tap/opencode-v2`, and sign it in to a provider once. The version matters: the older install command installs version 1, which the terminal assistant does not support.
 
 Every message a candidate sends is paid for by the account your assistant is signed in to. Use an account with a limit.
