@@ -58,6 +58,8 @@ To share the link with someone outside your network you need a tunnel, and `make
 | --- | --- |
 | `make install` | Install and check your setup (once) |
 | `make config` | Choose assistants, exercises and tunnel (`make config CHECK=1` only reports) |
+| `make new-exercise` | Make an exercise that runs right away, or copy an example |
+| `make exercises` | Bring in the exercises of the `sources:` in your settings |
 | `make start` | Start an interview (`make start LOG=1` for full logs) |
 | `make stop` | Stop everything |
 | `make export` | Zip a candidate's code and chats |
@@ -72,10 +74,11 @@ Do a full dry run on the machine and network you will use, which takes about ten
 
 | Exercise | What it is | Time |
 | --- | --- | --- |
-| `fibonacci` | One file and no app, a warm up | 20 min |
+| `fibonacci` (in `examples/`) | One file and no app, a warm up | 20 min |
+| `word-count` (in `examples/`) | A short algorithm with edge cases and ties, in one file | 20 min |
 | `gearshare` (in `examples/`) | A neighbourhood lending app with React, Express and SQLite, in four phases: read the code, fix three bugs, add a feature, review it together | 60 min |
 
-`make config` copies an example into `exercises/` when you say yes. The interviewer's notes for each one are in [docs/interviewers/](docs/interviewers/README.md), outside the folder the candidate can read. To write your own, ask your agent to run the `create-exercise` skill and review what it writes, and [CONTRIBUTING.md](CONTRIBUTING.md) shows how.
+Your exercises live in `exercises/`, which git ignores, so they and the candidates' work stay on your machine. `make config` copies an example there when you say yes, `make new-exercise` makes an empty one that already runs or copies an example to change, and a company can keep its own set in a repository, list it under `sources:` in `interview.config.yaml` and bring it in with `make exercises`. The interviewer's notes for each one are in [docs/interviewers/](docs/interviewers/README.md), outside the folder the candidate can read, and [CONTRIBUTING.md](CONTRIBUTING.md) shows how to write your own.
 
 ## Security
 

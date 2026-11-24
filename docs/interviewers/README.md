@@ -8,8 +8,9 @@ How to run the tool itself is in the [interviewer guide](../interviewer-guide.md
 
 | Exercise | Use it for | Time |
 |---|---|---|
-| [GearShare](gearshare.md) (in `examples/`, add it with `make config`) | A full interview: read the code, fix bugs, build a feature, review it | 60 min |
+| [GearShare](gearshare.md) (in `examples/`, add it with `make config` or `make new-exercise`) | A full interview: read the code, fix bugs, build a feature, review it | 60 min |
 | [Fibonacci](fibonacci.md) | Trying the tool, demos, checking your setup | 20 min |
+| [Word count](word-count.md) | A short algorithm warm up with edge cases, or a first real exercise | 20 min |
 
 ## Running an interview
 
