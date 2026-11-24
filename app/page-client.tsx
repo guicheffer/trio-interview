@@ -38,7 +38,6 @@ import { beginLayoutGesture, isLayoutGesture, pulseLayoutGesture } from './lib/l
 import { useRemoteKey } from './hooks/useRemoteKey';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { FileTabBar } from './components/FileTabBar';
-import { LandingPage } from './components/LandingPage';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { closeShortcut, globalShortcut, mergeOpenTabs } from './lib/shortcuts';
 import { createDragGuard } from './lib/dragGuard';
@@ -201,7 +200,6 @@ function CollapsedChat({ onExpand }: { onExpand: () => void }) {
 
 function InterviewPageContent() {
   const [sessionId] = useState(() => tabSessionId());
-  const [landingDone, setLandingDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [pendingThreadClose, setPendingThreadClose] = useState<string | null>(null);
@@ -225,7 +223,6 @@ function InterviewPageContent() {
     ['trio_cc_candidate', 'trio_cc_last_seen', 'trio_cc_role'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
     // Straight to the list of candidates, not the home page
     try {
-      localStorage.setItem('trio_cc_env_choice', JSON.stringify({ choice: 'web', timestamp: Date.now() }));
       sessionStorage.setItem('trio_cc_pick_candidate', '1');
     } catch {}
     window.location.reload();
@@ -235,8 +232,9 @@ function InterviewPageContent() {
   const [confirmInactive, setConfirmInactive] = useState(false);
   const goHome = useCallback(() => {
     const keys = localStorage.getItem('trio_cc_role') === 'interviewer'
-      ? ['trio_cc_env_choice', 'trio_cc_role', 'trio_cc_candidate', 'trio_cc_last_seen']
-      : ['trio_cc_env_choice', 'trio_cc_last_seen']; // no recent visit: the welcome screen asks "Continue as <name>" or someone else
+      ? ['trio_cc_role', 'trio_cc_candidate', 'trio_cc_last_seen']
+      
+      : ['trio_cc_last_seen']; // no recent visit: the welcome screen asks "Continue as <name>" or someone else
     keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
     window.location.reload();
   }, []);
@@ -297,7 +295,7 @@ function InterviewPageContent() {
       try { localStorage.setItem('trio_cc_candidate', target); localStorage.removeItem('trio_cc_last_seen'); } catch {}
     } else {
       // A candidate screen cannot take the interview back from someone else: leave to the first page
-      ['trio_cc_env_choice', 'trio_cc_last_seen'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
+      ['trio_cc_last_seen'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
     }
     window.location.reload();
   }, [sessionStatus.active]);
@@ -986,10 +984,6 @@ function InterviewPageContent() {
       ? [...paletteActions, ...paletteFiles.map(f => ({ id: `open-${f}`, category: 'Open file', title: f, run: () => openFile(f) } as PaletteAction))]
       : paletteActions
   ), [paletteActions, paletteFiles, paletteMode, openFile]);
-
-  if (!landingDone) {
-    return <LandingPage onWebInterface={() => setLandingDone(true)} onInterviewer={() => { try { localStorage.setItem('trio_cc_env_choice', JSON.stringify({ choice: 'web', timestamp: Date.now() })); } catch {} setStartAsInterviewer(true); setLandingDone(true); }} />;
-  }
 
   if (!sessionReady) {
     return (

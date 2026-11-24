@@ -155,9 +155,11 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
           <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
             Welcome
           </h1>
-          <p className="mx-auto mt-3 max-w-xs text-xs text-gray-500 dark:text-gray-400">
-            Your interviewer sees your work live. You will pick the assistant you want to work with once you are in.
-          </p>
+          {!interviewerMode && (
+            <p className="mx-auto mt-3 max-w-xs text-xs text-gray-500 dark:text-gray-400">
+              Your interviewer sees your work live. You will pick the assistant you want to work with once you are in.
+            </p>
+          )}
         </div>
 
         <div className="px-8 pb-8">
