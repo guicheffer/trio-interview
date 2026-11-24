@@ -59,3 +59,6 @@ interview.config.yaml
 # Exercise databases made by db:migrate
 examples/**/data/*.db
 exercises/**/data/*.db
+
+# Python bytecode from the site build scripts
+__pycache__/
