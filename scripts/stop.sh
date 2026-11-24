@@ -30,6 +30,7 @@ if [ -f "$ROOT/.logs/terminal-pids.txt" ]; then
 fi
 
 pkill -f "ngrok http 3000" 2>/dev/null
+pkill -f "cloudflared tunnel --url http://127.0.0.1:3000" 2>/dev/null
 
 if [ "$killed" -gt 0 ]; then
   echo "Stopped $killed process(es)."
