@@ -103,7 +103,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
     <header className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 lg:px-6 flex items-center justify-between gap-2 overflow-visible" style={{ zIndex: 50, position: 'relative' }}>
       {/* Left: Logo */}
       <div className="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
-        <TrioLogo size={28} />
+        <TrioLogo size={28} animate />
         {exerciseTitle && (
           <>
             <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 hidden md:block" />

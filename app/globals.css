@@ -77,3 +77,14 @@
 .trio-ai-added-gutter { border-left: 3px solid #22c55e; margin-left: 3px; }
 
 @keyframes trio-toast-timer { from { width: 100%; } to { width: 0%; } }
+
+
+/* The logo builds itself once when it appears: the console, then the interviewer, then the candidate. */
+@keyframes trio-part-in {
+  from { opacity: 0; transform: translate(var(--trio-from-x, 0), var(--trio-from-y, 14px)) scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+.trio-part { transform-box: view-box; animation: trio-part-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.trio-part-interviewer { --trio-from-x: -26px; animation-delay: 0.12s; }
+.trio-part-candidate { --trio-from-x: 26px; animation-delay: 0.24s; }
+@media (prefers-reduced-motion: reduce) { .trio-part { animation: none; } }
