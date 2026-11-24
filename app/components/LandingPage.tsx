@@ -95,7 +95,7 @@ export function LandingPage({ onWebInterface, onInterviewer }: LandingPageProps)
       {/* Logo */}
       <div className="text-center mb-10">
         <TrioLogo size={40} className="mx-auto mb-4" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">Live Coding Interview Platform</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Live coding interviews with an AI assistant</p>
       </div>
 
       {/* Two-column split */}

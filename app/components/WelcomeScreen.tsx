@@ -153,13 +153,10 @@ export function WelcomeScreen({ onReady, startAsInterviewer }: WelcomeScreenProp
           </div>
 
           <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Live Coding Challenge
+            Welcome
           </h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            Engineering Interview Platform
-          </p>
           <p className="mx-auto mt-3 max-w-xs text-xs text-gray-500 dark:text-gray-400">
-            The AI assistant edits and saves your files as it goes. You can keep or undo each change.
+            Your interviewer sees your work live. You will pick the assistant you want to work with once you are in.
           </p>
         </div>
 
