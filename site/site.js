@@ -96,14 +96,14 @@
     var draw = function () {
       var r = section.getBoundingClientRect(), room = r.height - innerHeight;
       var p = room > 0 ? Math.max(0, Math.min(1, -r.top / room)) : 0;
-      var fade = 1 - ease(seg(p, 0.04, 0.22));
+      var fade = 1 - ease(seg(p, 0.03, 0.18));
       var order = [0, 1, 2];           // the assistant, then the interviewer, then the candidate
       parts.forEach(function (el, k) {
-        var at = 0.26 + order[k] * 0.22, n = ease(seg(p, at, at + 0.2)), a = aim[k];
+        var at = 0.22 + order[k] * 0.2, n = ease(seg(p, at, at + 0.17)), a = aim[k];
         el.querySelector('.txt').style.opacity = fade;
         if (a) el.querySelector('svg').style.transform = 'translate(' + (a.dx * n) + 'px,' + (a.dy * n) + 'px) scale(' + (1 + (a.s - 1) * n) + ')';
       });
-      var lede = section.querySelector('.lede'); if (lede) lede.style.opacity = 1 - 0.65 * ease(seg(p, 0.04, 0.22));
+      var lede = section.querySelector('.lede'); if (lede) lede.style.opacity = 1 - 0.65 * ease(seg(p, 0.03, 0.18));
     };
     var ticking = false;
     addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; draw(); }); } }, { passive: true });
