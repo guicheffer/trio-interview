@@ -11,6 +11,8 @@ import { registerFileRoutes } from './routes/files.js';
 import { registerCandidateRoutes } from './routes/candidate.js';
 import { registerWatcherRoutes } from './routes/watcher.js';
 import { registerTerminalRoutes } from './routes/terminal.js';
+import { registerAgentRoutes } from './routes/agent.js';
+import { checkAll } from './lib/agent-mode.js';
 import { registerUiStateRoutes } from './routes/ui-state.js';
 import { registerPresenceRoutes, roleForRequest } from './routes/presence.js';
 import { registerInterviewerRoutes } from './routes/interviewer.js';
@@ -60,6 +62,7 @@ await server.register(registerUiStateRoutes);
 await server.register(registerPresenceRoutes);
 await server.register(registerInterviewerRoutes);
 await server.register(registerTerminalRoutes);
+await server.register(registerAgentRoutes);
 await server.register(registerDatabaseRoutes);
 await server.register(registerPreviewRoutes);
 
@@ -98,7 +101,7 @@ try {
   console.log('Exercise path:', process.env.EXERCISE_PATH || 'exercises/fibonacci');
 
   // Tell the interviewer right away if the assistant will not answer the candidate's messages
-  runAiHealthCheck().catch(() => undefined);
+  runAiHealthCheck().then(() => checkAll()).catch(() => undefined);
 
   // Start file watcher for auto-save
   const exercisePath = process.env.EXERCISE_PATH || 'exercises/fibonacci';

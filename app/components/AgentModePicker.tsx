@@ -1,0 +1,88 @@
+'use client';
+
+import { useState } from 'react';
+import type { AgentMode, ToolView } from '../hooks/useAgentMode';
+import { ClaudeCodeIcon } from './ClaudeCodeIcon';
+import { OpenCodeIcon } from './OpenCodeIcon';
+
+interface AgentModePickerProps {
+  /** The candidate decides. The interviewer sees the same options, all disabled. */
+  canChoose: boolean;
+  tools: ToolView[];
+  onChoose: (mode: AgentMode) => Promise<string | null>;
+  onRecheck: () => Promise<void>;
+}
+
+const LABELS: Record<'claude-code' | 'opencode', { name: string; hint: string }> = {
+  'claude-code': { name: 'Claude Code', hint: 'The real terminal program, Sonnet by default.' },
+  opencode: { name: 'OpenCode', hint: 'The OpenCode terminal program, Sonnet by default.' },
+};
+
+/** Shown in the side panel before any assistant is opened. The candidate picks; the interviewer watches. */
+export function AgentModePicker({ canChoose, tools, onChoose, onRecheck }: AgentModePickerProps) {
+  const [busy, setBusy] = useState<AgentMode | 'check' | null>(null);
+  const [error, setError] = useState('');
+
+  const choose = async (mode: AgentMode) => {
+    setBusy(mode);
+    setError('');
+    const problem = await onChoose(mode);
+    if (problem) setError(problem);
+    setBusy(null);
+  };
+
+  const recheck = async () => {
+    setBusy('check');
+    await onRecheck();
+    setBusy(null);
+  };
+
+  const card = 'flex w-full items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800';
+  const hover = canChoose ? 'hover:border-green-500' : '';
+  // Only tools the interviewer allowed are offered, and the candidate sees nothing about why one cannot open
+  const offered = tools.filter(t => t.allowed);
+  const problems = canChoose ? [] : offered.filter(t => t.ok === false);
+
+  return (
+    <div className="flex h-full items-center justify-center overflow-y-auto p-5">
+      <div className="w-full max-w-xs">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {canChoose ? 'How do you want to work with the assistant?' : 'The candidate is choosing the assistant'}
+        </h3>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {canChoose ? 'Pick the one you are most comfortable with.' : 'You will see what they see as soon as they pick.'}
+        </p>
+
+        <div className="mt-4 space-y-2">
+          <button onClick={() => choose('agent')} disabled={!canChoose || busy !== null} className={`${card} ${hover}`}>
+            <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded bg-green-500 text-[10px] font-bold text-white">A</span>
+            <span>
+              <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">Agent mode</span>
+              <span className="block text-xs text-gray-500 dark:text-gray-400">The chat panel, with model choice and plan mode.</span>
+            </span>
+          </button>
+
+          {offered.map(t => (
+            <button key={t.tool} onClick={() => choose(t.tool)} disabled={!canChoose || busy !== null || t.ok === false} className={`${card} ${hover}`}>
+              {t.tool === 'claude-code' ? <ClaudeCodeIcon className="mt-0.5 h-4 w-4 flex-shrink-0" /> : <OpenCodeIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              <span>
+                <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">{LABELS[t.tool].name}</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">{busy === t.tool ? 'Opening...' : t.ok === false ? 'Not available right now.' : LABELS[t.tool].hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {problems.map(t => (
+          <div key={t.tool} className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+            <p>{LABELS[t.tool].name} cannot open: {t.message || 'the check failed'}</p>
+            <button onClick={recheck} disabled={busy !== null} className="mt-2 rounded bg-amber-600 px-2 py-1 font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+              {busy === 'check' ? 'Checking...' : 'Check again'}
+            </button>
+          </div>
+        ))}
+        {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      </div>
+    </div>
+  );
+}

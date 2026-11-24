@@ -24,6 +24,9 @@ import { TerminalManager } from './components/TerminalManager';
 import { useUiStateSync } from './hooks/useUiStateSync';
 import { useAiStatus } from './hooks/useAiStatus';
 import { AiUnavailable } from './components/AiUnavailable';
+import { useAgentMode } from './hooks/useAgentMode';
+import { AgentModePicker } from './components/AgentModePicker';
+import { AgentTerminal } from './components/AgentTerminal';
 import { isLockedPath } from '../shared/locks';
 import { collab } from './lib/collab';
 import { previewSrc } from './lib/previewOrigin';
@@ -216,6 +219,8 @@ function InterviewPageContent() {
   interviewerViewRef.current = interviewerView;
   const [following] = useFollowing();
   const { status: aiStatus, recheck: recheckAi } = useAiStatus();
+  const agentMode = useAgentMode();
+  const [confirmChangeAssistant, setConfirmChangeAssistant] = useState(false);
   const switchCandidate = useCallback(() => {
     ['trio_cc_candidate', 'trio_cc_last_seen', 'trio_cc_role'].forEach(k => { try { localStorage.removeItem(k); } catch {} });
     // Straight to the list of candidates, not the home page
@@ -1032,6 +1037,16 @@ function InterviewPageContent() {
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       <CommandPalette open={paletteOpen} mode={paletteMode} actions={paletteWithFiles} onClose={() => setPaletteOpen(false)} />
 
+      {confirmChangeAssistant && (
+        <ConfirmDialog
+          title="Choose another assistant?"
+          message="The one you are using now stops. You can pick it again later and keep working."
+          confirmLabel="Choose another"
+          onConfirm={() => { setConfirmChangeAssistant(false); agentMode.reset(); }}
+          onCancel={() => setConfirmChangeAssistant(false)}
+        />
+      )}
+
       {confirmInactive && (
         <ConfirmDialog
           title="This session is not the active one"
@@ -1186,11 +1201,15 @@ function InterviewPageContent() {
           <Panel id="chat" defaultSize="30%" minSize="3%" collapsible collapsedSize="3%"
             panelRef={chatPanelRef} onResize={handleChatResize}>
             <div className="relative h-full">
-            {aiStatus.ok === false && !chatCollapsed && (
+            {aiStatus.ok === false && !chatCollapsed && agentMode.mode === 'agent' && (
               <AiUnavailable interviewer={interviewerView} message={aiStatus.message} onRecheck={recheckAi} />
             )}
             {chatCollapsed
               ? <CollapsedChat onExpand={() => { chatPanelRef.current?.expand(); setChatCollapsed(false); }} />
+              : agentMode.mode === null
+              ? <AgentModePicker canChoose={agentMode.canChoose} tools={agentMode.tools} onChoose={agentMode.choose} onRecheck={agentMode.recheck} />
+              : agentMode.mode === 'claude-code' || agentMode.mode === 'opencode'
+              ? <AgentTerminal interviewer={interviewerView} tool={agentMode.mode} onChange={() => setConfirmChangeAssistant(true)} />
               : <ChatInterface
                     chatKey={activeChatKey}
                     files={projectFiles}
