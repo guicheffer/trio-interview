@@ -67,7 +67,7 @@ function requireInterviewer(request: FastifyRequest, reply: FastifyReply): boole
 }
 
 export async function registerAgentRoutes(server: FastifyInstance) {
-  // Both screens read the same answer. The interviewer sees every option but cannot change it; why a tool cannot open is for the interviewer only.
+  // Both screens read the same answer and both may choose. Why a tool cannot open is for the interviewer only.
   server.get('/api/agent-mode', async (request) => {
     const interviewer = roleForRequest(request) === 'interviewer';
     const config = readInterviewConfig();
@@ -82,14 +82,13 @@ export async function registerAgentRoutes(server: FastifyInstance) {
     return {
       mode: currentMode(),
       chosen: currentMode() !== null,
-      // The candidate decides; the interviewer only watches
-      canChoose: !interviewer,
+      // Either screen may choose: the candidate does in the interview, the interviewer does to rehearse or to set the room up
+      canChoose: true,
       tools,
     };
   });
 
   server.post('/api/agent-mode', async (request, reply) => {
-    if (roleForRequest(request) === 'interviewer') return reply.status(403).send({ error: 'The candidate chooses the assistant' });
     const { mode } = (request.body ?? {}) as { mode?: unknown };
     if (!isAgentMode(mode)) return reply.status(400).send({ error: 'unknown mode' });
     if (!toolAllowed(readInterviewConfig(), mode)) return reply.status(403).send({ error: 'The interviewer did not allow this assistant' });
@@ -104,8 +103,7 @@ export async function registerAgentRoutes(server: FastifyInstance) {
   });
 
   // The candidate can go back to the picker and choose again. The terminal that was open stops.
-  server.delete('/api/agent-mode', async (request, reply) => {
-    if (roleForRequest(request) === 'interviewer') return reply.status(403).send({ error: 'The candidate chooses the assistant' });
+  server.delete('/api/agent-mode', async (_request, reply) => {
     stopTerminals();
     clearAgentMode(getWorkPath());
     return reply.send({ mode: null });
