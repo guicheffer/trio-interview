@@ -9,6 +9,7 @@ function binary(name: string): string {
 export const BIN = {
   claude: binary('claude'),
   opencode: binary('opencode'),
+  pi: binary('pi'),
   git: binary('git'),
   cp: binary('cp'),
   tsx: binary('tsx'),

@@ -1,5 +1,5 @@
-import { realpathSync } from 'fs';
-import { dirname } from 'path';
+import { mkdirSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { basename, dirname, join } from 'path';
 import { confinementFor, type ConfinementInput } from './confinement.js';
 
 /**
@@ -57,7 +57,8 @@ export function sandboxProfile(input: ProfileInput): string {
     ...open.map(path => `(allow file-read* ${subpath(path)})`),
     ';; the assistant looks upward for the root of the project (it asks about .git in each folder above its own), and a refusal makes it stop',
     ';; so the folders above may be asked about, with no contents: a name can be looked up, a file cannot be opened',
-    ...ancestors(input.workPath).map(path => `(allow file-read-metadata (literal ${quote(path)}))`),
+    ';; a program written in JavaScript is started by node, which looks up each folder above the program one by one (metadata only, as above)',
+    ...[...new Set([input.workPath, ...(input.programFolders ?? []), input.program].flatMap(path => ancestors(path)))].map(path => `(allow file-read-metadata (literal ${quote(path)}))`),
     ';; the only places it may write',
     ...write.map(path => `(allow file-write* ${subpath(path)})`),
     ';; closed last of all: the phases the interviewer has not released',
@@ -96,3 +97,20 @@ export function sandboxMissing(platform: string = process.platform): SandboxUnav
   };
 }
 
+
+/**
+ * The command for an assistant that is put inside the operating system's sandbox: the profile is written next to its private
+ * configuration (which it can read but not change) and the assistant becomes the last part of the command line.
+ */
+export function sandboxed(input: { bin: string; args: string[]; workPath: string; configDir: string; writable: string[]; programFolders?: string[] }): { bin: string; args: string[] } | { error: string } {
+  if (!sandboxAvailable()) return sandboxMissing();
+  // The profile lives in a folder of its own that the assistant can read and never write: a read only file is not enough, because
+  // deleting a file depends on the folder (measured: the program could not rewrite it and could still delete it).
+  const walls = join(dirname(input.workPath), '.walls');
+  mkdirSync(walls, { recursive: true });
+  const profilePath = join(walls, `${basename(input.workPath)}-${basename(input.bin)}.sb`);
+  // Written fresh on every start (the file is read only, so it is removed first): the tool owns this folder, the assistant does not.
+  rmSync(profilePath, { force: true });
+  writeFileSync(profilePath, sandboxProfile({ workPath: input.workPath, configDir: input.configDir, program: input.bin, writable: input.writable, readable: [walls], programFolders: input.programFolders }), { mode: 0o444 });
+  return wrapCommand(profilePath, input.bin, input.args);
+}

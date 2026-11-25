@@ -158,3 +158,25 @@ run('what the assistant may ask about above its folder', () => {
     } finally { rmSync(base, { recursive: true, force: true }); }
   });
 });
+
+// Pi and OpenCode are installed under the interviewer's home. node looks up every folder above the program one by one, and the home
+// is closed, so those folders may be asked about (name only) and the program itself is opened again. The home stays unreadable.
+run('a program installed inside the interviewer\'s home', () => {
+  test('starts, and still cannot read anything else of the home', () => {
+    const base = realpathSync(mkdtempSync(join(homedir(), '.trio-prog-')));
+    try {
+      const w = join(base, '.solutions', 'maya', 'fibonacci');
+      const c = join(base, '.solutions', 'maya', '.agent-pi-fibonacci');
+      const pkg = join(base, 'tools', 'node_modules', 'pi');
+      mkdirSync(w, { recursive: true });
+      mkdirSync(c, { recursive: true });
+      mkdirSync(pkg, { recursive: true });
+      writeFileSync(join(base, 'tools', 'secret.txt'), 'TOOLS-SECRET');
+      writeFileSync(join(pkg, 'cli.js'), `const fs = require('fs'); console.log('started'); try { console.log(fs.readFileSync(${JSON.stringify(join(base, 'tools', 'secret.txt'))}, 'utf8')); } catch (e) { console.log('closed'); }`);
+      const plan = sandboxed({ bin: process.execPath, args: [join(pkg, 'cli.js')], workPath: w, configDir: c, writable: [w, c], programFolders: [join(base, 'tools', 'node_modules')] }) as { bin: string; args: string[] };
+      const out = spawnSync(plan.bin, plan.args, { cwd: w, encoding: 'utf-8' });
+      expect(out.stdout).toContain('started');
+      expect(out.stdout).not.toContain('TOOLS-SECRET');
+    } finally { rmSync(base, { recursive: true, force: true }); }
+  });
+});

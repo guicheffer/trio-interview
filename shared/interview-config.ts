@@ -3,7 +3,7 @@
  * A missing file means everything is allowed, so a fresh clone and the tests behave like before.
  */
 
-export const TOOLS = ['agent', 'claude-code', 'opencode'] as const;
+export const TOOLS = ['agent', 'claude-code', 'opencode', 'pi'] as const;
 export type Tool = (typeof TOOLS)[number];
 
 /** How the candidate reaches this machine. `none` keeps everything local (a dry run, or a network the candidate is already on). */
@@ -22,7 +22,7 @@ export interface InterviewConfig {
 }
 
 export const DEFAULT_CONFIG: InterviewConfig = {
-  tools: ['agent', 'claude-code', 'opencode'],
+  tools: ['agent', 'claude-code', 'opencode', 'pi'],
   exercises: [],
   tunnel: 'ngrok',
   sources: [],
@@ -110,7 +110,7 @@ export function renderConfig(config: InterviewConfig): string {
   const list = (items: string[]) => items.map(i => `  - ${i}`).join('\n');
   return `# Local interview settings. Made by \`make config\`, ignored by git. Delete it to allow everything.
 
-# Which assistants a candidate may pick from: agent (the chat), claude-code, opencode
+# Which assistants a candidate may pick from: agent (the chat), claude-code, opencode, pi
 tools:
 ${list(config.tools)}
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { basename, dirname, join } from 'path';
 import type { IPty } from 'node-pty';
@@ -6,15 +6,17 @@ import { sanitizeEnvironment } from './sanitize-env.js';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
 import { BLOCKED_TOOLS, resolveModelId } from './claude-proxy.js';
 import { assistantTmpDir, confinedSettings } from './confinement.js';
-import { sandboxAvailable, sandboxMissing, sandboxProfile, wrapCommand } from './os-sandbox.js';
+import { sandboxed } from './os-sandbox.js';
+export { sandboxed };
 import { loadPty } from './terminal-session.js';
 import { BIN } from './binaries.js';
 import { DEFAULT_MODEL } from '../../shared/models.js';
+import { hasPiHistory, piArgs, piEnvironment, piHomeDir, piProgramFolders, PI_BLOCKED_ENVIRONMENT, seedPiHome, writePiRules } from './pi-pty.js';
 import { hasOpencodeHistory, opencodeArgs, opencodeEnvironment, opencodeHomeDir, seedOpencodeHome, writeOpencodeRules } from './opencode-pty.js';
 
-export type TerminalTool = 'claude-code' | 'opencode';
+export type TerminalTool = 'claude-code' | 'opencode' | 'pi';
 
-const TOOL_NAMES: Record<TerminalTool, string> = { 'claude-code': 'Claude Code', opencode: 'OpenCode' };
+const TOOL_NAMES: Record<TerminalTool, string> = { 'claude-code': 'Claude Code', opencode: 'OpenCode', pi: 'Pi' };
 
 const MAX_SCROLLBACK = 400_000;
 
@@ -106,23 +108,6 @@ export function stopAllAgentSessions(): void {
 }
 
 /** The arguments Claude Code starts with in the terminal: same limits as the chat, with its own question tool left on */
-/**
- * The command for an assistant that is put inside the operating system's sandbox: the profile is written next to its private
- * configuration (which it can read but not change) and the assistant becomes the last part of the command line.
- */
-export function sandboxed(input: { bin: string; args: string[]; workPath: string; configDir: string; writable: string[] }): { bin: string; args: string[] } | { error: string } {
-  if (!sandboxAvailable()) return sandboxMissing();
-  // The profile lives in a folder of its own that the assistant can read and never write: a read only file is not enough, because
-  // deleting a file depends on the folder (measured: the program could not rewrite it and could still delete it).
-  const walls = join(dirname(input.workPath), '.walls');
-  mkdirSync(walls, { recursive: true });
-  const profilePath = join(walls, `${basename(input.workPath)}-${basename(input.bin)}.sb`);
-  // Written fresh on every start (the file is read only, so it is removed first): the tool owns this folder, the assistant does not.
-  rmSync(profilePath, { force: true });
-  writeFileSync(profilePath, sandboxProfile({ workPath: input.workPath, configDir: input.configDir, program: input.bin, writable: input.writable, readable: [walls] }), { mode: 0o444 });
-  return wrapCommand(profilePath, input.bin, input.args);
-}
-
 export function claudeArgs(assistantContext: string, resume: boolean): string[] {
   return [
     '--permission-mode=bypassPermissions',
@@ -191,6 +176,19 @@ export class AgentPtySession {
         args: walled.args,
         env: { ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>), ...opencodeEnvironment(home), ...base },
       };
+    }
+    if (tool === 'pi') {
+      const home = piHomeDir(workPath);
+      const problem = seedPiHome(home);
+      if (problem) return { error: problem };
+      writePiRules(home, assistantContext);
+      // Pi has no sandbox of its own either. It is not started without the operating system's.
+      const walled = sandboxed({ bin: BIN.pi, args: piArgs(hasPiHistory(home)), workPath, configDir: home, writable: [workPath, home], programFolders: piProgramFolders(BIN.pi) });
+      if ('error' in walled) return walled;
+      const env: Record<string, string | undefined> = { ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>), ...piEnvironment(home), ...base };
+      // the login is the one copied into the private home, never a key another tool of the interviewer left in the environment
+      for (const key of PI_BLOCKED_ENVIRONMENT) delete env[key];
+      return { bin: walled.bin, args: walled.args, env };
     }
     const configDir = agentConfigDir(workPath);
     seedAgentConfig(configDir, workPath);

@@ -7,8 +7,9 @@ import { LOCAL, TUNNEL, buildApp, makeWorkspace, type Workspace } from './harnes
 // The tools "work" here so the test is about who may choose and what is allowed, not about this machine
 vi.mock('../../lib/agent-mode.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../lib/agent-mode.js')>();
-  const ok = { ok: true, message: 'OK', version: 'test', checkedAt: 1 };
-  return { ...original, checkClaudeCode: async () => ok, checkOpencode: async () => ok, cachedAvailability: () => ({ 'claude-code': ok, opencode: ok }) };
+  const ok = { ok: true, message: 'OK', version: 'test', checkedAt: 1, line: 'Tool: ready (installed test; login: test; sandbox: ok)' };
+  const broken = { ok: false, message: 'no login was found for the secret reason', version: 'test', checkedAt: 1, line: 'Pi: NOT ready, the secret reason (installed test; login: none found; sandbox: ok)' };
+  return { ...original, checkClaudeCode: async () => ok, checkOpencode: async () => ok, checkPi: async () => broken, cachedAvailability: () => ({ 'claude-code': ok, opencode: ok, pi: broken }) };
 });
 
 import { registerAgentRoutes } from '../agent.js';
@@ -63,7 +64,7 @@ describe('who chooses the assistant', () => {
     const theirs = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json();
     expect(mine.canChoose).toBe(true);
     expect(theirs.canChoose).toBe(true);
-    expect(mine.tools.map((t: { tool: string }) => t.tool)).toEqual(['claude-code', 'opencode']);
+    expect(mine.tools.map((t: { tool: string }) => t.tool)).toEqual(['claude-code', 'opencode', 'pi']);
   });
 
   test('a tool the interviewer did not allow is refused, even when called directly', async () => {
@@ -86,6 +87,33 @@ describe('who chooses the assistant', () => {
     expect((await choose(TUNNEL, 'agent')).statusCode).toBe(200);
   });
 
+  test('Codex is shown as coming soon and the server never accepts it, for either role, and it is not in the list of tools', async () => {
+    for (const headers of [LOCAL, TUNNEL]) {
+      expect((await choose(headers, 'codex')).statusCode).toBe(400);
+      const view = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers })).json();
+      expect(view.tools.map((t: { tool: string }) => t.tool)).not.toContain('codex');
+    }
+    expect((await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json().mode).toBeNull();
+  });
+
+  test('Pi is refused with the same plain words when it is not ready, and the reason is shown to the interviewer only', async () => {
+    const refused = await choose(TUNNEL, 'pi');
+    expect(refused.statusCode).toBe(409);
+    expect(refused.body).not.toContain('secret reason');
+    const mine = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: LOCAL })).json().tools.find((t: { tool: string }) => t.tool === 'pi');
+    expect(mine.message).toContain('secret reason');
+    expect(mine.line).toContain('NOT ready');
+    const theirs = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json().tools.find((t: { tool: string }) => t.tool === 'pi');
+    expect(theirs.message).toBe('');
+    expect(theirs.line).toBe('');
+    expect(JSON.stringify(theirs)).not.toContain('secret reason');
+  });
+
+  test('Pi can be switched off like the other terminal assistants', async () => {
+    writeConfig('tools:\n  - agent\n  - claude-code\n');
+    expect((await choose(TUNNEL, 'pi')).statusCode).toBe(403);
+  });
+
   test('only the interviewer can recheck or restart', async () => {
     for (const url of ['/api/agent-mode/check', '/api/agent-terminal/restart']) {
       expect((await app.inject({ method: 'POST', url, headers: TUNNEL })).statusCode).toBe(403);
@@ -95,7 +123,7 @@ describe('who chooses the assistant', () => {
 
   test('the candidate is never told why a tool cannot open', async () => {
     const view = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json();
-    for (const t of view.tools) { expect(t.message).toBe(''); expect(t.version).toBe(''); }
+    for (const t of view.tools) { expect(t.message).toBe(''); expect(t.version).toBe(''); expect(t.line).toBe(''); }
     expect(existsSync(join(process.cwd(), 'interview.config.yaml'))).toBe(false);
     rmSync(join(process.cwd(), 'interview.config.yaml'), { force: true });
   });
