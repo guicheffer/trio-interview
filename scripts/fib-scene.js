@@ -6,7 +6,7 @@
 // The line diff is the one of shared/line-diff.ts, so the editor shows the same hunks as the app would.
 (function () {
   var S = window.Scene, F = window.FIB;
-  var REQUEST = 'Implement fibonacci(n) in fibonacci.js so it returns the first n Fibonacci numbers and rejects invalid input. Keep it short. Then run the file.';
+  var REQUEST = 'Implement fibonacci(n) and fibonacciUpTo(limit) in fibonacci.js. Reject invalid input. Keep it short. Then run the file and the tests.';
   var LINE = 21;
 
   var linesEl = S.q('.view-lines'), gutterEl = S.q('.margin-view-overlays');
@@ -217,16 +217,18 @@
 
   // ---- the assistant terminal ----
   var BEFORE_ROWS = F.claudeBefore, AFTER_ROWS = F.claudeAfter;
-  var FOOT = [39, 40, 41, 42];
+  var plain = function (row) { return row.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' '); };
+  // The screen the real terminal showed is: the diff and the answer, a rule, the prompt, a rule and the status line. The last four rows are
+  // the prompt area, which BEFORE_ROWS has too, so the story only has to say what comes between the request and the prompt.
+  var BODY = AFTER_ROWS.slice(0, AFTER_ROWS.length - 4);
+  while (BODY.length && !plain(BODY[BODY.length - 1]).trim()) BODY.pop();
+  var FOOT_ROWS = BEFORE_ROWS.slice(-12).filter(function (r) { return /\u2500|\u276f|bypass/.test(plain(r)); }).slice(-4);
+  function footer() {
+    var foot = FOOT_ROWS.slice(); foot[1] = '<span>\u276f&nbsp;</span><span class="xterm-bg-257 xterm-fg-257"> </span>'; return foot;
+  }
   // The finished conversation: the header and the request, then what the real terminal showed (the diff and the answer), then the prompt.
   // It is longer than the pane, so the wheel or the bar goes back up to the request.
-  function afterTranscript() {
-    var shown = AFTER_ROWS.slice(0, 39);
-    while (shown.length && !shown[shown.length - 1].replace(/<[^>]+>/g, '').trim()) shown.pop();
-    var foot = FOOT.map(function (k) { return BEFORE_ROWS[k]; });
-    foot[1] = '<span>\u276f&nbsp;</span><span class="xterm-bg-257 xterm-fg-257"> </span>';
-    return BEFORE_ROWS.slice(0, 4).concat([''], requestRows(REQUEST), [''], shown, foot);
-  }
+  function afterTranscript() { return BEFORE_ROWS.slice(0, 4).concat([''], requestRows(REQUEST), [''], BODY, [''], footer()); }
   function claude(n) { setPane(claudeRows, n === 'after' ? afterTranscript() : BEFORE_ROWS); }
   function wrap(text, width) {
     var out = [], line = '';
@@ -237,7 +239,8 @@
     return wrap(text, 52).map(function (l, i) { return '<span style="background-color:#373737">' + (i ? '  ' : '❯ ') + esc(l) + '</span>'; });
   }
   function typing(text, cb) {
-    var i = 0, base = BEFORE_ROWS.slice(), idx = 40;
+    var i = 0, base = BEFORE_ROWS.slice(), idx = 0;
+    base.forEach(function (r, k) { if (/\u276f/.test(plain(r))) idx = k; });
     (function tick() {
       var rows = base.slice();
       rows[idx] = '<span>❯ ' + esc(text.slice(0, i)) + '</span><span class="xterm-bg-257 xterm-fg-257"> </span>';
@@ -248,18 +251,19 @@
   // the answer comes in a row at a time, as Claude Code prints it; the editor follows while the diff rows arrive
   function answer(done) {
     var head = BEFORE_ROWS.slice(0, 4).concat([''], requestRows(REQUEST), ['']);
-    var foot = FOOT.map(function (k) { return BEFORE_ROWS[k]; });
-    foot[1] = '<span>❯&nbsp;</span><span class="xterm-bg-257 xterm-fg-257"> </span>';
-    var compose = function (mid) { var rows = mid.slice(); while (rows.length < 39) rows.push(''); return rows.concat(foot); };
-    setPane(claudeRows, compose(head.concat(['<span style="color:#999999;">✻ Working…</span>'])));
+    var compose = function (mid) { var rows = mid.slice(); while (rows.length < 39) rows.push(''); return rows.concat(footer()); };
+    setPane(claudeRows, compose(head.concat(['<span style="color:#999999;">\u273b Working\u2026</span>'])));
+    // the editor follows the diff: each added row of the terminal (a line with a green plus) brings its share of the added lines
+    var plus = BODY.map(function (r) { return /^\s+\d*\s*\+/.test(plain(r)); });
+    var plusTotal = plus.filter(Boolean).length;
     later(function () {
       startChange();
-      var k = 0, DIFF_FIRST = 3, DIFF_LAST = 16;
+      var k = 0, seen = 0;
       (function step() {
-        k++;
-        setPane(claudeRows, compose(AFTER_ROWS.slice(0, k)));
-        if (k > DIFF_FIRST) { added = Math.min(totalAdded, Math.round((k - DIFF_FIRST) * totalAdded / (DIFF_LAST - DIFF_FIRST))); drawDiff(); }
-        if (k < 38) later(step, k < 20 ? 95 : 70); else { added = totalAdded; drawDiff(); claude('after'); asking = false; if (done) done(); }
+        k++; if (plus[k - 1]) seen++;
+        setPane(claudeRows, compose(head.slice(0, 0).concat(BODY.slice(0, k))));
+        added = Math.min(totalAdded, Math.round(seen * totalAdded / Math.max(1, plusTotal))); drawDiff();
+        if (k < BODY.length) later(step, k < 20 ? 95 : 70); else { added = totalAdded; drawDiff(); claude('after'); asking = false; if (done) done(); }
       })();
     }, 900);
   }

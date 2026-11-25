@@ -211,7 +211,7 @@
     if (active === 'fibonacci.js') drawBody();
     project();
     starterNote.querySelector('.t').textContent = on
-      ? 'This is the version the assistant wrote in the story of the landing page. It fills in fibonacci(n) and leaves fibonacciUpTo for you. Press Run to try it.'
+      ? 'This is the version the assistant wrote in the story of the landing page. It fills in fibonacci(n) and fibonacciUpTo(limit). Press Run, Run tests or Run both to try it.'
       : 'The starter is empty on purpose: the assistant is what would fill it in. It is shown here, not connected.';
     versionBtn.textContent = on ? 'Back to the empty starter' : "Show the assistant's version";
   }
