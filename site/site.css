@@ -108,7 +108,7 @@ code{font-family:var(--mono);font-size:.88em}
   .frame{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
   @keyframes rise{from{transform:translateY(60px) scale(.94)}to{transform:none}}
 }
-.beats{position:relative;margin-top:calc(-100svh + 0px)}
+.beats{position:relative;margin-top:calc(-100svh + 0px);pointer-events:none}
 .beat{height:62svh}
 .beat:first-child{height:100svh}
 
