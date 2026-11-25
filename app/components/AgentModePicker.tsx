@@ -96,8 +96,8 @@ export function AgentModePicker({ canChoose, interviewer = false, tools, onChoos
 
         {problems.map(t => (
           <div key={t.tool} className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
-            <p>{LABELS[t.tool].name} cannot open: {t.message || 'the check failed'}</p>
-            {t.line && <p className="mt-1 font-mono text-[10px] opacity-80">{t.line}</p>}
+            <p>{LABELS[t.tool].name} cannot open.</p>
+            <p className="mt-1">{t.line || t.message || 'the check failed'}</p>
             <button onClick={recheck} disabled={busy !== null} className="mt-2 rounded bg-amber-600 px-2 py-1 font-medium text-white hover:bg-amber-700 disabled:opacity-50">
               {busy === 'check' ? 'Checking...' : 'Check again'}
             </button>
