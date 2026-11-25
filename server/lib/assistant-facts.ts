@@ -1,4 +1,4 @@
-import { readOpencodeLogin } from './opencode-pty.js';
+import { chooseOpencodeSource, readOpencodeLogin } from './opencode-pty.js';
 import { choosePiSource, PI_MIN_VERSION, readPiLogin } from './pi-pty.js';
 import { readRouter } from './router-proxy.js';
 import { readInterviewConfig } from './interview-config.js';
@@ -66,11 +66,13 @@ export function assistantFacts(tool: AssistantName, version: string | null, erro
     return { ...base, versionProblem: installed ? undefined : error || undefined, login: claudeLogin.login, loginProblem: claudeLogin.problem };
   }
   if (tool === 'opencode') {
-    const login = installed ? readOpencodeLogin() : null;
+    const own = installed ? readOpencodeLogin() : null;
+    // Which source OpenCode will use, in words and never with an address or a key. Whether the router really answers is asked when it starts.
+    const source = installed ? chooseOpencodeSource(readInterviewConfig().opencode.provider, own, readRouter()) : null;
     return {
       ...base,
       versionProblem: !installed ? error || undefined : majorOf(version) < 2 ? `OpenCode 2 is needed (found "${version}"). Install it with: brew install anomalyco/tap/opencode-v2` : undefined,
-      login: login ? `${login.provider}, ${process.env.TRIO_OPENCODE_API_KEY ? 'from TRIO_OPENCODE_API_KEY' : 'from your own OpenCode setup'}` : null,
+      login: source?.kind === 'router' ? 'your model router (the one Claude Code uses)' : source?.kind === 'own-login' && own ? `${own.provider}, ${process.env.TRIO_OPENCODE_API_KEY ? 'from TRIO_OPENCODE_API_KEY' : 'from your own OpenCode setup'}` : null,
       loginProblem: 'OpenCode is installed but there is no login to copy. Sign in to a provider in OpenCode and pick a default model, or set TRIO_OPENCODE_API_KEY.',
     };
   }
