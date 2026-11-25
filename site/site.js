@@ -16,7 +16,7 @@
   // What each of the six steps shows. The scenes are the real screens of the app; `fib` is the one that runs.
   var plan = [
     { scene: 'welcome', note: 'replica' },
-    { scene: 'fib', note: 'scripted answer', ask: true },
+    { scene: 'fib', note: 'scripted answer', ask: true, live: true },
     { scene: 'fib', note: 'runs for real', run: true, live: true },
     { scene: 'picker', note: 'replica' },
     { scene: 'view', note: 'replica', reveal: false },

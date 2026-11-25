@@ -209,7 +209,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0b14}
         k++;
         setPane(claudeRows, compose(AFTER_ROWS.slice(0, k)));
         if (k > DIFF_FIRST) { added = Math.min(totalAdded, Math.round((k - DIFF_FIRST) * totalAdded / (DIFF_LAST - DIFF_FIRST))); drawDiff(); }
-        if (k < 38) later(step, k < 20 ? 95 : 70); else { added = totalAdded; drawDiff(); claude('after'); if (done) done(); }
+        if (k < 38) later(step, k < 20 ? 95 : 70); else { added = totalAdded; drawDiff(); claude('after'); asking = false; if (done) done(); }
       })();
     }, 900);
   }
@@ -237,13 +237,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0b14}
 
   function markRun(on) { runButtons.forEach(function (b) { b.style.outline = on ? '2px solid #5850F8' : ''; b.style.outlineOffset = on ? '2px' : ''; }); }
 
-  window.fibReset = function () { clear(); setCode('Before'); claude('before'); project(); markRun(false); tell('idle', 0); };
+  window.fibReset = function () { clear(); asking = false; setCode('Before'); claude('before'); project(); markRun(false); tell('idle', 0); };
 
-  window.fibAsk = function (cb) { clear(); setCode('Before'); typing(REQUEST, function () { answer(cb); }); };
+  var asking = false;   // the answer is still being drawn
+  window.fibAsk = function (cb) { clear(); asking = true; setCode('Before'); typing(REQUEST, function () { answer(cb); }); };
 
   var runs = 0;
   // Run starts from the top every time: the terminal is cleared, the command is typed, then the output comes
   window.fibRun = function (cb) {
+    // a press while the answer is still being drawn finishes the answer first, so the code that runs is the whole change
+    if (asking) { clear(); asking = false; startChange(); added = totalAdded; drawDiff(); claude('after'); }
     clear(); markRun(true); var n = ++runs; tell('running', n);
     project();
     later(function () { project({ cmd: 'node fibonacci.js' }); }, 220);
@@ -258,7 +261,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0b14}
   };
 
   // the answer already in place, for the step that is about the Run button
-  window.fibShowAnswer = function () { clear(); setCode('After'); claude('after'); project(); markRun(false); tell('idle', 0); };
+  window.fibShowAnswer = function () { clear(); asking = false; setCode('After'); claude('after'); project(); markRun(false); tell('idle', 0); };
   // no typing for people who asked the page not to animate: the change stays marked until it is kept
   window.fibSkipAsk = function () { clear(); startChange(); added = totalAdded; drawDiff(); claude('after'); project(); };
 
