@@ -16,6 +16,7 @@
     <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
     <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
   </symbol>
+  <symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7.5 8.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
   <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
 </svg>
@@ -29,7 +30,7 @@
   </nav>
 </div></header>
 <div class="docs">
-  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html" aria-current="page">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html">Contributing</a></li></ul></aside>
+  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html" aria-current="page">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html">Contributing</a></li></ul><h4>Try it</h4><ul><li><a href="../demo/">Live demo as a candidate</a></li></ul></aside>
   <main class="doc">
     <article class="md"><h1 id="interviewer-guide">Interviewer guide</h1>
 <p>How to run an interview with Trio, from setup to export. The notes for each exercise are in <a href="exercises.html">interviewers/</a>.</p>
@@ -66,6 +67,27 @@
 <li>Ask your agent to run the <code>evaluate-candidate</code> skill on the zip.</li>
 <li><code>make delete</code> when you no longer need the candidate&#39;s work. Their folder holds their code and a copy of the OpenCode login.</li>
 </ol>
+<h2 id="judging-an-interview-with-an-assistant">Judging an interview with an assistant</h2>
+<p>People work with assistants every day now, so a typing test no longer shows how someone works. What is worth seeing is how they work with the assistant, and this room lets you watch that in plain sight.</p>
+<p>In the saved conversation and on the live screen, look for these things:</p>
+<ul>
+<li>How they frame the problem before they ask, and whether the request is specific.</li>
+<li>Whether they read the answer and question it, or paste it in.</li>
+<li>Whether they check it by running it, and what they do with the result.</li>
+<li>When they take over and when they let the assistant work.</li>
+<li>How they explain their choices, in their own words.</li>
+<li>What they do when the assistant is wrong, which it sometimes is.</li>
+</ul>
+<p>For you as the interviewer:</p>
+<ul>
+<li>Say at the start that the assistant is allowed and expected.</li>
+<li>Ask the candidate to think aloud.</li>
+<li>Release phases at your own pace.</li>
+<li>Follow from your own view instead of interrupting.</li>
+<li>Read the export afterwards with the <code>evaluate-candidate</code> skill.</li>
+<li>Weigh reasoning and verification more than typing speed.</li>
+</ul>
+<p>Be honest about what the tool does. It shows you the interaction and keeps a record of it. It does not grade anything, and the judgment stays yours.</p>
 <h2 id="something-went-wrong">Something went wrong</h2>
 <table>
 <thead>
@@ -109,11 +131,11 @@
 </tr>
 <tr>
 <td>What is protected, and what is not</td>
-<td><a href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a></td>
+<td><a href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></td>
 </tr>
 <tr>
 <td>Understand or change the code</td>
-<td><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a></td>
+<td><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></td>
 </tr>
 <tr>
 <td>Write an exercise</td>
@@ -121,9 +143,9 @@
 </tr>
 </tbody></table>
 </article>
-    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md" target="_blank" rel="noopener">Edit this page on GitHub</a></p>
+    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md" target="_blank" rel="noopener">Edit this page on GitHub<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   </main>
-  <nav class="toc" aria-label="On this page"><h4>On this page</h4><ul><li><a href="#before-you-start">Before you start</a></li><li><a href="#test-it-once">Test it once</a></li><li><a href="#running-the-interview">Running the interview</a></li><li><a href="#after">After</a></li><li><a href="#something-went-wrong">Something went wrong</a></li><li><a href="#reading-more">Reading more</a></li></ul></nav>
+  <nav class="toc" aria-label="On this page"><h4>On this page</h4><ul><li><a href="#before-you-start">Before you start</a></li><li><a href="#test-it-once">Test it once</a></li><li><a href="#running-the-interview">Running the interview</a></li><li><a href="#after">After</a></li><li><a href="#judging-an-interview-with-an-assistant">Judging an interview with an assistant</a></li><li><a href="#something-went-wrong">Something went wrong</a></li><li><a href="#reading-more">Reading more</a></li></ul></nav>
 </div>
 <script src="../site.js"></script>
 </body>

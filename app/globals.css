@@ -87,4 +87,16 @@
 .trio-part { transform-box: view-box; animation: trio-part-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .trio-part-interviewer { --trio-from-x: -26px; animation-delay: 0.12s; }
 .trio-part-candidate { --trio-from-x: 26px; animation-delay: 0.24s; }
-@media (prefers-reduced-motion: reduce) { .trio-part { animation: none; } }
+/* Easter egg: while the pointer is on the logo the three pieces shuffle and settle. Only transforms, so nothing around it moves. */
+@keyframes trio-hop {
+  0% { transform: none; }
+  30% { transform: translate(var(--trio-hop-x, 0), var(--trio-hop-y, 0)) rotate(var(--trio-hop-r, 0deg)) scale(0.7); }
+  65% { transform: translate(calc(var(--trio-hop-x, 0) * -0.4), calc(var(--trio-hop-y, 0) * -0.4)) scale(1.08); }
+  100% { transform: none; }
+}
+.trio-hop { transform-box: view-box; transform-origin: center; }
+.trio-logo:hover .trio-hop { animation: trio-hop 0.9s cubic-bezier(0.3, 0.7, 0.2, 1) both; }
+.trio-logo:hover .trio-hop-agent { --trio-hop-x: -40px; --trio-hop-y: 10px; --trio-hop-r: -12deg; }
+.trio-logo:hover .trio-hop-interviewer { --trio-hop-x: 34px; --trio-hop-y: -30px; --trio-hop-r: 20deg; animation-delay: 0.08s; }
+.trio-logo:hover .trio-hop-candidate { --trio-hop-x: -30px; --trio-hop-y: -28px; --trio-hop-r: -20deg; animation-delay: 0.16s; }
+@media (prefers-reduced-motion: reduce) { .trio-part, .trio-hop { animation: none !important; } }

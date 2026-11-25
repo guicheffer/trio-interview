@@ -13,6 +13,8 @@ Live coding interviews in the browser with an AI assistant, free and open source
 
 There is no account to create, no seat to buy and no server of ours in the middle. What travels is the link you share and what the candidate says to the assistant, which goes to the provider of the account you signed in with. It is an alternative to hosted tools such as [CoderPad](https://coderpad.io/), [HackerRank](https://www.hackerrank.com/) and [CodeSignal](https://codesignal.com/), for teams that want to read what runs their interviews and see how a candidate works with an assistant instead of banning it.
 
+People work with assistants every day now, so an interview that bans them tests something they will never do at work. What is worth judging is how a candidate works with one: how they frame the problem, whether they read and question the answer, whether they check it by running it, and when they take over. Trio Interview shows you that as it happens, the whole conversation and every change to the code, and keeps it for you to read afterwards. The [interviewer guide](docs/interviewer-guide.md) has practical advice on judging an interview with an assistant in the room.
+
 ![The candidate types a name, picks an assistant and starts working](docs/images/candidate-flow.gif)
 
 ## Quick start
