@@ -149,3 +149,18 @@ describe('the hero', () => {
     expect(html).not.toContain('plain sight');
   });
 });
+
+describe('the demo link', () => {
+  const nav = /<nav>([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? '';
+  const footer = /<footer>([\s\S]*?)<\/footer>/.exec(html)?.[1] ?? '';
+  test('is in the top menu next to Docs, and in the footer', () => {
+    expect(nav).toMatch(/<a href="docs\/">Docs<\/a><a class="demo" href="demo\/">Demo<\/a>/);
+    expect(footer).toMatch(/<a href="demo\/">Demo<svg class="ext"/);
+  });
+  test('is also offered quietly in the hero and next to the docs button', () => {
+    expect((html.match(/href="demo\/">Try the demo/g) ?? []).length).toBe(2);
+  });
+  test('stays in the menu on a phone while the other items fold away', () => {
+    expect(css).toMatch(/\.bar nav a:not\(\.star\):not\(\.demo\)\{display:none\}/);
+  });
+});
