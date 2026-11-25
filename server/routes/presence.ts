@@ -92,7 +92,7 @@ function deliverCursor(from: Client, payload: Record<string, unknown>) {
 }
 
 // Live editing signals (carets, selections, text edits, chat drafts) go to everyone else in the room, both ways
-const PEER_KINDS = new Set(['caret', 'edit', 'doc-request', 'doc-full', 'draft', 'view-request']);
+const PEER_KINDS = new Set(['caret', 'edit', 'doc-request', 'doc-full', 'draft', 'view-request', 'renamed']);
 const MAX_PEER_PAYLOAD = 300_000;
 
 function deliverPeer(from: Client, payload: Record<string, unknown>) {

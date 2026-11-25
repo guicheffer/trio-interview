@@ -29,6 +29,7 @@ import { AgentModePicker } from './components/AgentModePicker';
 import { AgentTerminal } from './components/AgentTerminal';
 import { isLockedPath } from '../shared/locks';
 import { collab } from './lib/collab';
+import { migrateReviewKeys, remapList, remapPath, remapScrollRecord } from './lib/renamePaths';
 import { previewSrc } from './lib/previewOrigin';
 import { CommandPalette, type PaletteAction } from './components/CommandPalette';
 import { runAction } from './lib/actions';
@@ -68,11 +69,6 @@ function reloadPreview() {
   const iframe = document.querySelector<HTMLIFrameElement>('#preview-iframe');
   const src = iframe?.getAttribute('src');
   if (iframe && src) iframe.setAttribute('src', src);
-}
-
-function remapPath(path: string, from: string, to: string): string {
-  if (path === from) return to;
-  return path.startsWith(from + '/') ? to + path.slice(from.length) : path;
 }
 
 interface MainPaneProps {
@@ -690,6 +686,26 @@ function InterviewPageContent() {
     });
   }, []);
 
+  // A file or folder got a new name or place: its tabs, the active file, the scroll record and the choices about the
+  // agent's changes follow. The other screen is told too, since Follow can be off there.
+  const applyRename = useCallback((from: string, to: string, tell: boolean) => {
+    if (!from || !to || from === to) return;
+    setOpenTabs(prev => remapList(prev, from, to));
+    setSelectedFile(cur => (cur ? remapPath(cur, from, to) : cur));
+    try {
+      migrateReviewKeys(localStorage, from, to);
+      if (baseKey) {
+        const key = `trio_cc_scroll_${baseKey}`;
+        const moved = remapScrollRecord(localStorage.getItem(key), from, to);
+        if (moved) localStorage.setItem(key, moved);
+      }
+    } catch {}
+    if (tell) collab.send({ type: 'peer', kind: 'renamed', from, to });
+  }, [baseKey]);
+  useEffect(() => collab.on('peer', (msg) => {
+    if (msg.kind === 'renamed' && typeof msg.from === 'string' && typeof msg.to === 'string') applyRename(msg.from, msg.to, false);
+  }), [applyRename]);
+
   const closeTab = useCallback((path: string) => {
     removeTab(path);
   }, [removeTab]);
@@ -813,10 +829,7 @@ function InterviewPageContent() {
                           filePath={selectedFile === PREVIEW_TAB ? null : selectedFile}
                           readOnly={selectedFile && !interviewerView ? isLockedPath(selectedFile, lockedFiles) : false}
                           onSaveStateChange={setSaveState}
-                          onFileRenamed={(newPath) => {
-                            setOpenTabs(prev => prev.map(t => t === selectedFile ? newPath : t));
-                            setSelectedFile(newPath);
-                          }}
+                          onFileRenamed={(newPath) => { if (selectedFile) applyRename(selectedFile, newPath, true); }}
                           onRunFile={handleRunFile}
                           runStart={runChallenge?.start}
                           flushRef={monacoFlushRef}
@@ -1131,11 +1144,7 @@ function InterviewPageContent() {
                     hasSelection={() => selectedFileRef.current !== null}
                     selectedFile={selectedFile}
                     aiChangedFiles={aiChanged}
-                    onFileMoved={(from, to) => {
-                      const remap = (p: string) => remapPath(p, from, to);
-                      setOpenTabs(prev => prev.map(remap));
-                      setSelectedFile(cur => (cur ? remap(cur) : cur));
-                    }}
+                    onFileMoved={(from, to) => applyRename(from, to, true)}
                     onFileDeleted={(gone) => {
                       const goneNow = (p: string) => p === gone || p.startsWith(gone + '/');
                       setOpenTabs(prev => prev.filter(t => !goneNow(t)));

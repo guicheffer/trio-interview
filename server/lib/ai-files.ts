@@ -23,3 +23,11 @@ export function markAiFile(workPath: string, relativePath: string): void {
     writeFileSync(storePath(workPath), JSON.stringify([...known, relativePath]), 'utf-8');
   } catch {}
 }
+
+/** A file or folder was renamed or moved: the sparkle goes with it */
+export function renameAiFiles(workPath: string, from: string, to: string): void {
+  const known = readAiFiles(workPath);
+  const moved = [...new Set(known.map(f => (f === from ? to : f.startsWith(from + '/') ? to + f.slice(from.length) : f)))];
+  if (moved.length === known.length && moved.every((f, i) => f === known[i])) return;
+  try { writeFileSync(storePath(workPath), JSON.stringify(moved), 'utf-8'); } catch {}
+}
