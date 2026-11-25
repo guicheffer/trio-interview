@@ -324,6 +324,26 @@ case "$AI_STATUS" in
         help_hint ;;
 esac
 
+# One line per terminal assistant, from the running server (the same words as make config CHECK=1): installed, version, login, sandbox.
+# Only this machine can ask for the reasons, a candidate is only ever told "not available right now".
+if [ "$TRIO_SKIP_HEALTHCHECK" != "1" ]; then
+    for i in $(seq 1 20); do
+        ASSISTANTS=$(curl -s http://localhost:3001/api/agent-mode 2>/dev/null)
+        case "$ASSISTANTS" in *'"ok":null'*) sleep 1 ;; *) break ;; esac
+    done
+    echo "$ASSISTANTS" | node -e '
+      let t = ""; process.stdin.on("data", d => t += d).on("end", () => {
+        try {
+          for (const a of JSON.parse(t).tools) {
+            const green = "\x1b[32m", yellow = "\x1b[33m", dim = "\x1b[2m", off = "\x1b[0m";
+            if (!a.allowed) console.log(dim + (a.line || a.tool) + "  [off in your settings]" + off);
+            else console.log((a.ok ? green : yellow) + (a.line || a.tool + ": not checked") + off);
+          }
+          console.log("\x1b[2mCodex: coming soon (shown disabled in the picker)\x1b[0m");
+        } catch { /* the server did not answer; the AI check above already said so */ }
+      });' || true
+fi
+
 echo ""
 
 TUNNEL_URL=$(cat "$TUNNEL_URL_FILE" 2>/dev/null)
@@ -362,7 +382,7 @@ if [ -n "$TUNNEL_URL" ]; then
     print_box "SEND THIS LINK TO THE CANDIDATE ($TUNNEL_TYPE)" "${TUNNEL_URL}/#k=${TRIO_ACCESS_TOKEN}"
     echo -e "  ${DIM}Send the whole link. It is new for every interview and the old ones stop working.${NC}"
     if [ "$TUNNEL_TYPE" = "cloudflared" ]; then
-        echo -e "  ${YELLOW}A cloudflared quick tunnel holds back the chat's live stream (Agent mode). Claude Code and OpenCode in the terminal work. See SECURITY.md.${NC}"
+        echo -e "  ${YELLOW}A cloudflared quick tunnel holds back the chat's live stream (Agent mode). Claude Code, OpenCode and Pi in the terminal work. See SECURITY.md.${NC}"
     fi
 elif [ "$TUNNEL_TYPE" != "none" ]; then
     echo -e "  Candidate           ${YELLOW}tunnel URL not detected, see .logs/${TUNNEL_TYPE}.log${NC}"

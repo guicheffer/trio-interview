@@ -7,6 +7,8 @@ import { join } from 'path';
 import { createInterface } from 'readline/promises';
 import { DEFAULT_CONFIG, TOOLS, TUNNELS, parseConfig, renderConfig, type InterviewConfig, type Tool, type Tunnel } from '../shared/interview-config.js';
 import { tunnelStatus } from '../shared/tunnel.js';
+import { describeTool } from '../shared/assistant-status.js';
+import { assistantFacts, ASSISTANT_NAMES, INSTALL_HINT } from '../server/lib/assistant-facts.js';
 
 const root = process.cwd();
 const file = join(root, 'interview.config.yaml');
@@ -17,12 +19,8 @@ const note = (s: string) => console.log(`        ${c(2, s)}`);
 const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
 type TerminalTool = Exclude<Tool, 'agent'>;
-const TOOL_BINARIES: Record<TerminalTool, string> = { 'claude-code': process.env.TRIO_CLAUDE_BIN || 'claude', opencode: process.env.TRIO_OPENCODE_BIN || 'opencode' };
-const TOOL_NAMES: Record<Tool, string> = { agent: 'Agent mode (the chat)', 'claude-code': 'Claude Code', opencode: 'OpenCode' };
-const INSTALL_HINT: Record<TerminalTool, string> = {
-  'claude-code': 'npm install -g @anthropic-ai/claude-code',
-  opencode: 'brew install anomalyco/tap/opencode-v2   (OpenCode 2 is needed; see opencode.ai)',
-};
+const TOOL_BINARIES: Record<TerminalTool, string> = { 'claude-code': process.env.TRIO_CLAUDE_BIN || 'claude', opencode: process.env.TRIO_OPENCODE_BIN || 'opencode', pi: process.env.TRIO_PI_BIN || 'pi' };
+const TOOL_NAMES: Record<Tool, string> = { agent: 'Agent mode (the chat)', ...ASSISTANT_NAMES };
 
 /** The program's version line, or null when it is not installed or does not answer */
 function versionOf(bin: string): string | null {
@@ -56,10 +54,12 @@ function report(config: InterviewConfig): boolean {
     if (tool === 'agent') continue;
     const version = versionOf(TOOL_BINARIES[tool]);
     const allowed = config.tools.includes(tool);
-    if (!allowed) note(`${TOOL_NAMES[tool]}: off${version ? ` (installed: ${version})` : ''}`);
-    else if (version) ok(`${TOOL_NAMES[tool]}: allowed and installed (${version})`);
-    else { warn(`${TOOL_NAMES[tool]}: allowed, but the ${TOOL_BINARIES[tool]} command was not found`); note(`install: ${INSTALL_HINT[tool]}`); ready = false; }
+    const facts = describeTool(assistantFacts(tool, version, '', { login: 'not tested here, make start sends a test message', problem: '' }));
+    if (!allowed) note(`${facts.line}  [off in your settings]`);
+    else if (facts.ok) ok(facts.line);
+    else { warn(facts.line); if (!version) note(`install: ${INSTALL_HINT[tool]}`); ready = false; }
   }
+  ok('Codex: coming soon (shown disabled in the picker, it cannot be chosen yet)');
   const folders = exercisesIn('exercises');
   const offered = config.exercises.length ? config.exercises : folders;
   const missing = offered.filter(id => !folders.includes(id));
@@ -93,7 +93,7 @@ async function main() {
   // 1. What is installed first, so the questions below are about things that can work
   console.log(c(1, 'Checking what is installed'));
   const found = {} as Record<TerminalTool, string | null>;
-  for (const tool of ['claude-code', 'opencode'] as const) {
+  for (const tool of ['claude-code', 'opencode', 'pi'] as const) {
     found[tool] = versionOf(TOOL_BINARIES[tool]);
     if (found[tool]) ok(`${TOOL_NAMES[tool]} ${found[tool]}`);
     else { warn(`${TOOL_NAMES[tool]} was not found`); note(`install: ${INSTALL_HINT[tool]}`); }
@@ -102,7 +102,7 @@ async function main() {
 
   console.log(`\n${c(1, 'Assistants a candidate can choose from')}`);
   const tools: Tool[] = ['agent'];
-  for (const tool of ['claude-code', 'opencode'] as const) {
+  for (const tool of ['claude-code', 'opencode', 'pi'] as const) {
     // Not installed: the default is off, so a candidate is never offered something that cannot start
     const allow = await yes(`Allow ${TOOL_NAMES[tool]}?${found[tool] ? '' : c(33, ' (not installed here)')}`, found[tool] ? current.tools.includes(tool) : false);
     if (allow) tools.push(tool);
