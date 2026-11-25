@@ -173,6 +173,22 @@ describe('file routes', () => {
     expect(existsSync(join(work, 'phases', 'extra.md'))).toBe(false);
   });
 
+  test('a rename or move takes the AI sparkle along, for a file and for a folder', async () => {
+    const { markAiFile, readAiFiles } = await import('../../lib/ai-files.js');
+    await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: 'ai/one.ts', content: '1' } });
+    markAiFile(work, 'ai/one.ts');
+
+    await app.inject({ method: 'PATCH', url: `/api/files/${enc('ai/one.ts')}`, headers: TUNNEL, payload: { newName: 'two.ts' } });
+    expect(readAiFiles(work)).toContain('ai/two.ts');
+    expect(readAiFiles(work)).not.toContain('ai/one.ts');
+
+    await app.inject({ method: 'PATCH', url: `/api/files/${enc('ai')}`, headers: TUNNEL, payload: { newName: 'bots' } });
+    expect(readAiFiles(work)).toContain('bots/two.ts');
+
+    await app.inject({ method: 'POST', url: '/api/files-move', headers: TUNNEL, payload: { from: 'bots', toDir: 'src' } });
+    expect(readAiFiles(work)).toContain('src/bots/two.ts');
+  });
+
   test('serves the run command and the challenge meta', async () => {
     const run = await app.inject({ method: 'GET', url: '/api/run-challenge' });
     expect(run.json()).toMatchObject({ start: 'npm start' });

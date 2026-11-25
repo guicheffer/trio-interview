@@ -29,7 +29,7 @@ interface FileExplorerNewProps {
   selectedFile: string | null;
   /** Paths the AI changed that nobody opened yet */
   aiChangedFiles?: string[];
-  /** A file or folder was moved by drag and drop */
+  /** A file or folder was moved by drag and drop, or renamed */
   onFileMoved?: (from: string, to: string) => void;
   /** A file or folder was deleted from the tree, so its tabs can close */
   onFileDeleted?: (path: string) => void;
@@ -426,6 +426,7 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
         body: JSON.stringify({ newName }),
       });
       if (!res.ok) console.error('Rename failed:', await res.text());
+      else onFileMoved?.(oldPath, oldPath.includes('/') ? `${oldPath.slice(0, oldPath.lastIndexOf('/'))}/${newName}` : newName);
       await loadFiles();
     } catch (err) {
       console.error('Rename error:', err);

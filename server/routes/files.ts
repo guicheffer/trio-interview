@@ -7,7 +7,7 @@ import { isLockedPath } from '../../shared/locks.js';
 import { readExerciseConfig } from '../lib/exercise-config.js';
 import { trimTrailingSlashes } from '../lib/shell-command.js';
 import { dirname, resolve as resolvePath } from 'path';
-import { readAiFiles } from '../lib/ai-files.js';
+import { readAiFiles, renameAiFiles } from '../lib/ai-files.js';
 import { changedSinceStart } from '../lib/changed-files.js';
 import { readFile as readFsFile, writeFile as writeFsFile } from 'fs/promises';
 import { currentExerciseId, currentExercisePath } from '../lib/default-exercise.js';
@@ -119,6 +119,7 @@ export async function registerFileRoutes(server: FastifyInstance) {
       const renamed = dirname(path) === '.' ? newName : `${dirname(path)}/${newName}`;
       if (await rejectIfLocked(request, reply, path, renamed)) return;
       await getSandbox().renameFile(path, newName);
+      renameAiFiles(getWorkPath(), path, renamed);
       reply.send({ ok: true, newName });
     } catch (error) {
       if (error instanceof SecurityError) {
@@ -139,6 +140,7 @@ export async function registerFileRoutes(server: FastifyInstance) {
       if (dest === from || dest.startsWith(from + '/')) return reply.status(400).send({ error: 'Cannot move a folder into itself' });
       if (await rejectIfLocked(request, reply, from, dest)) return;
       await getSandbox().moveFile(from, dest);
+      renameAiFiles(getWorkPath(), from, dest);
       reply.send({ ok: true, path: dest });
     } catch (error) {
       if (error instanceof SecurityError) return reply.status(403).send({ error: (error as Error).message });
