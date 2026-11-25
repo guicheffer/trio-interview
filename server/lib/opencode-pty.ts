@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'f
 import { homedir } from 'os';
 import { basename, dirname, join } from 'path';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
+import type { Router } from './router-proxy.js';
+import type { OpencodeProvider } from '../../shared/interview-config.js';
 
 /** One private OpenCode home per candidate and exercise, so none of the interviewer's own setup comes along */
 export function opencodeHomeDir(workPath: string): string {
@@ -106,4 +108,61 @@ export function opencodeArgs(resume: boolean): string[] {
 
 export function hasOpencodeHistory(home: string): boolean {
   return existsSync(join(home, 'data', 'opencode', 'opencode.db'));
+}
+
+
+/** The name OpenCode shows for the provider that goes through the model router */
+export const OPENCODE_ROUTER_PROVIDER = 'router';
+
+/** Which source OpenCode will use: its own login, the model router, or nothing yet */
+export type OpencodeSource = { kind: 'own-login' } | { kind: 'router' } | { kind: 'none'; problem: string };
+
+/**
+ * `auto` prefers a login OpenCode already has (the interviewer's own, at no extra cost), then the model router, then a note.
+ * `router` and `own-login` force one.
+ */
+export function chooseOpencodeSource(provider: OpencodeProvider, own: OpencodeLogin | null, router: Router | null): OpencodeSource {
+  const missingOwn = 'No OpenCode login was found. Sign in to a provider in OpenCode and pick a default model.';
+  if (provider === 'own-login') return own ? { kind: 'own-login' } : { kind: 'none', problem: missingOwn };
+  if (provider === 'router') return router ? { kind: 'router' } : { kind: 'none', problem: 'No model router was found. It is read from the same place Claude Code reads it.' };
+  if (own) return { kind: 'own-login' };
+  if (router) return { kind: 'router' };
+  return { kind: 'none', problem: missingOwn };
+}
+
+/**
+ * The private home when OpenCode goes through the router: one provider that points at this machine's loopback forwarder with a random
+ * key, and one model the router answered. The router's address and key are in no file here. The interviewer's own OpenCode model
+ * is not used (it may name a model the router no longer serves).
+ */
+export function seedOpencodeRouterHome(home: string, proxy: { url: string; key: string }, model: string): void {
+  const config = join(home, 'config');
+  const data = join(home, 'data', 'opencode');
+  mkdirSync(config, { recursive: true });
+  mkdirSync(data, { recursive: true });
+  mkdirSync(join(home, 'tmp'), { recursive: true });
+  const chosen = `${OPENCODE_ROUTER_PROVIDER}/${model}`;
+  writeFileSync(join(config, 'opencode.json'), JSON.stringify({
+    $schema: 'https://opencode.ai/config.json',
+    autoupdate: false,
+    model: chosen,
+    small_model: chosen,
+    // only this provider is offered, so OpenCode cannot fall back to a free model of its own
+    enabled_providers: [OPENCODE_ROUTER_PROVIDER],
+    share: 'disabled',
+    permission: { webfetch: 'deny', websearch: 'deny', experimental_image_generate: 'deny', subagent: 'deny' },
+    provider: {
+      [OPENCODE_ROUTER_PROVIDER]: {
+        npm: '@ai-sdk/anthropic',
+        name: 'Model router',
+        // the Anthropic client adds /messages to this address
+        options: { baseURL: `${proxy.url}/v1`, apiKey: proxy.key },
+        models: { [model]: { name: model } },
+      },
+    },
+  }, null, 2), { mode: 0o600 });
+  try { chmodSync(join(config, 'opencode.json'), 0o600); } catch {}
+  const authPath = join(data, 'auth.json');
+  writeFileSync(authPath, '{}', { mode: 0o600 });
+  try { chmodSync(authPath, 0o600); } catch {}
 }

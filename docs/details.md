@@ -103,19 +103,26 @@ The terminal assistants start on Sonnet 5.5.
 
 Each program is found on your `PATH`. To use another copy, point one variable at it: `TRIO_CLAUDE_BIN`, `TRIO_OPENCODE_BIN` or `TRIO_PI_BIN`. Keep the program in a permanent folder such as your home or `/usr/local`: the operating system sandbox keeps temporary folders closed, so a copy under `/tmp` cannot start, and `make config CHECK=1` says so.
 
-### Where Pi gets its model
+### Where Pi and OpenCode get their model
 
-`interview.config.yaml` has an optional block for it:
+`interview.config.yaml` has an optional block for each:
 
 ```yaml
 pi:
   provider: auto     # auto, router or own-login
   model: ""          # optional: a model name to use instead of the one the tool picks
+opencode:
+  provider: auto
+  model: ""
 ```
 
-`auto` (the default) uses a Pi login if you have one, else the model router that your Claude Code uses (its address and key are read from the same environment variables or `~/.claude/settings.json` that Claude Code reads, and nothing about them is written in this repository), else it shows a grey card saying to sign in once. `router` and `own-login` force one of the two. `make config CHECK=1` says which one Pi will use, and never prints the address or the key.
+`auto` (the default) uses a login you already have in that tool, else the model router that your Claude Code uses (its address and key are read from the same environment variables or `~/.claude/settings.json` that Claude Code reads, and nothing about them is written in this repository), else it shows a grey card saying to sign in once. `router` and `own-login` force one of the two. `make config CHECK=1` says which one Pi will use, and never prints the address or the key.
 
 With the router, the tool asks the router which Claude models it serves, keeps the newest Sonnet (never a variant that needs another vendor's credentials), and confirms it with one tiny request of a few tokens. The router's key does not go to Pi. Pi is given the address of a small forwarder that the server runs on your own machine, for that one session, and a random key that works only there; the forwarder adds the real key and passes the request on, and it closes when Pi ends. This is because anything Pi can read, the candidate can read too (its shell inherits its environment and can read its own folder).
+
+OpenCode works the same way. With the router it is offered that one model and nothing else, so it cannot fall back to a free model of its own or to a model name in your own OpenCode config that the router no longer serves.
+
+Claude Code keeps the model names you set and still gets the router through the same forwarder: it is given the forwarder's address and a random key in place of the router's, because a key in its environment could be read from its `!` shell.
 
 To try Pi or OpenCode with a key of your own for one run, set it in the environment, for example `TRIO_PI_API_KEY=... make start` (Pi uses Anthropic unless `TRIO_PI_PROVIDER` names another provider) or `TRIO_OPENCODE_API_KEY=...` with `TRIO_OPENCODE_PROVIDER`. Only that key reaches the assistant, and `make config CHECK=1` shows which login it found without printing it.
 

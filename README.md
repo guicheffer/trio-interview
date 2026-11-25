@@ -46,7 +46,19 @@ flowchart LR
   classDef tool fill:#1a1a2b,stroke:#3b3b56,color:#ecebf5
 ```
 
-The candidate picks the assistant from the ones you allowed, the chat, or Claude Code, OpenCode or Pi in a real terminal (Codex is shown as coming soon), and you see the same screen they do. You can follow them, look around on your own, edit files, and reveal the later phases of an exercise when they are ready. At the end `make export` zips their code and every conversation for the `evaluate-candidate` skill to review.
+The candidate picks the assistant from the ones you allowed, and you see the same screen they do:
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img src="docs/images/assistant-chat.svg" width="40" alt=""><br><b>Chat</b><br><sub>Built in, in the page, and the easiest to start with. It works like the assistant panel of an editor such as Cursor or Antigravity: it reads and edits files, and the changes show in the code.</sub></td>
+    <td align="center" width="20%"><img src="docs/images/assistant-claude-code.svg" width="40" alt=""><br><b>Claude Code</b><br><sub>The terminal assistant, in a real terminal next to the editor.</sub></td>
+    <td align="center" width="20%"><img src="docs/images/assistant-opencode.svg" width="40" alt=""><br><b>OpenCode</b><br><sub>An open source terminal assistant, for candidates who prefer it.</sub></td>
+    <td align="center" width="20%"><img src="docs/images/assistant-pi.svg" width="40" alt=""><br><b>Pi</b><br><sub>A small, minimal terminal assistant.</sub></td>
+    <td align="center" width="20%"><img src="docs/images/assistant-codex.svg" width="40" alt=""><br><b>Codex</b><br><sub>Coming soon.</sub></td>
+  </tr>
+</table>
+
+You allow the ones you want in `make config`. The three terminal assistants run inside the operating system's sandbox (macOS for now), limited to the candidate's own folder, and they use your own account or your model router, whose key never reaches them. The chat is the one for people who have not used a terminal assistant, and the one closest to the assistants of the editors they already know. You can follow them, look around on your own, edit files, and reveal the later phases of an exercise when they are ready. At the end `make export` zips their code and every conversation for the `evaluate-candidate` skill to review.
 
 <table>
   <tr>

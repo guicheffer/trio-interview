@@ -182,3 +182,13 @@ describe('Run tests and Run both in the scene and the demo', () => {
     expect(demo).toMatch(/\^Run both/);
   });
 });
+
+// The landing is plainly a picture of the app, so it does not say so. The demo does, because it is a page to play with.
+describe('the labels of the landing window', () => {
+  const html = readFileSync(join(__dirname, '..', '..', 'site', 'index.html'), 'utf-8');
+  const script = readFileSync(join(__dirname, '..', '..', 'site', 'site.js'), 'utf-8');
+  test('do not call the scenes a replica', () => {
+    expect(html).not.toMatch(/<em id="note">[^<]/);
+    expect(script).not.toMatch(/note: '(replica|scripted answer|runs for real)'/);
+  });
+});
