@@ -16,7 +16,7 @@ Each candidate gets their own copy of the exercise in `.solutions/<name>/<exerci
 - Node 25 (see `.nvmrc`, run `nvm use`)
 - The **Claude Code CLI**, installed and signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). The chat and the Claude Code terminal both run on it, with your login, so your account pays for what candidates use.
 - Optional: **OpenCode 2** (`brew install anomalyco/tap/opencode-v2`), signed in to a provider with a default model. Version 1 is not supported.
-- Optional: **Pi** (`npm install -g @mariozechner/pi-coding-agent`, Node 20.6 or later), signed in to a provider with `/login`. Its login is only read from Pi's own setup, or from `TRIO_PI_API_KEY` together with `TRIO_PI_PROVIDER`.
+- Optional: **Pi** (`npm install -g @mariozechner/pi-coding-agent`, Node 20.6 or later). Run `pi` once and use `/login` to sign in with a subscription or a key. Nothing else is needed: the tool finds what Pi saved, or a key Pi documents in your environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and so on), and uses only that provider. Router and cloud logins that belong to other tools are never used.
 - Optional, to share with a remote candidate, one of: `ngrok` (needs a free account and an authtoken: sign up at https://dashboard.ngrok.com/signup, then `ngrok config add-authtoken <token>`; on the free plan candidates see a one time "Visit Site" page) or `cloudflared` (`brew install cloudflared`, no account needed). `make config` asks which and checks what it still needs from you.
 - Some budget on the account the assistants are signed in to: candidates spend yours.
 
@@ -103,7 +103,7 @@ The terminal assistants start on Sonnet 5.5.
 
 Each program is found on your `PATH`. To use another copy, point one variable at it: `TRIO_CLAUDE_BIN`, `TRIO_OPENCODE_BIN` or `TRIO_PI_BIN`. Keep the program in a permanent folder such as your home or `/usr/local`: the operating system sandbox keeps temporary folders closed, so a copy under `/tmp` cannot start, and `make config CHECK=1` says so.
 
-To try Pi or OpenCode with a key of your own and nothing else, set the key and the provider for the run, for example `TRIO_PI_PROVIDER=anthropic TRIO_PI_API_KEY=... make start` (or `TRIO_OPENCODE_PROVIDER` and `TRIO_OPENCODE_API_KEY` for OpenCode). Only that key reaches the assistant, and `make config CHECK=1` shows which one it found without printing it. Pi also needs the provider name when you use a key like this, because the tool never guesses it.
+To try Pi or OpenCode with a key of your own for one run, set it in the environment, for example `TRIO_PI_API_KEY=... make start` (Pi uses Anthropic unless `TRIO_PI_PROVIDER` names another provider) or `TRIO_OPENCODE_API_KEY=...` with `TRIO_OPENCODE_PROVIDER`. Only that key reaches the assistant, and `make config CHECK=1` shows which login it found without printing it.
 
 Subagents (the Task tool) work. The server sets `CLAUDE_CODE_SUBAGENT_MODEL` to the model the candidate picked.
 
