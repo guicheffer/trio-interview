@@ -17,7 +17,50 @@
   var runButtons = S.qa('button').filter(function (b) { return /^Run/.test(b.textContent.trim()); });
 
   function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-  function setPane(el, rows) { el.innerHTML = rows.map(function (r) { return '<div style="width: ' + (el === projectRows ? 726 : 413) + 'px; height: 16px; line-height: 16px; overflow: hidden;">' + r + '</div>'; }).join(''); }
+
+  // ---- scrolling: the panes of the scene scroll with the wheel and a drag on a slim bar, like the app's own ----
+  // The scene is drawn by hand, so nothing scrolls by itself. `view` is the box that clips, `moving` the elements that slide up.
+  // The wheel is only taken while the pane can still move that way: at an end it goes on to the page, so the page never gets stuck.
+  var scrollers = [];
+  function scroller(view, moving, size, opts) {
+    opts = opts || {};
+    var top = 0, bar = document.createElement('div'), thumb = document.createElement('div');
+    bar.setAttribute('aria-hidden', 'true');
+    bar.style.cssText = 'position:absolute;top:0;right:0;bottom:0;width:10px;z-index:30;display:none;opacity:0;transition:opacity .2s';
+    thumb.style.cssText = 'position:absolute;left:2px;right:2px;border-radius:4px;background:rgba(121,121,121,.4);cursor:default';
+    bar.appendChild(thumb); view.appendChild(bar);
+    if (getComputedStyle(view).position === 'static') view.style.position = 'relative';
+    var api = { max: function () { return Math.max(0, size() - view.clientHeight); } };
+    function draw() {
+      var max = api.max(), h = view.clientHeight, total = size();
+      top = Math.max(0, Math.min(max, top));
+      moving().forEach(function (el) { el.style.transform = top ? 'translateY(' + (-top) + 'px)' : ''; });
+      bar.style.display = max > 0 ? 'block' : 'none';
+      var t = Math.max(24, h * h / total);
+      thumb.style.height = t + 'px'; thumb.style.top = (max ? top / max * (h - t) : 0) + 'px';
+      if (opts.onMove) opts.onMove(top, max);
+    }
+    function show() { bar.style.opacity = '1'; clearTimeout(api.hide); api.hide = setTimeout(function () { bar.style.opacity = '0'; }, 900); }
+    api.update = function (follow) { if (follow) top = api.max(); draw(); };
+    api.to = function (y) { top = y; draw(); show(); };
+    view.addEventListener('wheel', function (e) {
+      var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY, max = api.max();
+      if (!dy || (dy < 0 && top <= 0) || (dy > 0 && top >= max)) return;   // nothing to scroll that way: the page takes it
+      e.preventDefault(); top += dy; draw(); show();
+    }, { passive: false });
+    thumb.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation(); thumb.setPointerCapture(e.pointerId);
+      var y0 = e.clientY, t0 = top, h = view.clientHeight, t = thumb.offsetHeight;
+      var move = function (ev) { top = t0 + (ev.clientY - y0) * api.max() / Math.max(1, h - t); draw(); show(); };
+      var up = function () { thumb.removeEventListener('pointermove', move); thumb.removeEventListener('pointerup', up); };
+      thumb.addEventListener('pointermove', move); thumb.addEventListener('pointerup', up);
+    });
+    view.addEventListener('pointerenter', function () { if (api.max() > 0) show(); });
+    scrollers.push(api); return api;
+  }
+  var paneScroll = [];
+  function setPane(el, rows) { el.innerHTML = rows.map(function (r) { return '<div style="width: ' + (el === projectRows ? 726 : 413) + 'px; height: 16px; line-height: 16px; overflow: hidden;">' + r + '</div>'; }).join(''); 
+    var sc = paneScroll[el === projectRows ? 0 : 1]; if (sc) sc.update(true); }
 
   // ---- the line diff (the same operations as shared/line-diff.ts) ----
   function operations(a, b) {
@@ -151,9 +194,7 @@
   var PROMPT = '<span class="xterm-fg-2">maya/fibonacci</span><span> $ </span>';
   function project(extra) {
     var rows = [HEAD, '', PROMPT + (extra && extra.cmd ? '<span>' + esc(extra.cmd) + '</span>' : '<span> </span>')].concat((extra && extra.out || []).map(termLine));
-    // a long output scrolls like a real terminal: the last rows that fit stay, so the total of a test run is never cut off
-    var term = document.getElementById('terminal'), room = term ? Math.floor((term.getBoundingClientRect().bottom - projectRows.getBoundingClientRect().top) / 16) : 0;
-    if (room >= 4 && rows.length > room) rows = rows.slice(-room);
+    // every row is drawn and the pane scrolls like a real terminal: it follows the newest row, and the wheel or the bar goes back up
     setPane(projectRows, rows);
   }
 
@@ -177,7 +218,16 @@
   // ---- the assistant terminal ----
   var BEFORE_ROWS = F.claudeBefore, AFTER_ROWS = F.claudeAfter;
   var FOOT = [39, 40, 41, 42];
-  function claude(n) { setPane(claudeRows, n === 'after' ? AFTER_ROWS : BEFORE_ROWS); }
+  // The finished conversation: the header and the request, then what the real terminal showed (the diff and the answer), then the prompt.
+  // It is longer than the pane, so the wheel or the bar goes back up to the request.
+  function afterTranscript() {
+    var shown = AFTER_ROWS.slice(0, 39);
+    while (shown.length && !shown[shown.length - 1].replace(/<[^>]+>/g, '').trim()) shown.pop();
+    var foot = FOOT.map(function (k) { return BEFORE_ROWS[k]; });
+    foot[1] = '<span>\u276f&nbsp;</span><span class="xterm-bg-257 xterm-fg-257"> </span>';
+    return BEFORE_ROWS.slice(0, 4).concat([''], requestRows(REQUEST), [''], shown, foot);
+  }
+  function claude(n) { setPane(claudeRows, n === 'after' ? afterTranscript() : BEFORE_ROWS); }
   function wrap(text, width) {
     var out = [], line = '';
     text.split(' ').forEach(function (w) { if ((line + ' ' + w).trim().length > width) { out.push(line); line = w; } else line = (line + ' ' + w).trim(); });
@@ -216,7 +266,7 @@
 
   var timers = [];
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-  function clear() { timers.forEach(clearTimeout); timers = []; if (worker) { worker.terminate(); worker = null; } }
+  function clear() { timers.forEach(clearTimeout); timers = []; if (worker) { worker.terminate(); worker = null; } cancelTests(); if (window.__markTests) window.__markTests(false); }
 
 
   // ---- the tests: the file of the exercise runs in a Worker against the code in the editor, with a small stand-in for node:test and node:assert ----
@@ -245,30 +295,36 @@
       try { new Function('require', 'console', e.data.tests)(req, quiet); } catch (x) { out.error = out.error || x.name + ': ' + x.message; }
       queue.forEach(function (t) {
         var t0 = performance.now(), ok = true;
-        try { t.fn(); } catch (x) { ok = false; }
-        results.push({ name: t.name, ok: ok, ms: performance.now() - t0 });
+        var why = '';
+        try { t.fn(); } catch (x) { ok = false; why = (x && x.message) || String(x); }
+        results.push({ name: t.name, ok: ok, ms: performance.now() - t0, why: why });
       });
       postMessage({ results: results, error: out.error });
     };
   }
-  var testWorkerHandle;
+  var testWorkerHandle, testRun = 0;
+  var NO_FINISH = 'the test run did not finish', NO_BROWSER = 'the browser could not run the tests here';
+  // One run at a time: starting another (or pressing Run, Reset, Ask) drops the first one, so an old answer never reaches the terminal.
+  function cancelTests() { testRun++; if (testWorkerHandle) { testWorkerHandle.terminate(); testWorkerHandle = null; } }
   function runTests(src, done) {
+    cancelTests(); var id = testRun, finished = false;
+    function end(res) { if (finished || id !== testRun) return; finished = true; clearTimeout(timer); if (testWorkerHandle) testWorkerHandle.terminate(); testWorkerHandle = null; done(res); }
+    var timer = setTimeout(function () { end({ results: [], error: NO_FINISH }); }, 3000);
     try {
-      if (testWorkerHandle) testWorkerHandle.terminate();
       var w = testWorkerHandle = new Worker(URL.createObjectURL(new Blob(['(' + testWorker.toString() + ')()'], { type: 'text/javascript' })));
-      var timer = setTimeout(function () { w.terminate(); done({ results: [], error: 'stopped: the tests ran for too long' }); }, 3000);
-      w.onmessage = function (e) { clearTimeout(timer); w.terminate(); done(e.data); };
-      w.onerror = function () { clearTimeout(timer); done({ results: [], error: 'the browser could not run the tests here' }); };
+      w.onmessage = function (e) { end(e.data); };
+      w.onerror = function () { end({ results: [], error: NO_BROWSER }); };
       w.postMessage({ code: src, tests: F.tests });
-    } catch (x) { done({ results: [], error: 'the browser could not run the tests here' }); }
+    } catch (x) { end({ results: [], error: NO_BROWSER }); }
   }
   // what the terminal prints for a run of the tests: one line per test, then the total, like the app's terminal does
   function testLines(res) {
-    var lines = res.results.map(function (r) { return (r.ok ? '<pass>' : '<bad>') + r.name + ' (' + r.ms.toFixed(2) + 'ms)'; });
+    var lines = res.results.map(function (r) { return (r.ok ? '<pass>' : '<bad>') + r.name + (r.ok ? '' : (r.why ? ': ' + r.why : '')) + ' (' + r.ms.toFixed(2) + 'ms)'; });
     var failed = res.results.filter(function (r) { return !r.ok; }).length, passed = res.results.length - failed;
     if (res.error) lines.unshift('<bad>' + res.error);
     var bad = failed > 0 || !!res.error || !res.results.length;
-    lines.push(bad ? '<sum-bad>✗ ' + (failed ? failed + ' failed, ' : '') + passed + ' passed' : '<sum-ok>✓ ' + passed + ' passed');
+    // the total always says pass or fail, whatever happened
+    lines.push(bad ? '<sum-bad>\u2717 FAIL: ' + (failed ? failed + ' failed, ' : '') + passed + ' passed' + (res.error && !res.results.length ? ' (' + res.error + ')' : '') : '<sum-ok>\u2713 PASS: ' + passed + ' passed');
     return lines;
   }
   window.fibTestLines = function (src, done) { runTests(src, function (res) { done(testLines(res), res); }); };
@@ -285,6 +341,7 @@
       clear.parentNode.insertBefore(b, clear); testButtons[d[0]] = b;
     });
   })();
+  window.__markTests = function (on) { markTests(on); };
   function markTests(on) { Object.keys(testButtons).forEach(function (k) { testButtons[k].style.outline = on ? '2px solid #5850F8' : ''; testButtons[k].style.outlineOffset = on ? '2px' : ''; }); }
 
   // ---- what shows that the code ran: a quiet line in the terminal and a soft glow on the Run buttons ----
@@ -336,7 +393,7 @@
     later(function () {
       function show(prefix) { runTests(src, function (res) { markTests(false); project({ cmd: cmd, out: prefix.concat(testLines(res)) }); }); }
       if (!both) { show([]); return; }
-      runCode(src, function (out) { show(printOut(out)); });
+      runCode(src, function (out) { project({ cmd: cmd, out: printOut(out) }); show(printOut(out)); });
     }, 700);
   };
 
@@ -348,6 +405,23 @@
   // pressing Run in the scene does the same, whatever the code in the editor is right now
   runButtons.forEach(function (b) { b.addEventListener('click', function (e) { e.preventDefault(); window.fibRun(); }); });
   Object.keys(testButtons).forEach(function (k) { testButtons[k].addEventListener('click', function (e) { e.preventDefault(); window.fibRunTests(k === 'both'); }); });
+
+  // ---- the panes get their scrollers: the project terminal, the assistant's terminal and the editor ----
+  var termView = function (rows) { var v = rows.closest('.xterm-screen'); return v ? v.parentNode : rows.parentNode; };
+  [projectRows, claudeRows].forEach(function (rows, k) {
+    var screen = rows.closest('.xterm-screen'), host = screen.parentNode, pane = rows.parentNode;
+    host.style.position = 'relative'; host.style.overflow = 'hidden';
+    var fixed = host.getBoundingClientRect().height || screen.getBoundingClientRect().height;
+    host.style.height = fixed + 'px'; screen.style.height = 'auto'; screen.style.minHeight = fixed + 'px'; screen.style.willChange = 'transform';
+    paneScroll[k] = scroller(host, function () { return [screen]; }, function () { return Math.max(fixed, rows.children.length * 16); });
+  });
+  // the editor's own static slider is a still picture; ours replaces it
+  S.qa('.editor-scrollable .scrollbar, .monaco-editor > .overflow-guard > .scrollbar').forEach(function (e) { e.style.display = 'none'; });
+  var edView = S.q('.overflow-guard');
+  var edScroll = scroller(edView, function () { return [linesEl, gutterEl, zonesEl]; }, function () { return parseFloat(linesEl.style.height) || 0; });
+  var drawDiffBase = drawDiff;
+  drawDiff = function () { drawDiffBase(); edScroll.update(false); };
+  window.fibScrollers = { project: paneScroll[0], claude: paneScroll[1], editor: edScroll };
 
   window.fibReset();
 })();
