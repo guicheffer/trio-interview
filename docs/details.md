@@ -101,6 +101,10 @@ TRIO_MODEL_OPUS=my-opus-id make start
 
 The terminal assistants start on Sonnet 5.5.
 
+Each program is found on your `PATH`. To use another copy, point one variable at it: `TRIO_CLAUDE_BIN`, `TRIO_OPENCODE_BIN` or `TRIO_PI_BIN`. Keep the program in a permanent folder such as your home or `/usr/local`: the operating system sandbox keeps temporary folders closed, so a copy under `/tmp` cannot start, and `make config CHECK=1` says so.
+
+To try Pi or OpenCode with a key of your own and nothing else, set the key and the provider for the run, for example `TRIO_PI_PROVIDER=anthropic TRIO_PI_API_KEY=... make start` (or `TRIO_OPENCODE_PROVIDER` and `TRIO_OPENCODE_API_KEY` for OpenCode). Only that key reaches the assistant, and `make config CHECK=1` shows which one it found without printing it. Pi also needs the provider name when you use a key like this, because the tool never guesses it.
+
 Subagents (the Task tool) work. The server sets `CLAUDE_CODE_SUBAGENT_MODEL` to the model the candidate picked.
 
 ## Sharing with a remote candidate
