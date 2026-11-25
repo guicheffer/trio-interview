@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v6
@@ -48,5 +48,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+      # The upload finishes, and the list of artifacts that deploy-pages reads can still be empty for a few seconds: it then fails
+      # with "Found 0 artifact(s)" although the artifact exists. A short wait makes that rare, and the deploy below tries twice.
+      - name: Let the artifact list catch up
+        run: sleep 30
       - id: deployment
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - name: Try the deployment once more
+        if: steps.deployment.outcome == 'failure'
+        id: deployment_retry
         uses: actions/deploy-pages@v5
