@@ -56,6 +56,7 @@ export function seedOpencodeHome(home: string): boolean {
   const data = join(home, 'data', 'opencode');
   mkdirSync(config, { recursive: true });
   mkdirSync(data, { recursive: true });
+  mkdirSync(join(home, 'tmp'), { recursive: true });
   writeFileSync(join(config, 'opencode.json'), JSON.stringify({
     $schema: 'https://opencode.ai/config.json',
     autoupdate: false,
@@ -91,6 +92,10 @@ export function opencodeEnvironment(home: string): Record<string, string> {
     OPENCODE_DISABLE_CLAUDE_CODE: '1',
     OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
     OPENCODE_DISABLE_PROJECT_CONFIG: '1',
+    // its small files go here and not in the interviewer's temporary folder, which the operating system sandbox keeps closed
+    TMPDIR: join(home, 'tmp'),
+    TEMP: join(home, 'tmp'),
+    TMP: join(home, 'tmp'),
   };
 }
 
