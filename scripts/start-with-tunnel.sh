@@ -337,6 +337,7 @@ if [ "$TRIO_SKIP_HEALTHCHECK" != "1" ]; then
           for (const a of JSON.parse(t).tools) {
             const green = "\x1b[32m", yellow = "\x1b[33m", dim = "\x1b[2m", off = "\x1b[0m";
             if (!a.allowed) console.log(dim + (a.line || a.tool) + "  [off in your settings]" + off);
+            else if (a.needsSignIn) console.log(dim + a.line + off);
             else console.log((a.ok ? green : yellow) + (a.line || a.tool + ": not checked") + off);
           }
           console.log("\x1b[2mCodex: coming soon (shown disabled in the picker)\x1b[0m");

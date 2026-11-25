@@ -58,6 +58,8 @@ function report(config: InterviewConfig): boolean {
     const facts = describeTool(assistantFacts(tool, version, '', { login: 'not tested here, make start sends a test message', problem: '' }));
     if (!allowed) note(`${facts.line}  [off in your settings]`);
     else if (facts.ok) ok(facts.line);
+    // only a missing sign in: a quiet note, not a warning, and it does not make the check fail (the card in the picker is grey)
+    else if (facts.needsSignIn) note(facts.line);
     else { warn(facts.line); if (!version) note(`install: ${INSTALL_HINT[tool]}`); ready = false; }
   }
   ok('Codex: coming soon (shown disabled in the picker, it cannot be chosen yet)');
