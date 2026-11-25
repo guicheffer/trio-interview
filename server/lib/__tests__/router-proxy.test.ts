@@ -152,6 +152,18 @@ describe('the loopback proxy an assistant is given instead of the key', () => {
     expect((await ask(proxy, '/v1/models', { 'x-api-key': proxy.key })).status).toBe(200);
   });
 
+  test('answers the reachability check Claude Code makes at start itself, forwarding nothing and showing nothing', async () => {
+    const router = await fakeRouter();
+    const proxy = await startRouterProxy({ baseUrl: router.url, token: REAL_KEY });
+    proxies.push(proxy);
+    const res = await fetch(`${proxy.url}/api/hello`, { method: 'HEAD' });
+    expect(res.status).toBe(200);
+    // only that one check, and only as HEAD: the same path asked another way still needs the key and is not passed on
+    expect((await fetch(`${proxy.url}/api/hello`)).status).toBe(401);
+    expect((await fetch(`${proxy.url}/api/other`, { method: 'HEAD' })).status).toBe(401);
+    expect(router.seen).toHaveLength(0);
+  });
+
   test('says plainly when the router cannot be reached, without its address', async () => {
     const proxy = await startRouterProxy({ baseUrl: 'http://127.0.0.1:1', token: REAL_KEY });
     proxies.push(proxy);
