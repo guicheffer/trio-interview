@@ -20,6 +20,7 @@
     <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
     <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
   </symbol>
+  <symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7.5 8.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
   <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
 </svg>
@@ -51,15 +52,15 @@
         <button role="tab" class="tab on" data-i="0" aria-selected="true"><b>1</b>Link</button>
         <button role="tab" class="tab" data-i="1" aria-selected="false"><b>2</b>Ask</button>
         <button role="tab" class="tab" data-i="2" aria-selected="false"><b>3</b>Run</button>
-        <button role="tab" class="tab" data-i="3" aria-selected="false"><b>4</b>Online</button>
+        <button role="tab" class="tab" data-i="3" aria-selected="false"><b>4</b>Setup</button>
         <button role="tab" class="tab" data-i="4" aria-selected="false"><b>5</b>Watch</button>
         <button role="tab" class="tab" data-i="5" aria-selected="false"><b>6</b>Release</button>
       </div>
       <div class="steps">
         <div class="step on" data-i="0"><div class="who c"><i></i>Candidate</div><h2>Open a link, type a name</h2><p>The candidate needs nothing installed. The workspace opens with the exercise, the files and a terminal.</p></div>
         <div class="step" data-i="1"><div class="who c"><i></i>Candidate</div><h2>Ask the assistant</h2><p>It reads the file, changes it and says what it did. Everything it was asked, and everything it answered, is saved for you.</p></div>
-        <div class="step" data-i="2"><div class="who c"><i></i>Candidate</div><h2>Run it</h2><p>The code in the editor really runs, here in your browser, and prints what Node would. Press the button, or Run inside the screen.</p><button class="runit" id="runit" type="button">Run fibonacci.js</button></div>
-        <div class="step" data-i="3"><div class="who i"><i></i>Interviewer</div><h2>You see who is online</h2><p>Open <code>localhost</code> on your machine and pick the candidate. The candidate's link cannot open this side.</p></div>
+        <div class="step" data-i="2"><div class="who c"><i></i>Candidate</div><h2>Run it</h2><p>The code in the editor really runs, here in your browser, and prints what Node would. Press the button, or Run inside the screen.</p><div class="runrow"><button class="runit" id="runit" type="button">Run fibonacci.js</button><span class="ranmsg" id="ranmsg" role="status"></span></div></div>
+        <div class="step" data-i="3"><div class="who i"><i></i>Interviewer</div><h2>Set it up your way</h2><p>Everything is configurable. You are not limited to the exercises that ship with it: install new ones whenever you like, in any language that runs on your machine, and choose which assistants candidates may use.</p></div>
         <div class="step" data-i="4"><div class="who i"><i></i>Interviewer</div><h2>The same screen, live</h2><p>Their files, editor, terminal and chat as they move. Follow them or look around, and edit files too.</p></div>
         <div class="step" data-i="5"><div class="who i"><i></i>Interviewer</div><h2>Release the next phase</h2><p>One click reveals the hidden phases in the candidate's file tree. You set the pace.</p></div>
       </div>
@@ -82,11 +83,11 @@
   <div class="pin"><div class="wrap">
     <div class="kicker">The name</div>
     <h2>Three of you in one room</h2>
-    <p class="lede">Every session has an interviewer, a candidate and an assistant, and the logo is made of the three. Keep scrolling and they come together, one by one.</p>
+    <p class="lede">Every session has an interviewer, a candidate and an assistant, and the logo is made of the three. Keep scrolling and they come together: the assistant first, then the candidate, and you in the middle.</p>
     <div class="trio" id="trio" aria-label="The three parts of the logo">
       <div class="slot" aria-hidden="true"></div>
       <div class="part pa"><div class="art"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/></svg></div><div class="txt"><h3>The assistant</h3><p>An AI agent: a model that reads the files, changes them and runs commands to do what it is asked. Here it works in plain sight, and every step is saved.</p></div></div>
-      <div class="part pi"><div class="art"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#interviewer"/></svg></div><div class="txt"><h3>The interviewer</h3><p>You. You watch the same screen, release the next phase and read how the candidate worked with the assistant.</p></div></div>
+      <div class="part pi"><div class="art"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#interviewer"/></svg></div><div class="txt"><h3>The interviewer</h3><div class="swap"><p class="first">You. You watch the same screen, release the next phase and read how the candidate worked with the assistant.</p><p class="done" aria-hidden="true">You sit in the middle: everything between the candidate and the assistant passes through you.</p></div></div></div>
       <div class="part pc"><div class="art"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#candidate"/></svg></div><div class="txt"><h3>The candidate</h3><p>They choose how to work, with the chat or a terminal assistant, and solve the exercise as they would at work.</p></div></div>
     </div>
   </div></div>
@@ -98,7 +99,7 @@
       <div class="kicker">Why this</div>
       <h2>An interview that looks like the job</h2>
       <p>People work with assistants now, so the room lets them, and shows you how. It runs on your machine, so the code is yours to read and the exercises stay yours. There is no seat to buy, and the maintenance belongs to the people who use it.</p>
-      <p class="small">Other tools exist, such as <a href="https://coderpad.io/">CoderPad</a>, <a href="https://www.hackerrank.com/">HackerRank</a> and <a href="https://codesignal.com/">CodeSignal</a>, and what they offer is on their own sites.</p>
+      <p class="small">Other tools exist, such as <a href="https://coderpad.io/">CoderPad<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, <a href="https://www.hackerrank.com/">HackerRank<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a> and <a href="https://codesignal.com/">CodeSignal<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, and what they offer is on their own sites.</p>
     </div>
     <div class="ledger" aria-label="What runs where">
       <div><span>The room</span><b>your machine</b></div>
@@ -106,6 +107,19 @@
       <div><span>Exercises</span><b>your repository</b></div>
       <div><span>Seats to buy</span><b>none</b></div>
       <div><span>Sent to the assistant's provider</span><b>the chat</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="safe">
+  <div class="wrap">
+    <div class="lead">
+      <div class="kicker">Security</div>
+      <h2>Built to be used with care</h2>
+      <p>Trio Interview is a local tool, not a hosted service. The servers listen on your machine only, and the tunnel you start is the way in. A candidate gets through it only with the private link that <code>make start</code> makes for each interview, and which side of the room someone is on is decided on the server, not in the page, so a candidate cannot open the interviewer's screens by changing what their browser sends.</p>
+      <p>Claude Code and OpenCode in a terminal run inside the operating system's sandbox, limited to the candidate's own folder, and the tool refuses to start them without one, which today means macOS. The chat assistant is kept on the exercise by instructions, so a determined candidate can talk it into reading further than it should.</p>
+      <p>This is a guard rail and not a full sandbox for the candidate's own code. That code runs as your user and the network is open, so use a machine and an account without production credentials.</p>
+      <div class="acts"><a class="btn" href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md">Read the security notes<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
     </div>
   </div>
 </section>
@@ -119,7 +133,7 @@
       <div class="cmd"><div class="n">2</div><h3>Say what is allowed</h3><p>Choose the assistants, exercises and tunnel, once.</p><pre>make config</pre></div>
       <div class="cmd"><div class="n">3</div><h3>Share the link</h3><p>Pick an exercise and send the candidate the link it prints.</p><pre>make start</pre></div>
     </div>
-    <div class="acts"><a class="btn" href="docs/">Read the docs</a><a class="link" href="https://github.com/guicheffer/trio-interview">See the code</a></div>
+    <div class="acts"><a class="btn" href="docs/">Read the docs<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a><a class="link" href="https://github.com/guicheffer/trio-interview">See the code<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
   </div>
 </section>
 
@@ -129,7 +143,7 @@
       <div class="kicker">Contribute</div>
       <h2>Help it get better</h2>
       <p>The easiest first contribution is an exercise from your own field, and there is room for more tunnels, more assistants and better ways to review what candidates did.</p>
-      <div class="acts"><a class="btn" href="docs/contributing.html">How to contribute</a><a class="link" href="https://github.com/guicheffer/trio-interview/issues">Open an issue</a></div>
+      <div class="acts"><a class="btn" href="docs/contributing.html">How to contribute<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a><a class="link" href="https://github.com/guicheffer/trio-interview/issues">Open an issue<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
     </div>
   </div>
 </section>
@@ -137,8 +151,8 @@
 
 <footer><div class="wrap">
   <div><strong>Trio Interview</strong><br>Free software under the AGPL-3.0.</div>
-  <div><a href="docs/">Docs</a><a href="docs/contributing.html">Contributing</a><a href="https://github.com/guicheffer/trio-interview">Source code</a></div>
-  <div><a href="https://github.com/guicheffer/trio-interview/issues">Issues</a><a href="https://github.com/guicheffer/trio-interview/blob/main/LICENSE">License</a></div>
+  <div><a href="docs/">Docs<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a><a href="docs/contributing.html">Contributing<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a><a href="https://github.com/guicheffer/trio-interview">Source code<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
+  <div><a href="https://github.com/guicheffer/trio-interview/issues">Issues<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a><a href="https://github.com/guicheffer/trio-interview/blob/main/LICENSE">License<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
 </div></footer>
 
 <script src="site.js"></script>

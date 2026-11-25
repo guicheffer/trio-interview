@@ -45,10 +45,7 @@
         call(f, 'fibReset');
         if (reduce) { call(f, 'fibSkipAsk'); } else later(function () { call(f, 'fibAsk'); }, 700);
       }
-      if (p.run) {   // the answer is already in the editor, then the code runs
-        call(f, 'fibShowAnswer');
-        if (!reduce) later(function () { call(f, 'fibRun'); }, 1100); else call(f, 'fibRun');
-      }
+      if (p.run) call(f, 'fibShowAnswer');   // the answer is already in the editor; the code runs when Run is pressed
     }
     if (p.scene === 'view') { call(by.view, 'reveal', false); if (p.reveal) { if (reduce) call(by.view, 'reveal', true); else later(function () { call(by.view, 'reveal', true); }, 900); } }
   }
@@ -62,7 +59,19 @@
   function choose(i) { go(i, true); scrollToStep(Math.max(0, Math.min(plan.length - 1, i))); }
   tabs.forEach(function (t, k) { t.addEventListener('click', function () { choose(k); }); });
   var runit = document.getElementById('runit');
+  var ranmsg = document.getElementById('ranmsg');
   if (runit) runit.addEventListener('click', function () { call(by.fib, 'fibRun'); });
+  // the scene says when the code starts and when it has run, so the button can show it worked and offer to run again
+  addEventListener('message', function (e) {
+    var d = e.data; if (!d || d.trio !== 'fib' || !runit) return;
+    if (d.state === 'running') { runit.disabled = true; ranmsg.textContent = 'Running...'; ranmsg.classList.remove('ok'); }
+    if (d.state === 'done') {
+      runit.disabled = false; runit.textContent = 'Run again';
+      ranmsg.textContent = d.n > 1 ? 'Ran again (' + d.n + ' times), see the terminal' : 'Ran, see the terminal'; ranmsg.classList.add('ok');
+      ranmsg.classList.remove('pulse'); void ranmsg.offsetWidth; ranmsg.classList.add('pulse');
+    }
+    if (d.state === 'idle') { runit.disabled = false; runit.textContent = 'Run fibonacci.js'; ranmsg.textContent = ''; ranmsg.classList.remove('ok'); }
+  });
   prev.addEventListener('click', function () { choose(cur - 1); });
   next.addEventListener('click', function () { choose(cur + 1); });
   document.addEventListener('keydown', function (e) {
@@ -98,18 +107,35 @@
     var draw = function () {
       var r = section.getBoundingClientRect(), room = r.height - innerHeight;
       var p = room > 0 ? Math.max(0, Math.min(1, -r.top / room)) : 0;
-            var order = [0, 1, 2];           // the assistant, then the interviewer, then the candidate
+      // parts are in the order of the markup: assistant, interviewer, candidate. They join as assistant, candidate, interviewer.
+      var order = [0, 2, 1];
       parts.forEach(function (el, k) {
-        var at = 0.1 + order[k] * 0.24, n = ease(seg(p, at, at + 0.2)), a = aim[k];
-        el.querySelector('.txt').style.opacity = 1 - ease(seg(p, at + 0.12, at + 0.2));
+        var at = 0.08 + order[k] * 0.22, n = ease(seg(p, at, at + 0.2)), a = aim[k];
+        // the interviewer is the middle piece, already close to its place, so it only settles
+        el.querySelector('.txt').style.opacity = k === 1 ? 1 : 1 - ease(seg(p, at + 0.12, at + 0.2));
         if (a) el.querySelector('svg').style.transform = 'translate(' + (a.dx * n) + 'px,' + (a.dy * n) + 'px) scale(' + (1 + (a.s - 1) * n) + ')';
       });
-      
+      // the interviewer's text is left alone until the logo is whole, then it says what the middle piece means
+      trio.classList.toggle('whole', p >= 0.74);
     };
     var ticking = false;
     addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; draw(); }); } }, { passive: true });
     addEventListener('resize', measure);
     measure();
+  }
+
+  // Easter egg: the three pieces of the logo in the bar shuffle and come back when the pointer (or the keyboard) reaches it.
+  var brand = document.querySelector('.brand');
+  if (brand && !reduce) {
+    var playing = false;
+    // once the entrance has played it must not come back when the shuffle class is taken off
+    setTimeout(function () { brand.classList.add('built'); }, 1200);
+    var play = function () { if (playing) return; playing = true; brand.classList.add('play'); };
+    brand.addEventListener('pointerenter', play); brand.addEventListener('focus', play);
+    brand.querySelector('svg').addEventListener('animationend', function (e) {
+      if (e.animationName !== 'shuffle' || e.target !== brand.querySelectorAll('svg use')[2]) return;
+      brand.classList.add('built'); brand.classList.remove('play'); playing = false;
+    });
   }
 
   // Stars, from the public GitHub API with no sign in. The number stays hidden when the API cannot be reached.
