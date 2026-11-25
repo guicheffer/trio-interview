@@ -50,3 +50,17 @@ describe('the pages kept in the repository', () => {
     } finally { rmSync(join(before, '..'), { recursive: true, force: true }); }
   });
 });
+
+describe('the menu of the docs pages', () => {
+  test('has the same items as the menu of the landing page, in the same order', async () => {
+    const { readFileSync, readdirSync } = await import('fs');
+    const { join } = await import('path');
+    const root = join(__dirname, '..', '..');
+    const names = (html: string) => [...((html.match(/<nav>([\s\S]*?)<\/nav>/) ?? ['', ''])[1].matchAll(/<a [^>]*>([\s\S]*?)<\/a>/g))].map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim());
+    const landing = names(readFileSync(join(root, 'site', 'index.html'), 'utf-8'));
+    expect(landing.length).toBeGreaterThan(3);
+    for (const file of readdirSync(join(root, 'site', 'docs')).filter(f => f.endsWith('.html'))) {
+      expect(names(readFileSync(join(root, 'site', 'docs', file), 'utf-8')), file).toEqual(landing);
+    }
+  });
+});
