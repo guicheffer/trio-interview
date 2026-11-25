@@ -17,9 +17,11 @@ permissions:
   pages: write
   id-token: write
 
+# A deployment that is running is never cut short by a newer push: the newer one waits its turn. Cancelling it midway is what left
+# the next run looking for an artifact that was no longer there.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
