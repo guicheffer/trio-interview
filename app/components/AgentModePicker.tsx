@@ -6,8 +6,10 @@ import { ClaudeCodeIcon } from './ClaudeCodeIcon';
 import { OpenCodeIcon } from './OpenCodeIcon';
 
 interface AgentModePickerProps {
-  /** The candidate decides. The interviewer sees the same options, all disabled. */
+  /** Whether this screen may choose. Both may; the server decides and still refuses a tool that is switched off. */
   canChoose: boolean;
+  /** True on the interviewer's screen, which also learns why a tool cannot open */
+  interviewer?: boolean;
   tools: ToolView[];
   onChoose: (mode: AgentMode) => Promise<string | null>;
   onRecheck: () => Promise<void>;
@@ -19,7 +21,7 @@ const LABELS: Record<'claude-code' | 'opencode', { name: string; hint: string }>
 };
 
 /** Shown in the side panel before any assistant is opened. The candidate picks; the interviewer watches. */
-export function AgentModePicker({ canChoose, tools, onChoose, onRecheck }: AgentModePickerProps) {
+export function AgentModePicker({ canChoose, interviewer = false, tools, onChoose, onRecheck }: AgentModePickerProps) {
   const [busy, setBusy] = useState<AgentMode | 'check' | null>(null);
   const [error, setError] = useState('');
 
@@ -41,16 +43,16 @@ export function AgentModePicker({ canChoose, tools, onChoose, onRecheck }: Agent
   const hover = canChoose ? 'hover:border-accent-500' : '';
   // Only tools the interviewer allowed are offered, and the candidate sees nothing about why one cannot open
   const offered = tools.filter(t => t.allowed);
-  const problems = canChoose ? [] : offered.filter(t => t.ok === false);
+  const problems = interviewer ? offered.filter(t => t.ok === false) : [];
 
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto p-5">
       <div className="w-full max-w-xs">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {canChoose ? 'How do you want to work with the assistant?' : 'The candidate is choosing the assistant'}
+          {interviewer ? 'Which assistant should the candidate work with?' : 'How do you want to work with the assistant?'}
         </h3>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          {canChoose ? 'Pick the one you are most comfortable with.' : 'You will see what they see as soon as they pick.'}
+          {interviewer ? 'The candidate can pick too. Whoever picks last decides, and you both see the same screen.' : 'Pick the one you are most comfortable with.'}
         </p>
 
         <div className="mt-4 space-y-2">

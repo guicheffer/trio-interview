@@ -31,10 +31,24 @@ describe('who chooses the assistant', () => {
     app.inject({ method: 'POST', url: '/api/agent-mode', headers: { ...headers, ...json }, payload: { mode } });
   const writeConfig = (text: string) => writeFileSync(join(process.cwd(), 'interview.config.yaml'), text);
 
-  test('the interviewer cannot choose, even by calling the API directly', async () => {
-    const res = await choose(LOCAL, 'claude-code');
-    expect(res.statusCode).toBe(403);
-    expect((await app.inject({ method: 'GET', url: '/api/agent-mode', headers: LOCAL })).json().mode).toBeNull();
+  test('the interviewer can choose too, to rehearse alone or to set the room up, and the candidate sees it', async () => {
+    expect((await choose(LOCAL, 'claude-code')).statusCode).toBe(200);
+    for (const headers of [LOCAL, TUNNEL]) {
+      expect((await app.inject({ method: 'GET', url: '/api/agent-mode', headers })).json().mode).toBe('claude-code');
+    }
+  });
+
+  test('the interviewer is held to the same rules: an unknown or a switched off tool is refused', async () => {
+    writeConfig('tools:\n  - agent\n  - claude-code\n');
+    expect((await choose(LOCAL, 'opencode')).statusCode).toBe(403);
+    expect((await choose(LOCAL, 'codex')).statusCode).toBe(400);
+    expect((await choose(LOCAL, 'claude-code')).statusCode).toBe(200);
+  });
+
+  test('either one can go back to the picker', async () => {
+    await choose(TUNNEL, 'claude-code');
+    expect((await app.inject({ method: 'DELETE', url: '/api/agent-mode', headers: LOCAL })).statusCode).toBe(200);
+    expect((await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json().mode).toBeNull();
   });
 
   test('the candidate chooses, and both screens then see it', async () => {
@@ -44,10 +58,10 @@ describe('who chooses the assistant', () => {
     }
   });
 
-  test('the interviewer sees the options but is told they cannot choose', async () => {
+  test('both screens may choose and see the same options', async () => {
     const mine = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: LOCAL })).json();
     const theirs = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json();
-    expect(mine.canChoose).toBe(false);
+    expect(mine.canChoose).toBe(true);
     expect(theirs.canChoose).toBe(true);
     expect(mine.tools.map((t: { tool: string }) => t.tool)).toEqual(['claude-code', 'opencode']);
   });

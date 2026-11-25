@@ -1208,7 +1208,7 @@ function InterviewPageContent() {
             {chatCollapsed
               ? <CollapsedChat onExpand={() => { chatPanelRef.current?.expand(); setChatCollapsed(false); }} />
               : agentMode.mode === null
-              ? <AgentModePicker canChoose={agentMode.canChoose} tools={agentMode.tools} onChoose={agentMode.choose} onRecheck={agentMode.recheck} />
+              ? <AgentModePicker canChoose={agentMode.canChoose} interviewer={interviewerView} tools={agentMode.tools} onChoose={agentMode.choose} onRecheck={agentMode.recheck} />
               : agentMode.mode === 'claude-code' || agentMode.mode === 'opencode'
               ? <AgentTerminal interviewer={interviewerView} tool={agentMode.mode} onChange={() => setConfirmChangeAssistant(true)} />
               : <ChatInterface

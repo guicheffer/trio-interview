@@ -88,7 +88,7 @@ Paths may use `*` and `**`. Hidden files are moved out of the candidate's folder
 
 ## Assistants and models
 
-The candidate picks the assistant from what you allowed in `interview.config.yaml`: the chat, Claude Code or OpenCode. The interviewer sees the same options, disabled, and the choice once it is made. See [SECURITY.md](../SECURITY.md) for how the terminal assistants are kept apart from your own setup.
+The candidate picks the assistant from what you allowed in `interview.config.yaml`: the chat, Claude Code or OpenCode. The interviewer can choose too, to rehearse alone or to set the room up, and both screens show the choice once it is made. See [SECURITY.md](../SECURITY.md) for how the terminal assistants are kept apart from your own setup.
 
 The chat runs the Claude Code CLI on your machine, through whatever login that CLI uses. Every message a candidate sends is paid for by that account, so make sure it has enough left.
 

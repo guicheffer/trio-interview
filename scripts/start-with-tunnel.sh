@@ -18,13 +18,40 @@ TOTAL_STEPS=6
 STEP=0
 mkdir -p .logs
 
+# How wide the progress line may be: the terminal's width, or 80 when it cannot be read. A line wider than the terminal wraps,
+# and then each redraw with \r starts a new line instead of replacing the last one.
+term_cols() {
+  local c="${COLUMNS:-}"
+  [ -z "$c" ] && c=$(tput cols 2>/dev/null)
+  case "$c" in ''|*[!0-9]*) c=80 ;; esac
+  echo "$c"
+}
+
+# bar <done> [width]: the bar is 24 wide when there is room and shrinks (never below 6) when there is not
 bar() {
-  local done=$1 width=24 filled i out=""
+  local done=$1 width=${2:-24} filled i out=""
   filled=$(( done * width / TOTAL_STEPS ))
   for ((i = 0; i < width; i++)); do
     if [ $i -lt $filled ]; then out+="█"; else out+="░"; fi
   done
   printf '%s' "$out"
+}
+
+# progress_layout <label>: prints "<bar width> <label>" for the width of this terminal. The fixed parts of the line are
+# 2 spaces, the spinner, 2 spaces, the bar, 2 spaces, "N/N" and 2 spaces: 12 columns plus the bar and the label.
+progress_layout() {
+  local label="$1" cols room width=24
+  cols=$(term_cols)
+  room=$(( cols - 14 ))                      # the 12 fixed columns and 2 spare, so the cursor never lands on the wrap
+  if [ $(( width + ${#label} )) -gt $room ]; then width=$(( room - ${#label} )); fi
+  [ $width -gt 24 ] && width=24
+  if [ $width -lt 6 ]; then                  # no room for a useful bar: keep 6 and cut the label instead
+    width=6
+    local keep=$(( room - width ))
+    [ $keep -lt 1 ] && keep=1
+    label="${label:0:$keep}"
+  fi
+  printf '%s %s' "$width" "$label"
 }
 
 help_hint() {
@@ -67,7 +94,8 @@ run_step() {
   local pid=$! frames='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏' i=0
   printf '\033[?25l'
   while kill -0 "$pid" 2>/dev/null; do
-    printf '\r  %s%s%s  %s  %s/%s  %s\033[K' "$BLUE" "${frames:$((i % 10)):1}" "$NC" "$(bar $((STEP - 1)))" "$STEP" "$TOTAL_STEPS" "$label"
+    read -r bw shown <<< "$(progress_layout "$label")"
+    printf '\r  %s%s%s  %s  %s/%s  %s\033[K' "$BLUE" "${frames:$((i % 10)):1}" "$NC" "$(bar $((STEP - 1)) "$bw")" "$STEP" "$TOTAL_STEPS" "$shown"
     i=$((i + 1))
     sleep 0.1
   done
@@ -86,7 +114,8 @@ run_step() {
 
 finish_bar() {
   [ "$LOG_MODE" = "1" ] && return
-  printf '\r  %sok%s  %s  %s/%s  Ready\033[K\n' "$GREEN" "$NC" "$(bar $TOTAL_STEPS)" "$TOTAL_STEPS" "$TOTAL_STEPS"
+  read -r bw shown <<< "$(progress_layout "Ready")"
+  printf '\r  %sok%s  %s  %s/%s  %s\033[K\n' "$GREEN" "$NC" "$(bar $TOTAL_STEPS "$bw")" "$TOTAL_STEPS" "$TOTAL_STEPS" "$shown"
 }
 
 trap 'printf "\033[?25h"' EXIT

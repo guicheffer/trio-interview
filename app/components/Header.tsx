@@ -280,7 +280,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
               </button>
               <hr className="my-1 border-gray-100 dark:border-gray-700"/>
               <button
-                onClick={() => { toggleTheme(); setShowMenu(false); }}
+                onClick={toggleTheme}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 {theme === 'dark'
@@ -290,7 +290,7 @@ export function Header({ isConnected, inactive, onResolveInactive, exerciseTitle
                 Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode
               </button>
               <button
-                onClick={() => { setShowCursors(!showCursors); setShowMenu(false); }}
+                onClick={() => setShowCursors(!showCursors)}
                 className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <span className="flex items-center gap-3 whitespace-nowrap text-left"><svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2"><path d="M4 3l7 17 2.5-7.5L21 10z" strokeLinejoin="round"/></svg>

@@ -17,7 +17,7 @@ export interface ToolView {
 export interface AgentModeView {
   /** What the candidate chose, or null while nothing was chosen yet */
   mode: AgentMode | null;
-  /** The candidate decides; the interviewer only watches */
+  /** Either screen may choose; the server still refuses a tool that is switched off */
   canChoose: boolean;
   tools: ToolView[];
   loaded: boolean;
