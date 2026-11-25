@@ -19,7 +19,7 @@ const candidateSteps: HelpStep[] = [
     body: [
       'Use it the way you would at work: ask it to explain code, find bugs, write and review changes. It is part of the interview.',
       'Say what you are trying to do and why. Read what it writes before you accept it.',
-      'Whichever assistant you pick edits your files directly, and your work saves as it goes. With the chat, the changes show in the editor and you can keep or undo each one, and a sparkle in the file list marks a file it wrote to. In Claude Code and OpenCode you read the changes in the terminal, and you can undo them in the editor like any edit.',
+      'Whichever assistant you pick edits your files directly, and your work saves as it goes. With the chat, the changes show in the editor and you can keep or undo each one, and a sparkle in the file list marks a file it wrote to. In Claude Code, OpenCode and Pi you read the changes in the terminal, and you can undo them in the editor like any edit.',
     ],
   },
   {
@@ -59,7 +59,7 @@ const interviewerSteps: HelpStep[] = [
     body: [
       'Every candidate message is paid for by the account your assistant is signed in to, so check you have enough left before you start.',
       'If the assistant stops working the chat is blurred for the candidate and you see the reason here.',
-      'Every assistant edits and saves files directly. With the chat, the changes of the open file show in the editor with Keep and Undo, a sparkle marks files it wrote to and a pencil marks files changed since the exercise started. With Claude Code and OpenCode you see the same terminal as the candidate, and the pencil still marks changed files, but there is no Keep and Undo and no sparkle.',
+      'Every assistant edits and saves files directly. With the chat, the changes of the open file show in the editor with Keep and Undo, a sparkle marks files it wrote to and a pencil marks files changed since the exercise started. With Claude Code, OpenCode and Pi you see the same terminal as the candidate, and the pencil still marks changed files, but there is no Keep and Undo and no sparkle.',
     ],
   },
   {
