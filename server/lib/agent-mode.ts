@@ -60,6 +60,11 @@ export function cachedAvailability(): Record<TerminalAssistant, ToolAvailability
   return cache;
 }
 
+/** The version line from what a program printed: the first line of stdout, or of stderr when stdout is empty */
+export function pickVersion(out: string, err: string): string {
+  return (out.trim() || err.trim()).split('\n')[0] ?? '';
+}
+
 /** Runs `<bin> --version`: tells whether the program can be started at all on this machine */
 function readVersion(bin: string): Promise<{ ok: boolean; version: string; error: string }> {
   return new Promise((resolve) => {
@@ -77,7 +82,8 @@ function readVersion(bin: string): Promise<{ ok: boolean; version: string; error
     child.stdout.on('data', d => { out += d.toString(); });
     child.stderr.on('data', d => { err += d.toString(); });
     child.on('error', e => done({ ok: false, version: '', error: `could not start ${bin}: ${e.message}` }));
-    child.on('exit', code => done({ ok: code === 0, version: out.trim().split('\n')[0] ?? '', error: err.trim().slice(0, 200) }));
+    // Pi prints its version on stderr, so that is read when stdout is empty
+    child.on('exit', code => done({ ok: code === 0, version: pickVersion(out, err), error: err.trim().slice(0, 200) }));
   });
 }
 

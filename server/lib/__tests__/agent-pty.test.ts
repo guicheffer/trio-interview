@@ -71,3 +71,12 @@ describe('OpenCode version check', () => {
     expect(majorVersion('no number')).toBe(0);
   });
 });
+
+describe('the version a program prints', () => {
+  test('is read from stderr when stdout is empty, because Pi prints it there', async () => {
+    const { pickVersion } = await import('../agent-mode.js');
+    expect(pickVersion('opencode v2.3.0\n', '')).toBe('opencode v2.3.0');
+    expect(pickVersion('', '0.73.1\n')).toBe('0.73.1');
+    expect(pickVersion('', '')).toBe('');
+  });
+});

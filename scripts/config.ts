@@ -25,7 +25,8 @@ const TOOL_NAMES: Record<Tool, string> = { agent: 'Agent mode (the chat)', ...AS
 /** The program's version line, or null when it is not installed or does not answer */
 function versionOf(bin: string): string | null {
   const run = spawnSync(bin, ['--version'], { encoding: 'utf-8', timeout: 15000 });
-  return run.status === 0 ? (run.stdout.trim().split('\n')[0] || 'installed') : null;
+  // Pi prints its version on stderr
+  return run.status === 0 ? ((run.stdout.trim() || run.stderr.trim()).split('\n')[0] || 'installed') : null;
 }
 
 function exercisesIn(dir: string): string[] {
