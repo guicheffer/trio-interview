@@ -7,6 +7,10 @@ import { useAction } from '../lib/actions';
 import { useEffect, useRef, useState } from 'react';
 import { useRemoteKey } from '../hooks/useRemoteKey';
 import { CreateFileModal } from './CreateFileModal';
+import { ConfirmDialog } from './ConfirmDialog';
+import { isMenuKey } from '../lib/contextMenu';
+import { openContextMenu, pointOfEvent } from '../lib/contextMenuStore';
+import { duplicatePath, fileMenuEntries, type FileMenuTarget } from '../lib/fileMenu';
 
 interface FileNode {
   name: string;
@@ -27,6 +31,8 @@ interface FileExplorerNewProps {
   aiChangedFiles?: string[];
   /** A file or folder was moved by drag and drop */
   onFileMoved?: (from: string, to: string) => void;
+  /** A file or folder was deleted from the tree, so its tabs can close */
+  onFileDeleted?: (path: string) => void;
   onLockedFilesLoaded?: (files: Set<string>, exerciseId?: string) => void;
 }
 
@@ -93,7 +99,7 @@ const AI_FOLDER_TITLE = 'The AI changed files in here. It edits and saves direct
 const AI_CHANGED_TITLE = 'Changed by the AI and already saved. Open the file to keep or undo its latest changes.';
 const AI_TOUCHED_TITLE = 'The AI wrote to this file. It edits and saves directly; you can undo its latest changes when the file is open.';
 
-export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedFile, aiChangedFiles, onFileMoved, onLockedFilesLoaded }: FileExplorerNewProps) {
+export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedFile, aiChangedFiles, onFileMoved, onFileDeleted, onLockedFilesLoaded }: FileExplorerNewProps) {
   const dragPathRef = useRef<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const aiChanged = aiChangedFiles ?? [];
@@ -363,6 +369,21 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
 
   useAction('files:new-file', () => setModal({ type: 'file', parentPath: '' }));
   useAction('files:new-folder', () => setModal({ type: 'folder', parentPath: '' }));
+  // "Reveal in the file tree" from a tab: open the folders that lead to the file and bring its row into view
+  useAction('files:reveal', (path: string) => {
+    if (!path) return;
+    const parts = path.split('/').slice(0, -1);
+    setExpandedDirs(prev => {
+      const next = new Set(prev);
+      parts.forEach((_, i) => next.add(parts.slice(0, i + 1).join('/')));
+      return next;
+    });
+    setTimeout(() => {
+      const row = Array.from(document.querySelectorAll<HTMLElement>('[data-file-row]')).find(el => el.dataset.fileRow === path);
+      row?.scrollIntoView({ block: 'nearest' });
+      row?.focus();
+    }, 60);
+  });
   useAction('files:collapse-all', () => setExpandedDirs(new Set()));
   useAction('files:reveal-all', () => { void changeVisibility('reveal-all'); });
   useAction('files:hide-all', () => { void changeVisibility('hide-all'); });
@@ -437,6 +458,101 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
       setTimeout(() => setCreateError(null), 4000);
     }
   };
+
+  const showError = (text: string) => {
+    setCreateError(text);
+    setTimeout(() => setCreateError(null), 4000);
+  };
+
+  // Delete asks first, then calls the same server route for a file or a folder
+  const [pendingDelete, setPendingDelete] = useState<FileNode | null>(null);
+  const confirmDelete = async () => {
+    const target = pendingDelete;
+    setPendingDelete(null);
+    if (!target) return;
+    try {
+      const res = await fetch(`/api/files/${encodeURIComponent(target.path)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showError(body.error || `Could not delete ${target.name}`);
+        return;
+      }
+      onFileDeleted?.(target.path);
+      await loadFiles();
+    } catch {
+      showError(`Could not delete ${target.name}`);
+    }
+  };
+
+  // A copy is a new file with the same text, made with the calls the tree already uses to read and create
+  const duplicateFile = async (path: string) => {
+    try {
+      const read = await fetch(`/api/files/${encodeURIComponent(path)}`);
+      if (!read.ok) { showError('Could not read the file to copy it'); return; }
+      const { content } = await read.json();
+      const copy = duplicatePath(path, new Set(filesRef.current.map(f => f.path)));
+      const res = await fetch('/api/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: copy, content: content ?? '' }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showError(body.error || 'Could not duplicate the file');
+        return;
+      }
+      await loadFiles();
+      stopFollowing();
+      onFileSelect(copy);
+    } catch {
+      showError('Could not duplicate the file');
+    }
+  };
+
+  const copyText = (text: string) => { navigator.clipboard?.writeText(text).catch(() => {}); };
+
+  const openMenu = (target: FileMenuTarget, at: { x: number; y: number; keyboard: boolean }) => {
+    const nodeFiles = filesRef.current;
+    const lockedInside = target.kind === 'directory'
+      && nodeFiles.some(f => f.path.startsWith(target.path + '/') && isLockedPath(f.path, lockedFiles));
+    const entries = fileMenuEntries(target, {
+      isInterviewer,
+      lockedFiles,
+      existingPaths: new Set(nodeFiles.map(f => f.path)),
+      expanded: expandedDirs,
+      managed: visibility.managed,
+      hiddenNow: visibility.hidden,
+      lockedInside,
+      handlers: {
+        open: (path) => { stopFollowing(); onFileSelect(path); },
+        toggle: toggleDir,
+        rename: (path) => { const n = nodeFiles.find(f => f.path === path); if (n) startRename(n); },
+        remove: (path) => { const n = nodeFiles.find(f => f.path === path); if (n) setPendingDelete(n); },
+        newFile: (parent) => { if (parent && !expandedDirs.has(parent)) toggleDir(parent); setModal({ type: 'file', parentPath: parent }); },
+        newFolder: (parent) => { if (parent && !expandedDirs.has(parent)) toggleDir(parent); setModal({ type: 'folder', parentPath: parent }); },
+        duplicate: (path) => { void duplicateFile(path); },
+        copy: copyText,
+        setVisibility: (action, paths) => { void changeVisibility(action, paths); },
+        collapseAll: () => setExpandedDirs(new Set()),
+      },
+    });
+    openContextMenu({ entries, x: at.x, y: at.y, keyboard: at.keyboard, label: target.kind === 'root' ? 'Files' : target.name });
+  };
+
+  const menuHandlers = (target: FileMenuTarget) => ({
+    onContextMenu: (e: React.MouseEvent<HTMLElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openMenu(target, pointOfEvent(e));
+    },
+    onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+      if (!isMenuKey(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = e.currentTarget.getBoundingClientRect();
+      openMenu(target, { x: rect.left + 8, y: rect.bottom - 2, keyboard: true });
+    },
+  });
 
   const commitNewFolder = async (name: string) => {
     const trimmed = name.trim();
@@ -533,6 +649,9 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
         onDragOver={(e) => { if (dragPathRef.current) { e.preventDefault(); setDropTarget(''); } }}
         onDragLeave={(e) => { if (e.currentTarget === e.target) setDropTarget(null); }}
         onDrop={(e) => { e.preventDefault(); void moveTo(''); }}
+        {...menuHandlers({ kind: 'root' })}
+        tabIndex={-1}
+        aria-label="Files"
       >
         {loading && (
           <div className="flex items-center justify-center h-full">
@@ -625,6 +744,10 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
                         if (file.type === 'file' && !isLockedPath(file.path, lockedFiles)) startRename(file);
                       }}
                       title={rowTitle(file, lockedFiles)}
+                      data-file-row={file.path}
+                      {...menuHandlers(file.type === 'directory'
+                        ? { kind: 'directory', path: file.path, name: file.name, hidden: file.hidden }
+                        : { kind: 'file', path: file.path, name: file.name, hidden: file.hidden })}
                       className="flex-1 text-left px-3 py-2 flex items-center space-x-2 min-w-0"
                     >
                       {file.type === 'directory' ? (
@@ -733,6 +856,19 @@ export function FileExplorerNew({ onFileSelect, baseKey, hasSelection, selectedF
           </ul>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title={pendingDelete.type === 'directory' ? `Delete the folder ${pendingDelete.name}?` : `Delete ${pendingDelete.name}?`}
+          message={pendingDelete.type === 'directory'
+            ? 'The folder and everything in it will be deleted. This cannot be undone.'
+            : 'The file will be deleted. This cannot be undone.'}
+          confirmLabel="Delete"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
 
       {modal && (
         <CreateFileModal

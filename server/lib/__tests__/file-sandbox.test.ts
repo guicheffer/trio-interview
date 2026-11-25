@@ -82,6 +82,27 @@ describe('FileSandbox', () => {
     expect(files).toContain('file1.txt');
     expect(files).toContain('file2.txt');
   });
+
+  test('deletePath removes a folder with its content but never the root, a path outside, or what a symlink points to', async () => {
+    const { mkdir, readFile, stat } = await import('fs/promises');
+    const dir_ = await mkdtemp(join(tmpdir(), 'test-del-'));
+    await mkdir(join(dir_, 'a', 'b'), { recursive: true });
+    await writeFile(join(dir_, 'a', 'b', 'c.txt'), 'c');
+    const outside = await mkdtemp(join(tmpdir(), 'test-outside-'));
+    await writeFile(join(outside, 'keep.txt'), 'keep');
+    await symlink(outside, join(dir_, 'link'));
+
+    const sandbox = new FileSandbox(dir_);
+    await sandbox.deletePath('a');
+    await expect(stat(join(dir_, 'a'))).rejects.toThrow();
+
+    await expect(sandbox.deletePath('.')).rejects.toBeInstanceOf(SecurityError);
+    await expect(sandbox.deletePath('../x')).rejects.toBeInstanceOf(SecurityError);
+    await expect(sandbox.deletePath('link/keep.txt')).rejects.toBeInstanceOf(SecurityError);
+    expect(await readFile(join(outside, 'keep.txt'), 'utf-8')).toBe('keep');
+    await rm(outside, { recursive: true, force: true });
+    await rm(dir_, { recursive: true, force: true });
+  });
 });
 
 describe('FileSandbox listing and moving', () => {
@@ -196,4 +217,5 @@ describe('FileSandbox symlinks', () => {
     await sandbox.writeFile('alias/new.txt', 'ok');
     expect(await sandbox.readFile('real/new.txt')).toBe('ok');
   });
+
 });

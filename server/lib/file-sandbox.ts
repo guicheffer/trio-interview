@@ -1,6 +1,6 @@
 import { resolve, relative, dirname, isAbsolute, sep } from 'path';
 import { lstatSync, realpathSync } from 'fs';
-import { readFile as fsReadFile, writeFile as fsWriteFile, readdir, lstat, mkdir, rename as fsRename } from 'fs/promises';
+import { readFile as fsReadFile, writeFile as fsWriteFile, readdir, lstat, mkdir, rename as fsRename, rm } from 'fs/promises';
 
 export class FileSandbox {
   private readonly exerciseRoot: string;
@@ -147,6 +147,14 @@ export class FileSandbox {
     const safeTo = this.validatePath(toPath);
     await mkdir(dirname(safeTo), { recursive: true });
     await fsRename(safeFrom, safeTo);
+  }
+
+  /** Deletes a file, or a folder with everything in it. The folder the sandbox is built on cannot go. */
+  async deletePath(path: string): Promise<void> {
+    const safe = this.validatePath(path);
+    if (safe === this.exerciseRoot) throw new SecurityError('Cannot delete the exercise folder');
+    // A symlink is removed as a link, never followed
+    await rm(safe, { recursive: true, force: false });
   }
 
   async createFile(path: string, content: string = ''): Promise<void> {

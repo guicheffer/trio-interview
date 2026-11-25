@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useTerminalMenu } from '../lib/useTerminalMenu';
 import { ClaudeCodeIcon } from './ClaudeCodeIcon';
 import { OpenCodeIcon } from './OpenCodeIcon';
 import { PiIcon } from './PiIcon';
@@ -23,6 +24,9 @@ export function AgentTerminal({ interviewer, tool, onChange }: AgentTerminalProp
   const [connected, setConnected] = useState(false);
   const [restartKey, setRestartKey] = useState(0);
   const { theme } = useTheme();
+
+  const xtermRef = useRef<any>(null);
+  useTerminalMenu({ host: termRef, getTerm: () => xtermRef.current, kind: 'assistant', connected, deps: [restartKey, tool] });
 
   useEffect(() => {
     if (!termRef.current) return;
@@ -55,6 +59,7 @@ export function AgentTerminal({ interviewer, tool, onChange }: AgentTerminalProp
       term.loadAddon(fit);
       term.loadAddon(new WebLinksAddon());
       term.open(termRef.current);
+      xtermRef.current = term;
       fit.fit();
 
       // Copy with a selection; without one the key goes to the program (Ctrl+C interrupts it)
@@ -111,6 +116,7 @@ export function AgentTerminal({ interviewer, tool, onChange }: AgentTerminalProp
       try { term?.dispose(); } catch {}
       try { ws?.close(); } catch {}
       wsRef.current = null;
+      xtermRef.current = null;
     };
   }, [theme, restartKey, tool]);
 

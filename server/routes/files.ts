@@ -147,6 +147,37 @@ export async function registerFileRoutes(server: FastifyInstance) {
     }
   });
 
+  // DELETE /api/files/:path - Delete a file, or a folder with what is in it
+  server.delete('/api/files/:path', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { path } = request.params as { path: string };
+      if (!path) return reply.status(400).send({ error: 'path is required' });
+      if (roleForRequest(request) !== 'interviewer') {
+        const patterns = await lockedPatterns();
+        // A folder that holds a read only file cannot be deleted either, or its files would go with it
+        const inside = (await getSandbox().listFilesTree()).map(f => f.path).filter(p => p === path || p.startsWith(trimTrailingSlashes(path) + '/'));
+        if ([path, ...inside].some(p => isLockedPath(p, patterns))) {
+          return reply.status(403).send({ error: 'This file is read-only' });
+        }
+      }
+      const active = getActiveSession();
+      if (active && roleForRequest(request) === 'interviewer') {
+        // A file still hidden from the candidate lives aside; it is revealed before it can be deleted
+        if (hiddenFilePath(active.candidateName, active.exerciseId, path)) {
+          return reply.status(409).send({ error: 'Reveal the file to the candidate before deleting it' });
+        }
+      }
+      server.log.info(`[FileDelete] Deleting ${path}`);
+      await getSandbox().deletePath(path);
+      reply.send({ ok: true });
+    } catch (error) {
+      if (error instanceof SecurityError) return reply.status(403).send({ error: (error as Error).message });
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return reply.status(404).send({ error: 'File not found' });
+      server.log.error({ err: error }, '[FileDelete] Failed to delete');
+      reply.status(500).send({ error: 'Failed to delete' });
+    }
+  });
+
   // PUT /api/files/:path - Save file content (from editable Monaco)
   server.put('/api/files/:path', async (request: FastifyRequest, reply: FastifyReply) => {
     try {

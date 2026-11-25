@@ -445,6 +445,14 @@ export function ChatInterface({
   const goInstant = () => { setPlanMode(false); if (selectedModel === PLAN_MODEL) onModelChange?.(DEFAULT_MODEL); };
   useAction('chat:focus', () => inputRef.current?.focus());
   useAction('chat:prefill', (text: string) => { setInput(text ?? ''); shareDraft(text ?? ''); setTimeout(() => inputRef.current?.focus(), 0); });
+  // Adds to what is already typed (the editor menu's "Ask the assistant"); never sends it
+  useAction('chat:draft-append', (text: string) => {
+    if (!text) return;
+    const next = input.trim() ? `${input.replace(/\s+$/, '')}\n\n${text}` : text;
+    setInput(next);
+    shareDraft(next);
+    setTimeout(() => { const el = inputRef.current; if (el) { el.focus(); el.setSelectionRange(next.length, next.length); } }, 0);
+  });
   useAction('chat:plan', goPlan);
   useAction('chat:instant', goInstant);
   useAction('chat:clear', () => setConfirmClear(true));

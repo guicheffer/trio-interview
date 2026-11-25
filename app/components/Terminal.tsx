@@ -5,6 +5,7 @@ import { moveHead, selectionRange, type SelectKey, type Selection } from '../lib
 import { firstPreviewUrl, lastPreviewUrl } from '../lib/terminalOutput';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useTerminalMenu } from '../lib/useTerminalMenu';
 
 interface TerminalProps {
   collapsed: boolean;
@@ -56,6 +57,8 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
   onPreviewUrlRef.current = onPreviewUrl;
   onServerStatusRef.current = onServerStatus;
   runChallengeRef.current = runChallenge;
+
+  useTerminalMenu({ host: termRef, getTerm: () => xtermRef.current, kind: 'shell', connected, clear: () => sendFrame({ type: 'clear' }), deps: [collapsed] });
 
   useEffect(() => {
     if (collapsed || !termRef.current) return;

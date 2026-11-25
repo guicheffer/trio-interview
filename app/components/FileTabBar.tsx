@@ -3,6 +3,8 @@
 import { activateOnKey } from '../lib/a11y';
 import { isLockedPath } from '../../shared/locks';
 import { useState } from 'react';
+import { isMenuKey } from '../lib/contextMenu';
+import { pointOfEvent } from '../lib/contextMenuStore';
 import { REDACTED, useHiddenFiles } from '../lib/hiddenFiles';
 
 // Extension → color for tab dot indicator
@@ -29,9 +31,11 @@ interface FileTabBarProps {
   onClose: (path: string) => void;
   onReorder?: (newOrder: string[]) => void;
   lockedFiles?: Set<string>;
+  /** Right click (or the Menu key) on a tab */
+  onTabMenu?: (tab: string, at: { x: number; y: number; keyboard: boolean }) => void;
 }
 
-export function FileTabBar({ tabs, selectedTab, onSelect, onClose, onReorder, lockedFiles }: FileTabBarProps) {
+export function FileTabBar({ tabs, selectedTab, onSelect, onClose, onReorder, lockedFiles, onTabMenu }: FileTabBarProps) {
   const hiddenFiles = useHiddenFiles();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -87,7 +91,21 @@ export function FileTabBar({ tabs, selectedTab, onSelect, onClose, onReorder, lo
             tabIndex={0}
             aria-selected={isActive}
             onClick={() => onSelect(tab)}
-            onKeyDown={activateOnKey(() => onSelect(tab))}
+            onKeyDown={(e) => {
+              if (onTabMenu && isMenuKey(e)) {
+                e.preventDefault();
+                const rect = e.currentTarget.getBoundingClientRect();
+                onTabMenu(tab, { x: rect.left + 8, y: rect.bottom - 2, keyboard: true });
+                return;
+              }
+              activateOnKey(() => onSelect(tab))(e);
+            }}
+            onContextMenu={(e) => {
+              if (!onTabMenu) return;
+              e.preventDefault();
+              e.stopPropagation();
+              onTabMenu(tab, pointOfEvent(e));
+            }}
           >
             {/* Color dot (skip for preview tab) */}
             {!isPreview && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getExtColor(name)}`} />}
