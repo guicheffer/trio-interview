@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { basename, dirname, join } from 'path';
 import type { IPty } from 'node-pty';
@@ -6,6 +6,7 @@ import { sanitizeEnvironment } from './sanitize-env.js';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
 import { BLOCKED_TOOLS, resolveModelId } from './claude-proxy.js';
 import { assistantTmpDir, confinedSettings } from './confinement.js';
+import { sandboxAvailable, sandboxMissing, sandboxProfile, wrapCommand } from './os-sandbox.js';
 import { loadPty } from './terminal-session.js';
 import { BIN } from './binaries.js';
 import { DEFAULT_MODEL } from '../../shared/models.js';
@@ -105,6 +106,23 @@ export function stopAllAgentSessions(): void {
 }
 
 /** The arguments Claude Code starts with in the terminal: same limits as the chat, with its own question tool left on */
+/**
+ * The command for an assistant that is put inside the operating system's sandbox: the profile is written next to its private
+ * configuration (which it can read but not change) and the assistant becomes the last part of the command line.
+ */
+export function sandboxed(input: { bin: string; args: string[]; workPath: string; configDir: string; writable: string[] }): { bin: string; args: string[] } | { error: string } {
+  if (!sandboxAvailable()) return sandboxMissing();
+  // The profile lives in a folder of its own that the assistant can read and never write: a read only file is not enough, because
+  // deleting a file depends on the folder (measured: the program could not rewrite it and could still delete it).
+  const walls = join(dirname(input.workPath), '.walls');
+  mkdirSync(walls, { recursive: true });
+  const profilePath = join(walls, `${basename(input.workPath)}-${basename(input.bin)}.sb`);
+  // Written fresh on every start (the file is read only, so it is removed first): the tool owns this folder, the assistant does not.
+  rmSync(profilePath, { force: true });
+  writeFileSync(profilePath, sandboxProfile({ workPath: input.workPath, configDir: input.configDir, program: input.bin, writable: input.writable, readable: [walls] }), { mode: 0o444 });
+  return wrapCommand(profilePath, input.bin, input.args);
+}
+
 export function claudeArgs(assistantContext: string, resume: boolean): string[] {
   return [
     '--permission-mode=bypassPermissions',
@@ -164,9 +182,13 @@ export class AgentPtySession {
       const home = opencodeHomeDir(workPath);
       if (!seedOpencodeHome(home)) return { error: 'No OpenCode login was found to copy. Sign in to a provider in OpenCode and pick a default model, or set TRIO_OPENCODE_API_KEY.' };
       writeOpencodeRules(home, assistantContext);
+      // OpenCode has no sandbox of its own, so the operating system's is put around the whole process. Without one the assistant is
+      // not started at all: running it open is the thing this exists to prevent.
+      const walled = sandboxed({ bin: BIN.opencode, args: opencodeArgs(hasOpencodeHistory(home)), workPath, configDir: home, writable: [workPath, home] });
+      if ('error' in walled) return walled;
       return {
-        bin: BIN.opencode,
-        args: opencodeArgs(hasOpencodeHistory(home)),
+        bin: walled.bin,
+        args: walled.args,
         env: { ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>), ...opencodeEnvironment(home), ...base },
       };
     }

@@ -116,3 +116,5 @@ The system prompt lives in `server/lib/assistant-prompt.ts` (base rules) plus th
 - Never push to the main branch. Work on a branch and open a pull request.
 - English for code, docs and commits. No em dashes.
 - Verify UI changes in the browser on both sides: `localhost` (interviewer) and the tunnel link in an isolated context (candidate).
+
+- **Terminal assistants run inside the operating system's sandbox.** `server/lib/confinement.ts` lists what a candidate session may not reach; Claude Code gets it as its own sandbox settings plus switches that keep its file tools in the folder, and `server/lib/os-sandbox.ts` wraps OpenCode (and whatever comes next) in `sandbox-exec` with the same list. The profile sits in a folder the assistant can read and not write (a read only file is not enough: deleting depends on the folder). Where the sandbox does not exist the assistant is not started. `server/lib/__tests__/os-sandbox.test.ts` runs ordinary programs inside the real sandbox and tries to get out.
