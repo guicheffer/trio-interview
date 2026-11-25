@@ -38,6 +38,10 @@ import { beginLayoutGesture, isLayoutGesture, pulseLayoutGesture } from './lib/l
 import { useRemoteKey } from './hooks/useRemoteKey';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { FileTabBar } from './components/FileTabBar';
+import { ContextMenuHost } from './components/ContextMenuHost';
+import { openContextMenu } from './lib/contextMenuStore';
+import { tabMenuEntries } from './lib/tabMenu';
+import { isHiddenFile } from './lib/hiddenFiles';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { closeShortcut, globalShortcut, mergeOpenTabs } from './lib/shortcuts';
 import { createDragGuard } from './lib/dragGuard';
@@ -692,6 +696,25 @@ function InterviewPageContent() {
   const closeTabRef = useRef(closeTab);
   closeTabRef.current = closeTab;
 
+  const openTabMenu = (tab: string, at: { x: number; y: number; keyboard: boolean }) => {
+    const entries = tabMenuEntries({
+      tab,
+      tabs: openTabs,
+      hasPreviewUrl: !!previewUrl,
+      revealable: tab !== PREVIEW_TAB && !isHiddenFile(tab),
+      hidden: false,
+    }, {
+      close: closeTab,
+      closeOthers: (keep) => { setOpenTabs(prev => prev.filter(t => t === keep)); setSelectedFile(keep); },
+      closeAll: () => { setOpenTabs([]); setSelectedFile(null); },
+      copyPath: (path) => { navigator.clipboard?.writeText(path).catch(() => {}); },
+      revealInTree: (path) => { showPanel(filesPanelRef, setFilesCollapsed); setTimeout(() => runAction('files:reveal', path), 120); },
+      reloadPreview,
+      openPreviewInNewTab: () => { if (previewUrl) window.open(previewSrc(previewUrl, window.location), '_blank', 'noopener'); },
+    }, typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl+');
+    openContextMenu({ entries, x: at.x, y: at.y, keyboard: at.keyboard, label: tab === PREVIEW_TAB ? 'Preview tab' : `Tab ${tab.split('/').pop()}` });
+  };
+
   const toggleTerminal = useCallback(() => {
     const panel = terminalPanelRef.current;
     if (!panel) return;
@@ -1113,6 +1136,14 @@ function InterviewPageContent() {
                       setOpenTabs(prev => prev.map(remap));
                       setSelectedFile(cur => (cur ? remap(cur) : cur));
                     }}
+                    onFileDeleted={(gone) => {
+                      const goneNow = (p: string) => p === gone || p.startsWith(gone + '/');
+                      setOpenTabs(prev => prev.filter(t => !goneNow(t)));
+                      setSelectedFile(cur => {
+                        if (!cur || !goneNow(cur)) return cur;
+                        return openTabsRef.current.find(t => !goneNow(t)) ?? null;
+                      });
+                    }}
                     onLockedFilesLoaded={(locked, exerciseId) => {
                       setLockedFiles(locked);
                       if (exerciseId) setCurrentExerciseId(exerciseId);
@@ -1135,6 +1166,7 @@ function InterviewPageContent() {
                     onClose={closeTab}
                     onReorder={(newOrder) => setOpenTabs(newOrder)}
                     lockedFiles={lockedFiles}
+                    onTabMenu={openTabMenu}
                   />
                   <div className="relative flex-1 min-h-0">
                     <MainPane
@@ -1278,6 +1310,7 @@ function InterviewPageContent() {
 export default function InterviewPage() {
   return (
     <ThemeProvider>
+      <ContextMenuHost />
       <InterviewPageContent />
     </ThemeProvider>
   );

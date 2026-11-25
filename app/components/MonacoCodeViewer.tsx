@@ -11,7 +11,10 @@ import { DatabaseViewer } from './DatabaseViewer';
 import { CsvViewer } from './CsvViewer';
 import { collab } from '../lib/collab';
 import { REDACTED, isHiddenFile, useHiddenFiles } from '../lib/hiddenFiles';
-import { useAction } from '../lib/actions';
+import { runAction, useAction } from '../lib/actions';
+import { askDraft, editorMenuEntries } from '../lib/editorMenu';
+import { openContextMenu } from '../lib/contextMenuStore';
+import { isMenuKey } from '../lib/contextMenu';
 
 export type SaveState = 'idle' | 'unsaved' | 'saving' | 'saved';
 
@@ -314,6 +317,53 @@ export function MonacoCodeViewer({ filePath, readOnly = false, aiLocked = false,
     if (cmd) onRunFile?.(cmd);
   });
   useAction('editor:save', () => doSaveRef.current());
+  // What the right-click menu needs to know when it opens, read at that moment rather than when the editor mounted
+  const menuStateRef = useRef({ readOnly, aiLocked, filePath, runCommand: null as string | null, onRunFile });
+  menuStateRef.current = { readOnly, aiLocked, filePath, runCommand: runCommandFor(filePath), onRunFile };
+  const openEditorMenu = (editor: any, x: number, y: number, keyboard: boolean) => {
+    const st = menuStateRef.current;
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    const selected = selection && !selection.isEmpty() ? model?.getValueInRange(selection) ?? '' : '';
+    const editLocked = st.readOnly || st.aiLocked;
+    const edit = (text: string) => {
+      const sel = editor.getSelection();
+      if (!sel) return;
+      editor.focus();
+      // A normal Monaco edit, so it saves and reaches the other screen like typing
+      editor.executeEdits('context-menu', [{ range: sel, text, forceMoveMarkers: true }]);
+    };
+    const entries = editorMenuEntries({
+      hasSelection: !!selected,
+      readOnly: st.readOnly,
+      aiLocked: st.aiLocked,
+      canFormat: !!editor.getAction('editor.action.formatDocument')?.isSupported(),
+      runCommand: st.runCommand && st.onRunFile ? st.runCommand : null,
+      chatAvailable: document.querySelector('[data-chat-root]') !== null,
+      isMac: navigator.platform.toLowerCase().includes('mac'),
+    }, {
+      cut: () => { if (editLocked || !selected) return; navigator.clipboard?.writeText(selected).catch(() => {}); edit(''); },
+      copy: () => { if (selected) navigator.clipboard?.writeText(selected).catch(() => {}); editor.focus(); },
+      paste: () => {
+        if (editLocked) return;
+        navigator.clipboard?.readText().then(text => { if (text && !menuStateRef.current.aiLocked) edit(text); }).catch(() => {});
+      },
+      selectAll: () => { editor.focus(); editor.trigger('context-menu', 'editor.action.selectAll', {}); },
+      gotoLine: () => { editor.focus(); editor.trigger('context-menu', 'editor.action.gotoLine', {}); },
+      find: () => { editor.focus(); editor.trigger('context-menu', 'actions.find', {}); },
+      format: () => { if (editLocked) return; editor.focus(); editor.trigger('context-menu', 'editor.action.formatDocument', {}); },
+      run: () => { if (st.runCommand) st.onRunFile?.(st.runCommand); },
+      ask: () => {
+        const file = menuStateRef.current.filePath;
+        if (!file) return;
+        const line = editor.getPosition()?.lineNumber ?? 1;
+        const sel = editor.getSelection();
+        runAction('chat:draft-append', askDraft(file, selected && sel ? { text: selected, startLine: sel.startLineNumber, endLine: sel.endLineNumber } : null, line));
+      },
+    });
+    openContextMenu({ entries, x, y, keyboard, label: 'Editor', returnFocus: editor.getDomNode()?.querySelector('textarea') ?? null });
+  };
+
   useAction('editor:reload', () => { hasLocalEditsRef.current = false; loadFileRef.current?.(); });
 
   const notifySaveState = useCallback((state: SaveState) => {
@@ -623,6 +673,28 @@ export function MonacoCodeViewer({ filePath, readOnly = false, aiLocked = false,
                 pendingTyping = false;
               };
               sendCaretRef.current = sendCaret;
+
+              // Our own menu replaces Monaco's (contextmenu is off below). It also opens from the Menu key and Shift+F10
+              editor.onContextMenu((e: any) => {
+                const ev = e.event;
+                ev.preventDefault();
+                ev.stopPropagation();
+                // A right click inside the selection keeps it, anywhere else it moves the cursor there first
+                const sel = editor.getSelection();
+                if (e.target?.position && !(sel && !sel.isEmpty() && sel.containsPosition(e.target.position))) editor.setPosition(e.target.position);
+                openEditorMenu(editor, ev.posx, ev.posy, false);
+              });
+              editor.onKeyDown((e: any) => {
+                const ev = e.browserEvent as KeyboardEvent;
+                if (!isMenuKey(ev)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                // Under the caret, in page coordinates
+                const pos = editor.getPosition();
+                const spot = pos ? editor.getScrolledVisiblePosition(pos) : null;
+                const box = editor.getDomNode()?.getBoundingClientRect();
+                openEditorMenu(editor, (box?.left ?? 0) + (spot?.left ?? 0), (box?.top ?? 0) + (spot ? spot.top + spot.height : 0), true);
+              });
               const scheduleCaret = (typing = false) => {
                 if (typing) pendingTyping = true;
                 if (caretTimer) return;
@@ -693,6 +765,8 @@ export function MonacoCodeViewer({ filePath, readOnly = false, aiLocked = false,
             options={{
               // Typing pauses while the agent writes; the text it writes still arrives
               readOnly: readOnly || aiLocked,
+              // Replaced by the menu of the page (see onContextMenu above)
+              contextmenu: false,
               minimap: { enabled: true },
               fontSize: 14,
               lineNumbers: 'on',

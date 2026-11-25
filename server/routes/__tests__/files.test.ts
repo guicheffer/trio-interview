@@ -131,6 +131,48 @@ describe('file routes', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  test('deletes a file or a folder, and refuses what is locked for a candidate', async () => {
+    await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: 'trash/a.txt', content: 'a' } });
+    await app.inject({ method: 'POST', url: '/api/files', headers: TUNNEL, payload: { path: 'trash/deep/b.txt', content: 'b' } });
+
+    const file = await app.inject({ method: 'DELETE', url: `/api/files/${enc('trash/a.txt')}`, headers: TUNNEL });
+    expect(file.json()).toEqual({ ok: true });
+    expect(existsSync(join(work, 'trash', 'a.txt'))).toBe(false);
+
+    const folder = await app.inject({ method: 'DELETE', url: `/api/files/${enc('trash')}`, headers: TUNNEL });
+    expect(folder.statusCode).toBe(200);
+    expect(existsSync(join(work, 'trash'))).toBe(false);
+
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('trash/none.txt')}`, headers: TUNNEL })).statusCode).toBe(404);
+  });
+
+  test('a candidate cannot delete a locked file, a locked folder or a folder that holds one', async () => {
+    const locked = await app.inject({ method: 'DELETE', url: `/api/files/${enc('description.md')}`, headers: TUNNEL });
+    expect(locked.statusCode).toBe(403);
+    expect(existsSync(join(work, 'description.md'))).toBe(true);
+
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('phases')}`, headers: TUNNEL })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('phases/phase-1.md')}`, headers: TUNNEL })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('./Phases/phase-1.md')}`, headers: TUNNEL })).statusCode).toBe(403);
+    expect(existsSync(join(work, 'phases', 'phase-1.md'))).toBe(true);
+  });
+
+  test('delete stays inside the candidate folder', async () => {
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('../../x')}`, headers: TUNNEL })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'DELETE', url: `/api/files/${enc('.')}`, headers: LOCAL })).statusCode).toBeGreaterThanOrEqual(400);
+    expect(existsSync(join(work, 'description.md'))).toBe(true);
+  });
+
+  test('the interviewer may delete a locked file but not one still hidden from the candidate', async () => {
+    const hidden = await app.inject({ method: 'DELETE', url: `/api/files/${enc('phases/phase-2-hidden.md')}`, headers: LOCAL });
+    expect(hidden.statusCode).toBe(409);
+
+    await app.inject({ method: 'POST', url: '/api/files', headers: LOCAL, payload: { path: 'phases/extra.md', content: '' } });
+    const locked = await app.inject({ method: 'DELETE', url: `/api/files/${enc('phases/extra.md')}`, headers: LOCAL });
+    expect(locked.statusCode).toBe(200);
+    expect(existsSync(join(work, 'phases', 'extra.md'))).toBe(false);
+  });
+
   test('serves the run command and the challenge meta', async () => {
     const run = await app.inject({ method: 'GET', url: '/api/run-challenge' });
     expect(run.json()).toMatchObject({ start: 'npm start' });
