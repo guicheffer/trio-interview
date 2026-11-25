@@ -86,6 +86,7 @@ describe('the live demo page', () => {
     const html = demo();
     expect(html).toMatch(/Demo replica/);
     expect(html).toMatch(/Nothing you type or run is sent anywhere/);
+    expect(html).toMatch(/runs on the interviewer's own machine/);
     expect(html).toContain('href="../docs/candidate.html"');
     expect(html).toContain('src="../app/scene-fib.html"');
   });
