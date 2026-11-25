@@ -51,7 +51,10 @@
     '.demo-ta::selection{background:rgba(38,79,120,.8)}',
     '.demo-empty{display:flex;align-items:center;justify-content:center;height:100%;background:#111827;color:#9ca3af;font:14px system-ui,sans-serif;text-align:center}',
     '.demo-empty svg{display:block;margin:0 auto 16px;width:48px;height:48px}',
-    '.demo-hide-sub{display:none!important}'
+    '.demo-starter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:5px 10px;background:#1a1a2e;border-bottom:1px solid #2c2c3c;font:11px/1.4 system-ui,sans-serif;color:#9ca3af}',
+    '.demo-starter .t{flex:1 1 220px}',
+    '.demo-starter .v{flex:none;font:600 11px system-ui,sans-serif;color:#fff;background:#5850f8;border:0;border-radius:6px;padding:4px 10px;cursor:pointer}',
+    '.demo-starter .v:hover{filter:brightness(1.12)}'
   ].join('');
 
   /* ---------------- the editor, its tabs and the file tree ---------------- */
@@ -171,6 +174,37 @@
     setTimeout(function () { runCode(text['fibonacci.js'], function (out) { if (id === runId) project('node fibonacci.js', out); }); }, 250);
   }
 
+  /* ---------------- the empty starter, and the assistant's version ---------------- */
+  var starterNote = null, versionBtn = null, usingAnswer = false;
+  function setupStarter() {
+    var term = doc.getElementById('terminal'); if (!term) return;
+    var bar = term.querySelector('.min-h-\\[30px\\]') || term.firstElementChild.firstElementChild;
+    starterNote = doc.createElement('div'); starterNote.className = 'demo-starter';
+    starterNote.innerHTML = '<span class="t"></span><button type="button" class="v"></button>';
+    bar.parentNode.insertBefore(starterNote, bar.nextSibling);
+    versionBtn = starterNote.querySelector('.v');
+    versionBtn.addEventListener('click', function () { setAnswer(!usingAnswer); });
+    setAnswer(false);
+  }
+  /**
+   * Swaps the editor between the empty starter and the version the assistant writes in the landing page's story. The code comes from the
+   * scene (FIB.after, FIB.before) and its own functions draw the assistant's terminal, so nothing of the story is copied here.
+   */
+  function setAnswer(on) {
+    usingAnswer = on;
+    text['fibonacci.js'] = on ? win.FIB.after : (FILES['fibonacci.js'] || {}).text || win.FIB.before;
+    try { if (on) win.fibShowAnswer(); else win.fibReset(); } catch (e) { /* the scene is still loading */ }
+    hideSceneEditor();
+    if (active === 'fibonacci.js') drawBody();
+    project();
+    starterNote.querySelector('.t').textContent = on
+      ? 'This is the version the assistant wrote in the story of the landing page. It fills in fibonacci(n) and leaves fibonacciUpTo for you. Press Run to try it.'
+      : 'The starter is empty on purpose: the assistant is what would fill it in. It is shown here, not connected.';
+    versionBtn.textContent = on ? 'Back to the empty starter' : "Show the assistant's version";
+  }
+  // the scene's own editor is replaced by ours, and its functions redraw it, so keep that copy out of sight
+  function hideSceneEditor() { [].forEach.call(doc.querySelectorAll('.view-lines, .view-zones'), function (e) { e.style.display = 'none'; }); }
+
   /* ---------------- panels that collapse ---------------- */
   var saved = {};
   function setCollapsed(id, hide, btn, shownMark, hiddenMark, hideTitle, showTitle) {
@@ -258,6 +292,22 @@
     mode: function () { return current; },
     target: function (name) { return doc && doc.getElementById(name); },
     expandAll: function () {},
+    /**
+     * Whether a real click on `name` (a button of the scene) would reach it: the iframe takes pointer events, the point at the centre of the
+     * button, moved and scaled to the page the way a mouse sees it, is over the iframe, and the scene puts that button under it.
+     */
+    canClick: function (selector, label) {
+      if (!doc) return { ok: false, why: 'the scene is not loaded' };
+      var btn = [].slice.call(doc.querySelectorAll(selector)).filter(function (b) { return label.test(b.textContent.trim()); })[0];
+      if (!btn) return { ok: false, why: 'no such button' };
+      var fr = frame.getBoundingClientRect(), r = btn.getBoundingClientRect(), s = fr.width / 1440;
+      var x = fr.left + (r.left + r.width / 2) * s, y = fr.top + (r.top + r.height / 2) * s;
+      var pe = getComputedStyle(frame).pointerEvents;
+      var top = document.elementFromPoint(x, y);
+      var inner = top === frame ? doc.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+      var hit = inner && inner.closest && inner.closest('button');
+      return { ok: pe !== 'none' && top === frame && hit === btn, pointerEvents: pe, onTop: top && (top.tagName + (top.id ? '#' + top.id : '')), x: Math.round(x), y: Math.round(y), scale: s };
+    },
     state: function () { return { open: open.slice(), active: active }; }
   };
   window.DemoApp = api;
@@ -300,6 +350,7 @@
     [].forEach.call(doc.querySelectorAll('button'), function (b) { if (/^(Keep all|Undo all)/.test(b.textContent.trim())) { var bar = b.parentNode; if (bar && bar.parentNode) bar.style.display = 'none'; } });
     wirePanels();
     if (!setupAssistant()) return;
+    setupStarter();
     project();
     show('claude-code');
     document.documentElement.dataset.ready = '1';

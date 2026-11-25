@@ -13,7 +13,7 @@ body.demo-page{display:flex;flex-direction:column;padding-top:56px}
 .back:hover{color:var(--text)}
 .stage2{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg)}
 .box{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#0b0b14;flex:none}
-.box iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;background:#0b0b14}
+.box iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;background:#0b0b14;pointer-events:auto}
 .foot{margin:0;padding:6px 16px;font-size:.78rem;color:var(--mute);text-align:center;border-top:1px solid var(--line)}
 .foot code{font-size:.95em}
 @media (max-width:760px){.strip{padding:8px 12px}.switch .lab{display:none}.foot{font-size:.72rem}}

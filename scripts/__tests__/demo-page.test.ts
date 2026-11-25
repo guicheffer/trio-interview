@@ -141,3 +141,51 @@ describe('the assistant panel of the demo', () => {
     expect(js()).toMatch(/class="send" type="button" disabled/);
   });
 });
+
+describe('the workspace can be clicked', () => {
+  const css = () => read('site/demo/demo.css');
+  const page = () => read('site/demo/index.html');
+
+  test('the iframe takes pointer events and nothing in the page stylesheets turns that off', () => {
+    expect(css()).toMatch(/\.box iframe\{[^}]*pointer-events:auto/);
+    // the landing page switches its iframes off and on again by class; the demo must not reuse those classes
+    expect(page()).not.toMatch(/class="[^"]*\bscreen\b/);
+    expect(page()).not.toMatch(/<iframe[^>]*class="[^"]*\b(on|live)\b[^"]*\bon\b/);
+    expect(css()).not.toMatch(/iframe[^{]*\{[^}]*pointer-events:none/);
+  });
+
+  test('nothing but the tour covers the workspace, and the tour only exists while it is open', () => {
+    expect(css()).toMatch(/\.tour\[hidden\]\{display:none\}/);
+    expect(page()).toMatch(/<div class="tour" id="tour" hidden/);
+  });
+
+  test('the page can check by itself that a real click would reach a button of the scene', () => {
+    const js = read('site/demo/demo.js');
+    expect(js).toMatch(/canClick: function \(selector, label\)/);
+    expect(js).toMatch(/document\.elementFromPoint\(x, y\)/);
+    expect(js).toMatch(/getComputedStyle\(frame\)\.pointerEvents/);
+  });
+});
+
+describe('the empty starter', () => {
+  const js = () => read('site/demo/demo.js');
+
+  test('has a note that says the starter is empty on purpose and a button for the assistant version', () => {
+    expect(js()).toMatch(/The starter is empty on purpose: the assistant is what would fill it in/);
+    expect(js()).toContain("Show the assistant's version");
+  });
+
+  test('takes the answer from the scene and lets the scene draw the assistant, instead of copying the story', () => {
+    expect(js()).toMatch(/win\.FIB\.after/);
+    expect(js()).toMatch(/win\.fibShowAnswer\(\)/);
+    expect(js()).toMatch(/win\.fibReset\(\)/);
+    // no copy of the answer's code lives in the demo files
+    expect(js()).not.toMatch(/Number\.isInteger/);
+  });
+
+  test('says honestly what the assistant version covers', () => {
+    expect(js()).toMatch(/fills in fibonacci\(n\) and leaves fibonacciUpTo for you/);
+    const after = (() => { const m = read('site/app/scene-fib.html').match(/window\.FIB=(\{[\s\S]*?\});\n/); return JSON.parse(m![1]).after as string; })();
+    expect(after).toMatch(/function fibonacciUpTo\(limit\) \{\s*\/\/ TODO/);
+  });
+});
