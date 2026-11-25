@@ -135,10 +135,27 @@
     return out.join('\n');
   }
 
+  // one line of terminal output. A marker in front picks the color: <ok> the quiet green of "ran in", <pass> and <bad> a test result
+  function termLine(l) {
+    if (l.indexOf('<ok>') === 0) return '<span class="xterm-fg-2 xterm-dim">' + esc(l.slice(4)) + '</span>';
+    if (l.indexOf('<pass>') === 0) return '<span class="xterm-fg-2">\u2714</span><span> ' + esc(l.slice(6)) + '</span>';
+    if (l.indexOf('<bad>') === 0) return '<span class="xterm-fg-1">\u2716</span><span class="xterm-fg-1"> ' + esc(l.slice(5)) + '</span>';
+    if (l.indexOf('<sum-ok>') === 0) return '<span class="xterm-fg-2 xterm-dim">' + esc(l.slice(8)) + '</span>';
+    if (l.indexOf('<sum-bad>') === 0) return '<span class="xterm-fg-1">' + esc(l.slice(9)) + '</span>';
+    return '<span>' + esc(l) + '</span>';
+  }
+  window.fibTermLine = termLine;
+
   // ---- project terminal ----
   var HEAD = '<span class="xterm-fg-2">● maya / fibonacci</span>';
   var PROMPT = '<span class="xterm-fg-2">maya/fibonacci</span><span> $ </span>';
-  function project(extra) { setPane(projectRows, [HEAD, '', PROMPT + (extra && extra.cmd ? '<span>' + esc(extra.cmd) + '</span>' : '<span> </span>')].concat((extra && extra.out || []).map(function (l) { return l.indexOf('<ok>') === 0 ? '<span class="xterm-fg-2 xterm-dim">' + esc(l.slice(4)) + '</span>' : '<span>' + esc(l) + '</span>'; }))); }
+  function project(extra) {
+    var rows = [HEAD, '', PROMPT + (extra && extra.cmd ? '<span>' + esc(extra.cmd) + '</span>' : '<span> </span>')].concat((extra && extra.out || []).map(termLine));
+    // a long output scrolls like a real terminal: the last rows that fit stay, so the total of a test run is never cut off
+    var term = document.getElementById('terminal'), room = term ? Math.floor((term.getBoundingClientRect().bottom - projectRows.getBoundingClientRect().top) / 16) : 0;
+    if (room >= 4 && rows.length > room) rows = rows.slice(-room);
+    setPane(projectRows, rows);
+  }
 
   // ---- the code, run for real in a Worker ----
   var worker;
@@ -201,6 +218,75 @@
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
   function clear() { timers.forEach(clearTimeout); timers = []; if (worker) { worker.terminate(); worker = null; } }
 
+
+  // ---- the tests: the file of the exercise runs in a Worker against the code in the editor, with a small stand-in for node:test and node:assert ----
+  var TEST_CMD = 'node --test fibonacci.test.js';
+  function testWorker() {
+    self.onmessage = function (e) {
+      var results = [], queue = [];
+      function same(a, b) {
+        if (Object.is(a, b)) return true;
+        if (typeof a !== 'object' || typeof b !== 'object' || !a || !b || Array.isArray(a) !== Array.isArray(b)) return false;
+        var ka = Object.keys(a), kb = Object.keys(b);
+        return ka.length === kb.length && ka.every(function (k) { return Object.prototype.hasOwnProperty.call(b, k) && same(a[k], b[k]); });
+      }
+      function fail(msg) { var err = new Error(msg); err.name = 'AssertionError'; throw err; }
+      var assert = {
+        deepStrictEqual: function (a, b) { if (!same(a, b)) fail('Expected values to be strictly deep-equal'); },
+        strictEqual: function (a, b) { if (!Object.is(a, b)) fail('Expected values to be strictly equal'); },
+        ok: function (v) { if (!v) fail('The expression evaluated to a falsy value'); },
+        throws: function (fn) { var threw = false; try { fn(); } catch (x) { threw = true; } if (!threw) fail('Missing expected exception'); }
+      };
+      var test = function (name, fn) { queue.push({ name: name, fn: fn }); };
+      var mod = { exports: {} }, quiet = { log: function () {} };
+      var out = { error: null };
+      try { new Function('module', 'exports', 'console', e.data.code)(mod, mod.exports, quiet); } catch (x) { out.error = x.name + ': ' + x.message; }
+      var req = function (name) { return name === 'node:test' ? test : name === 'node:assert' ? assert : mod.exports; };
+      try { new Function('require', 'console', e.data.tests)(req, quiet); } catch (x) { out.error = out.error || x.name + ': ' + x.message; }
+      queue.forEach(function (t) {
+        var t0 = performance.now(), ok = true;
+        try { t.fn(); } catch (x) { ok = false; }
+        results.push({ name: t.name, ok: ok, ms: performance.now() - t0 });
+      });
+      postMessage({ results: results, error: out.error });
+    };
+  }
+  var testWorkerHandle;
+  function runTests(src, done) {
+    try {
+      if (testWorkerHandle) testWorkerHandle.terminate();
+      var w = testWorkerHandle = new Worker(URL.createObjectURL(new Blob(['(' + testWorker.toString() + ')()'], { type: 'text/javascript' })));
+      var timer = setTimeout(function () { w.terminate(); done({ results: [], error: 'stopped: the tests ran for too long' }); }, 3000);
+      w.onmessage = function (e) { clearTimeout(timer); w.terminate(); done(e.data); };
+      w.onerror = function () { clearTimeout(timer); done({ results: [], error: 'the browser could not run the tests here' }); };
+      w.postMessage({ code: src, tests: F.tests });
+    } catch (x) { done({ results: [], error: 'the browser could not run the tests here' }); }
+  }
+  // what the terminal prints for a run of the tests: one line per test, then the total, like the app's terminal does
+  function testLines(res) {
+    var lines = res.results.map(function (r) { return (r.ok ? '<pass>' : '<bad>') + r.name + ' (' + r.ms.toFixed(2) + 'ms)'; });
+    var failed = res.results.filter(function (r) { return !r.ok; }).length, passed = res.results.length - failed;
+    if (res.error) lines.unshift('<bad>' + res.error);
+    var bad = failed > 0 || !!res.error || !res.results.length;
+    lines.push(bad ? '<sum-bad>✗ ' + (failed ? failed + ' failed, ' : '') + passed + ' passed' : '<sum-ok>✓ ' + passed + ' passed');
+    return lines;
+  }
+  window.fibTestLines = function (src, done) { runTests(src, function (res) { done(testLines(res), res); }); };
+  window.fibTestCommands = { tests: TEST_CMD, both: 'node fibonacci.js; ' + TEST_CMD };
+
+  // the terminal bar gets Run tests and Run both next to Run, the way the app shows them for an exercise that declares tests
+  var testButtons = {};
+  (function addTestButtons() {
+    var clear = S.qa('button').filter(function (b) { return b.title === 'Clear terminal'; })[0]; if (!clear) return;
+    var tpl = clear.cloneNode(true);
+    [['tests', 'Run tests', 'Run the tests'], ['both', 'Run both', 'Run the script, then the tests']].forEach(function (d) {
+      var b = tpl.cloneNode(true); b.textContent = d[1]; b.title = d[2]; b.setAttribute('data-trio', d[0]);
+      b.className = 'flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-white font-medium transition-colors';
+      clear.parentNode.insertBefore(b, clear); testButtons[d[0]] = b;
+    });
+  })();
+  function markTests(on) { Object.keys(testButtons).forEach(function (k) { testButtons[k].style.outline = on ? '2px solid #5850F8' : ''; testButtons[k].style.outlineOffset = on ? '2px' : ''; }); }
+
   // ---- what shows that the code ran: a quiet line in the terminal and a soft glow on the Run buttons ----
   var css = document.createElement('style');
   css.textContent = '@keyframes ranglow{0%{box-shadow:0 0 0 0 rgba(0,192,104,.55)}100%{box-shadow:0 0 0 7px rgba(0,192,104,0)}}' +
@@ -215,7 +301,7 @@
 
   function markRun(on) { runButtons.forEach(function (b) { b.style.outline = on ? '2px solid #5850F8' : ''; b.style.outlineOffset = on ? '2px' : ''; }); }
 
-  window.fibReset = function () { clear(); asking = false; setCode('Before'); claude('before'); project(); markRun(false); tell('idle', 0); };
+  window.fibReset = function () { clear(); asking = false; setCode('Before'); claude('before'); project(); markRun(false); markTests(false); tell('idle', 0); };
 
   var asking = false;   // the answer is still being drawn
   window.fibAsk = function (cb) { clear(); asking = true; setCode('Before'); typing(REQUEST, function () { answer(cb); }); };
@@ -240,6 +326,20 @@
     }, 700);
   };
 
+  // Run tests and Run both: same start as Run (clear, type the command), then the tests run against the code in the editor
+  function finishAnswer() { if (asking) { clear(); asking = false; startChange(); added = totalAdded; drawDiff(); claude('after'); } }
+  window.fibRunTests = function (both) {
+    finishAnswer(); clear(); markTests(true);
+    var cmd = both ? window.fibTestCommands.both : window.fibTestCommands.tests, src = code();
+    project();
+    later(function () { project({ cmd: cmd }); }, 220);
+    later(function () {
+      function show(prefix) { runTests(src, function (res) { markTests(false); project({ cmd: cmd, out: prefix.concat(testLines(res)) }); }); }
+      if (!both) { show([]); return; }
+      runCode(src, function (out) { show(printOut(out)); });
+    }, 700);
+  };
+
   // the answer already in place, for the step that is about the Run button
   window.fibShowAnswer = function () { clear(); asking = false; setCode('After'); claude('after'); project(); markRun(false); tell('idle', 0); };
   // no typing for people who asked the page not to animate: the change stays marked until it is kept
@@ -247,6 +347,7 @@
 
   // pressing Run in the scene does the same, whatever the code in the editor is right now
   runButtons.forEach(function (b) { b.addEventListener('click', function (e) { e.preventDefault(); window.fibRun(); }); });
+  Object.keys(testButtons).forEach(function (k) { testButtons[k].addEventListener('click', function (e) { e.preventDefault(); window.fibRunTests(k === 'both'); }); });
 
   window.fibReset();
 })();

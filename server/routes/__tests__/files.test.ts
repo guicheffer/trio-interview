@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { FastifyInstance } from 'fastify';
 import { LOCAL, TUNNEL, buildApp, makeWorkspace, type Workspace } from './harness.js';
@@ -195,6 +195,16 @@ describe('file routes', () => {
 
     const meta = await app.inject({ method: 'GET', url: '/api/challenge-meta' });
     expect(meta.json()).toMatchObject({ exerciseId: 'demo', defaultFile: 'description.md', lockedFiles: ['description.md', 'phases/'] });
+  });
+
+  test('serves the tests block of the exercise, or null when it has none', async () => {
+    expect((await app.inject({ method: 'GET', url: '/api/tests-config' })).json()).toEqual({ tests: null });
+    const file = join(ws.exercise, 'exercise.json');
+    const before = readFileSync(file, 'utf-8');
+    try {
+      writeFileSync(file, JSON.stringify({ tests: { command: 'node --test', files: ['a.test.js'], cases: ['one'] } }));
+      expect((await app.inject({ method: 'GET', url: '/api/tests-config', headers: TUNNEL })).json()).toEqual({ tests: { command: 'node --test', files: ['a.test.js'], description: null, cases: ['one'] } });
+    } finally { writeFileSync(file, before); }
   });
 
   test('a candidate cannot read the exercise config', async () => {

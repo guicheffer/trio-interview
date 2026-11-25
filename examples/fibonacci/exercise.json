@@ -1,7 +1,8 @@
 {
   "defaultFile": "description.md",
   "lockedFiles": [
-    "description.md"
+    "description.md",
+    "fibonacci.test.js"
   ],
   "hidden": [],
   "run": {
@@ -9,7 +10,26 @@
     "description": "Run the Fibonacci solution",
     "port": null
   },
+  "tests": {
+    "command": "node --test",
+    "description": "Check the solution with the tests",
+    "files": [
+      "fibonacci.test.js"
+    ],
+    "cases": [
+      "fibonacci(0) is an empty array",
+      "fibonacci(1) is [0]",
+      "fibonacci(5) is [0, 1, 1, 2, 3]",
+      "fibonacci(10) is the first ten numbers",
+      "fibonacci(-1) is rejected",
+      "fibonacci(2.5) is rejected",
+      "fibonacciUpTo(10) stops before the limit",
+      "fibonacciUpTo(8) does not include 8",
+      "fibonacciUpTo(0) is an empty array",
+      "fibonacciUpTo(1) is [0]"
+    ]
+  },
   "assistant": {
-    "context": "A single file exercise. fibonacci.js has stub functions fibonacci(n) (first n Fibonacci numbers as an array) and fibonacciUpTo(limit) (numbers below limit) plus a few console.log checks at the bottom. It runs with `node fibonacci.js` and exports both functions with module.exports. There is no test runner and no dependencies. description.md is the brief the candidate reads first."
+    "context": "A single file exercise. fibonacci.js has stub functions fibonacci(n) (first n Fibonacci numbers as an array) and fibonacciUpTo(limit) (numbers below limit) plus a few console.log checks at the bottom. It runs with `node fibonacci.js` and exports both functions with module.exports. The tests are in fibonacci.test.js (Node's built in test runner, `node --test fibonacci.test.js`, the Run tests button does the same); they fail until the functions are implemented. There are no dependencies. description.md is the brief the candidate reads first."
   }
 }

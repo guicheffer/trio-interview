@@ -5,12 +5,19 @@ import { moveHead, selectionRange, type SelectKey, type Selection } from '../lib
 import { firstPreviewUrl, lastPreviewUrl } from '../lib/terminalOutput';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { classifyCommand, lastTestRun, parseSpecOutput, type CommandKind, type TestRun, type TestsConfig } from '../../shared/exercise-tests';
 import { useTerminalMenu } from '../lib/useTerminalMenu';
 
 interface TerminalProps {
   collapsed: boolean;
   onToggle: () => void;
   onRunReady?: (fn: (cmd: string) => void) => void;
+  /** Types any command in this terminal, without the app bookkeeping Run does (used by Run tests and Run both) */
+  onSendReady?: (fn: (cmd: string) => void) => void;
+  /** The exercise's tests, so a run of them can be recognised in the output */
+  tests?: TestsConfig | null;
+  /** What a test run printed: after it ends, or when a screen joins late and the terminal's history holds a finished run */
+  onTestRun?: (kind: CommandKind, run: TestRun | null, replayed: boolean) => void;
   onClearReady?: (fn: () => void) => void;
   onStopReady?: (fn: () => void) => void;
   pendingCommand?: string | null;
@@ -44,7 +51,7 @@ function restoreSavedOutput(term: { write: (data: string) => void }, scrollKey: 
   }
 }
 
-export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStopReady, pendingCommand, onCommandExecuted, onPreviewUrl, onAppStarted, onAppStopped, runChallenge, hideHeader, persistKey, tabId, onServerStatus }: TerminalProps) {
+export function Terminal({ collapsed, onToggle, onRunReady, onSendReady, tests, onTestRun, onClearReady, onStopReady, pendingCommand, onCommandExecuted, onPreviewUrl, onAppStarted, onAppStopped, runChallenge, hideHeader, persistKey, tabId, onServerStatus }: TerminalProps) {
   const termRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -57,6 +64,12 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
   onPreviewUrlRef.current = onPreviewUrl;
   onServerStatusRef.current = onServerStatus;
   runChallengeRef.current = runChallenge;
+  const testsRef = useRef(tests);
+  const onTestRunRef = useRef(onTestRun);
+  testsRef.current = tests;
+  onTestRunRef.current = onTestRun;
+  // What is printed while a test command runs, read when it ends
+  const capture = useRef<{ kind: CommandKind; text: string } | null>(null);
 
   useTerminalMenu({ host: termRef, getTerm: () => xtermRef.current, kind: 'shell', connected, clear: () => sendFrame({ type: 'clear' }), deps: [collapsed] });
 
@@ -194,11 +207,16 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
             // Whoever joins late still learns where the app is running
             const url = lastPreviewUrl(String(frame.data ?? ''));
             if (url) onPreviewUrlRef.current?.(url);
+            if (testsRef.current) {
+              const last = lastTestRun(String(frame.data ?? ''), testsRef.current);
+              if (last) onTestRunRef.current?.(last.single ? 'test' : 'tests', last.run, true);
+            }
             return;
           }
 
           if (frame.type === 'output') {
             term.write(frame.data);
+            if (capture.current) capture.current.text += String(frame.data);
             const url = firstPreviewUrl(String(frame.data));
             if (url) onPreviewUrlRef.current?.(url);
             return;
@@ -210,6 +228,15 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
           }
 
           if (frame.type === 'status') {
+            // A test command started: keep what it prints. It ended: read it
+            const kind = frame.running ? classifyCommand(frame.command, runChallengeRef.current?.start, testsRef.current ?? null) : null;
+            if (frame.running && (kind === 'tests' || kind === 'test' || kind === 'both')) {
+              if (!capture.current) capture.current = { kind, text: '' };
+            } else if (!frame.running && capture.current) {
+              const done = capture.current;
+              capture.current = null;
+              onTestRunRef.current?.(done.kind, parseSpecOutput(done.text), false);
+            }
             const isApp = !!frame.running && !!runChallengeRef.current?.start && frame.command === runChallengeRef.current.start;
             setRunStatus(isApp ? 'running' : 'idle');
             onServerStatusRef.current?.(!!frame.running, frame.command ?? null, Number(frame.commandsRun) || 0);
@@ -274,6 +301,8 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
     sendFrame({ type: 'run', command: runChallenge.start });
   };
 
+  const sendCommand = (command: string) => sendFrame({ type: 'run', command });
+
   const stopApp = async () => {
     try {
       await fetch('/api/terminal/stop', { method: 'POST' });
@@ -297,6 +326,7 @@ export function Terminal({ collapsed, onToggle, onRunReady, onClearReady, onStop
 
   // Expose runApp, stopApp, clearTerminal to parent
   useEffect(() => { onRunReady?.(runApp); }, [runApp, onRunReady]);
+  useEffect(() => { onSendReady?.(sendCommand); }, [sendCommand, onSendReady]);
   useEffect(() => { onClearReady?.(clearTerminal); }, [clearTerminal, onClearReady]);
   useEffect(() => { onStopReady?.(stopApp); }, [stopApp, onStopReady]);
 

@@ -66,6 +66,7 @@ exercises/<id>/
 - `description.md` must not name or describe hidden phases. Hidden files are moved out of the candidate's folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.
 - Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in `docs/interviewers/`.
 - Lock `description.md` and `phases/` in `exercise.json`, plus any fixture or test the candidate must not edit.
+- Tests are optional. Add a `tests` block to `exercise.json` and the terminal bar shows **Run tests** (and **Run both** for a script). Keep the test file locked, write the tests as examples of behaviour (not the answer), and check that the starter fails them and a correct solution passes. See `examples/fibonacci/`.
 - A web app uses a `run.serverPort` of 3002 or higher and the `vite.config.ts` from `exercises/_templates/web-app/`, so the preview works through the tool.
 - To share an exercise with everyone, send it as a pull request into `examples/`, with its notes in `docs/interviewers/`.
 

@@ -28,6 +28,7 @@ import { useAgentMode } from './hooks/useAgentMode';
 import { AgentModePicker } from './components/AgentModePicker';
 import { AgentTerminal } from './components/AgentTerminal';
 import { isLockedPath } from '../shared/locks';
+import { runButtons, type TestsConfig } from '../shared/exercise-tests';
 import { collab } from './lib/collab';
 import { migrateReviewKeys, remapList, remapPath, remapScrollRecord } from './lib/renamePaths';
 import { previewSrc } from './lib/previewOrigin';
@@ -261,6 +262,7 @@ function InterviewPageContent() {
   });
   const [pendingRunCmd, setPendingRunCmd] = useState<string | null>(null);
   const [runChallenge, setRunChallenge] = useState<{ start: string; description: string; port: number | null } | null>(null);
+  const [testsConfig, setTestsConfig] = useState<TestsConfig | null>(null);
   const [openTabs, setOpenTabs] = useState<string[]>([]);
   const [tabsLoaded, setTabsLoaded] = useState(false);
   const [previewFlash, setPreviewFlash] = useState(false);
@@ -379,6 +381,10 @@ function InterviewPageContent() {
     fetch('/api/run-challenge')
       .then(r => r.json())
       .then(d => { if (d.start) setRunChallenge(d); })
+      .catch(() => {});
+    fetch('/api/tests-config')
+      .then(r => r.json())
+      .then(d => setTestsConfig(d?.tests ?? null))
       .catch(() => {});
   }, [sessionReady]);
 
@@ -968,6 +974,8 @@ function InterviewPageContent() {
       a('editor-wrap', 'Editor', 'Toggle word wrap', () => runAction('editor:action', 'editor.action.toggleWordWrap'), { shortcut: ['Alt', 'Z'] }),
       // Run
       a('run-app', 'Run', 'Run the app', () => runAction('app:run'), { shortcut: [mod, 'Enter'], keywords: 'start dev server' }),
+      ...(testsConfig ? [a('run-tests', 'Run', 'Run the tests', () => { handleFocusTerminal(); runAction('tests:run'); }, { keywords: 'check test spec pass fail' })] : []),
+      ...(testsConfig && runButtons({ start: runChallenge?.start ?? null, port: runChallenge?.port ?? null }, testsConfig).both ? [a('run-both', 'Run', 'Run the script and the tests', () => { handleFocusTerminal(); runAction('tests:run-both'); }, { keywords: 'both script test' })] : []),
       a('reload-preview', 'Run', 'Reload the preview', reloadPreview, { shortcut: ['Ctrl', 'R'], keywords: 'refresh app' }),
       a('stop-app', 'Run', 'Stop the running app', () => runAction('app:stop'), { keywords: 'kill' }),
       a('restart-app', 'Run', 'Restart the app', () => { runAction('app:stop'); setTimeout(() => runAction('app:run'), 1500); }),
@@ -1012,7 +1020,7 @@ function InterviewPageContent() {
       ...paletteFiles.map(f => a(`file-${f}`, 'File', f, () => openFile(f), { fileMode: true })),
     ];
     return list;
-  }, [selectedFile, previewUrl, previewPinned, interviewerView, openTabs, threads, paletteFiles, mod, focusChat, focusTerminal, togglePanel, showPanel, cycleFileTab, cycleChat, openFile, closeTab, setActiveThreadId, filesPanelRef, chatPanelRef, terminalPanelRef, toggleTerminal, openPalette]);
+  }, [selectedFile, previewUrl, previewPinned, interviewerView, openTabs, threads, paletteFiles, mod, focusChat, focusTerminal, togglePanel, showPanel, cycleFileTab, cycleChat, openFile, closeTab, setActiveThreadId, filesPanelRef, chatPanelRef, terminalPanelRef, toggleTerminal, openPalette, testsConfig, runChallenge, handleFocusTerminal]);
 
   // Typing a file name in the command palette also finds files
   const paletteWithFiles = useMemo(() => (
@@ -1224,6 +1232,7 @@ function InterviewPageContent() {
                   }}
                   onAppStarted={() => { focusPreviewAskedAt.current = Date.now(); }}
                   runChallenge={runChallenge}
+                  tests={testsConfig}
                   previewAvailable={!!runChallenge?.port}
                   previewActive={selectedFile === PREVIEW_TAB}
                   previewFlash={previewFlash}

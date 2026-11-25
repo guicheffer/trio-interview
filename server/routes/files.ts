@@ -222,6 +222,11 @@ export async function registerFileRoutes(server: FastifyInstance) {
     reply.send(readExerciseConfig(activeTemplate().templatePath).run);
   });
 
+  // GET /api/tests-config - What the Run tests button needs: the command parts and the names the exercise lists. Null without a tests block
+  server.get('/api/tests-config', async (_request: FastifyRequest, reply: FastifyReply) => {
+    reply.send({ tests: readExerciseConfig(activeTemplate().templatePath).tests });
+  });
+
   // GET /api/challenge-meta - Returns lockedFiles, defaultFile and exerciseId; the hidden list stays on the server
   server.get('/api/challenge-meta', async (_request: FastifyRequest, reply: FastifyReply) => {
     const { templatePath, exerciseId } = activeTemplate();

@@ -164,3 +164,21 @@ describe('the demo link', () => {
     expect(css).toMatch(/\.bar nav a:not\(\.star\):not\(\.demo\)\{display:none\}/);
   });
 });
+
+describe('Run tests and Run both in the scene and the demo', () => {
+  const scene = readFileSync(join(__dirname, '..', 'fib-scene.js'), 'utf-8');
+  const demo = readFileSync(join(__dirname, '..', 'demo', 'demo.js'), 'utf-8');
+  const built = readFileSync(join(__dirname, '..', '..', 'site', 'app', 'scene-fib.html'), 'utf-8');
+
+  test('the scene adds both buttons and runs the exercise test file in a Worker', () => {
+    expect(scene).toMatch(/'Run tests'/);
+    expect(scene).toMatch(/'Run both'/);
+    expect(scene).toContain('new Worker');
+    expect(built).toContain('fibonacci(0) is an empty array');   // the real test file of the example is inside the scene
+  });
+
+  test('the demo sends each of the three buttons to its own run', () => {
+    expect(demo).toMatch(/\^Run tests/);
+    expect(demo).toMatch(/\^Run both/);
+  });
+});

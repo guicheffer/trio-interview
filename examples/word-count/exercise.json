@@ -1,13 +1,36 @@
 {
   "defaultFile": "description.md",
-  "lockedFiles": ["description.md"],
+  "lockedFiles": [
+    "description.md",
+    "wordcount.test.js"
+  ],
   "hidden": [],
   "run": {
     "start": "node wordcount.js",
-    "description": "Run the checks",
+    "description": "Run wordcount.js",
     "port": null
   },
+  "tests": {
+    "command": "node --test",
+    "description": "Check the solution with the tests",
+    "files": [
+      "wordcount.test.js"
+    ],
+    "cases": [
+      "wordCount counts each word",
+      "wordCount ignores case",
+      "wordCount ignores punctuation",
+      "wordCount keeps an apostrophe inside a word",
+      "wordCount of empty text is empty",
+      "wordCount of only punctuation is empty",
+      "wordCount handles extra spaces and line breaks",
+      "topWords puts the most frequent first",
+      "topWords breaks a tie alphabetically",
+      "topWords with n larger than the number of words",
+      "topWords with n of zero is empty"
+    ]
+  },
   "assistant": {
-    "context": "A single file exercise. wordcount.js has two stub functions, wordCount(text) and topWords(text, n), and a list of checks at the bottom that print pass or FAIL. It runs with `node wordcount.js` and exports both functions with module.exports. There is no test runner and no dependencies. description.md is the brief the candidate reads first."
+    "context": "A single file exercise. wordcount.js has two stub functions, wordCount(text) and topWords(text, n), and a few example calls at the bottom. It runs with `node wordcount.js` and exports both functions with module.exports. The tests are in wordcount.test.js (Node's built in test runner, `node --test wordcount.test.js`, the Run tests button does the same); they fail until the functions are implemented. There are no dependencies. description.md is the brief the candidate reads first."
   }
 }
