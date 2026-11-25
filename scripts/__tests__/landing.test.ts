@@ -67,6 +67,8 @@ describe('the Run button of the Fibonacci scene', () => {
   });
   test('every press clears the terminal first and shows that it ran', () => {
     expect(scene).toMatch(/window\.fibRun = function[\s\S]*?clear\(\);[\s\S]*?project\(\);[\s\S]*?celebrate\(\)/);
+    expect(scene).toContain('ran in ');
+    expect(scene).not.toMatch(/ran-flash|ran-badge/);
     expect(js).toMatch(/runit\.textContent = 'Run again'/);
   });
   test('leaves room under the button', () => { expect(css).toMatch(/\.runrow\{[^}]*margin:18px 0 34px/); });
@@ -113,5 +115,37 @@ describe('Why this', () => {
     expect(why).toContain('href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md"');
     expect(why).toContain('class="ledger"');
     expect(why).not.toMatch(/[\u2013\u2014]/);
+  });
+});
+
+describe('the scenes of the stage', () => {
+  const dir = join(root, 'site', 'app');
+  const files = ['welcome', 'fib', 'picker', 'view', 'work'].map(n => `scene-${n}.html`);
+  const appCss = readFileSync(join(dir, 'app.css'), 'utf-8');
+  test('every scene links the stylesheet and stays hidden until it has applied', () => {
+    for (const f of files) {
+      const page = readFileSync(join(dir, f), 'utf-8');
+      expect(page, f).toMatch(/<link rel="stylesheet" href="app\.css" onload="document\.documentElement\.classList\.add\('styled'\)">/);
+      expect(page, f).toContain('html:not(.styled) body{visibility:hidden}');
+    }
+  });
+  test('the stylesheet keeps the rules the scenes lean on', () => {
+    expect(appCss.length).toBeGreaterThan(100000);
+    for (const f of files) {
+      const body = readFileSync(join(dir, f), 'utf-8').split('<body>')[1] ?? '';
+      const classes = new Set([...body.matchAll(/class="([^"]*)"/g)].flatMap(m => m[1].split(/\s+/)).filter(Boolean));
+      // the classes that carry the look of a screen: its heading, buttons and layout. Each needs a rule.
+      const must = ['flex', 'items-center', 'rounded-lg', 'text-gray-100'].filter(c => classes.has(c));
+      expect(must.length, f).toBeGreaterThan(0);
+      for (const c of must) expect(appCss, `${f} .${c}`).toContain(`.${c}`);
+    }
+  });
+  test('the page preloads the stylesheet', () => { expect(html).toContain('<link rel="preload" href="app/app.css" as="style">'); });
+});
+
+describe('the hero', () => {
+  test('says what the interviewer gets in plain words', () => {
+    expect(html).toContain('and <b>you see all of it</b>.');
+    expect(html).not.toContain('plain sight');
   });
 });
