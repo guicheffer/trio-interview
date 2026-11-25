@@ -47,6 +47,10 @@ Use it the way you would at work: ask it to explain code, find bugs, write and r
 
 Click **Run** (or press Cmd or Ctrl and Enter). A web app opens in a preview tab. Cmd or Ctrl and K opens a palette of everything you can do.
 
+## Try it first
+
+You can look around a replica of this workspace before your interview, with nothing to install and nothing sent anywhere: [open the live demo](https://guicheffer.github.io/trio-interview/demo/). It shows the Fibonacci exercise, and **Run** really runs the code in your browser. The assistant is shown but not connected, so nobody can send it a message there. A small switcher changes which assistant is displayed: the chat, Claude Code or OpenCode.
+
 ## If something breaks
 
 Tell your interviewer. Reloading the page keeps your work.

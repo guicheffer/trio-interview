@@ -37,6 +37,30 @@ Before a real interview, run a dry run with a made up candidate:
 3. Ask your agent to run the `evaluate-candidate` skill on the zip.
 4. `make delete` when you no longer need the candidate's work. Their folder holds their code and a copy of the OpenCode login.
 
+## Judging an interview with an assistant
+
+People work with assistants every day now, so a typing test no longer shows how someone works. What is worth seeing is how they work with the assistant, and this room lets you watch that in plain sight.
+
+In the saved conversation and on the live screen, look for these things:
+
+- How they frame the problem before they ask, and whether the request is specific.
+- Whether they read the answer and question it, or paste it in.
+- Whether they check it by running it, and what they do with the result.
+- When they take over and when they let the assistant work.
+- How they explain their choices, in their own words.
+- What they do when the assistant is wrong, which it sometimes is.
+
+For you as the interviewer:
+
+- Say at the start that the assistant is allowed and expected.
+- Ask the candidate to think aloud.
+- Release phases at your own pace.
+- Follow from your own view instead of interrupting.
+- Read the export afterwards with the `evaluate-candidate` skill.
+- Weigh reasoning and verification more than typing speed.
+
+Be honest about what the tool does. It shows you the interaction and keeps a record of it. It does not grade anything, and the judgment stays yours.
+
 ## Something went wrong
 
 | What you see | What to do |

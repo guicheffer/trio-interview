@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Try it as a candidate | Trio Interview</title>
+<meta name="description" content="A replica of the candidate workspace of Trio Interview. Open files, edit and run the code, and look at each assistant. Nothing is sent anywhere.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body class="demo-page">
+<!--sprite--><!--/sprite-->
+<header class="bar"><div class="wrap">
+  <a class="brand" href="../"><svg viewBox="0 0 279 241" aria-hidden="true"><use href="#agent"/><use href="#interviewer"/><use href="#candidate"/></svg> Trio Interview</a>
+  <nav><!--nav--><!--/nav--></nav>
+</div></header>
+<div class="strip">
+  <p class="notice"><strong>Demo replica.</strong> This is a copy of the candidate workspace running in your browser. Nothing you type or run is sent anywhere.</p>
+  <div class="switch" role="group" aria-label="Assistant shown on the right">
+    <span class="lab">Assistant shown</span>
+    <button type="button" class="opt" data-mode="chat" aria-pressed="false">Chat</button>
+    <button type="button" class="opt on" data-mode="claude-code" aria-pressed="true">Claude Code</button>
+    <button type="button" class="opt" data-mode="opencode" aria-pressed="false">OpenCode</button>
+    <button type="button" class="opt" data-mode="pi" aria-pressed="false">Pi</button>
+    <button type="button" class="opt" disabled aria-disabled="true" title="Coming soon">Codex (soon)</button>
+  </div>
+  <a class="back" href="#" id="tour-again">Show the tour again</a>
+  <a class="back" href="../docs/candidate.html">Back to the docs</a>
+</div>
+<main class="stage2" id="stage">
+  <div class="box" id="box">
+    <iframe id="app" src="../app/scene-fib.html" title="The candidate workspace with the Fibonacci exercise" class="live"></iframe>
+  </div>
+</main>
+<p class="foot">Click files to open them. You can type in <code>fibonacci.js</code> (nothing is saved) and press <b>Run</b> to run it for real. The assistant is shown, not connected: nobody can send it a message here.</p>
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tour-title">
+  <div class="tour-dim tour-top"></div><div class="tour-dim tour-bottom"></div><div class="tour-dim tour-left"></div><div class="tour-dim tour-right"></div>
+  <div class="tour-ring"></div>
+  <div class="tour-card">
+    <p class="tour-count"></p>
+    <h2 id="tour-title"></h2>
+    <p class="tour-text"></p>
+    <button type="button" class="tour-next">Next</button>
+  </div>
+</div>
+<script src="files.js"></script>
+<script src="tokenize.js"></script>
+<script src="tour.js"></script>
+<script src="demo.js"></script>
+</body>
+</html>

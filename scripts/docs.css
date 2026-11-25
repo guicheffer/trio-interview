@@ -61,3 +61,6 @@
   .hljs-punctuation,.hljs-operator{color:#444}
   .hljs-meta,.hljs-meta .hljs-keyword{color:#7a3e9d}
 }
+
+/* The mark on a link that leaves the page */
+.md a .ext,.edit a .ext{width:.75em;height:.75em;margin-left:.25em;vertical-align:baseline;opacity:.7}

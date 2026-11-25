@@ -1,0 +1,34 @@
+/* The live demo page: the workspace fills the window, scaled like the stages of the landing page */
+html,body.demo-page{height:100%;overflow:hidden}
+body.demo-page{display:flex;flex-direction:column;padding-top:56px}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.notice{margin:0;font-size:.84rem;line-height:1.4;color:var(--mute);flex:1 1 320px}
+.notice strong{color:var(--text)}
+.switch{display:flex;align-items:center;gap:4px}
+.switch .lab{font:600 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-right:6px}
+.opt{font:500 .82rem var(--sans);color:var(--mute);background:transparent;border:1px solid var(--line);border-radius:7px;padding:5px 11px;cursor:pointer}
+.opt:hover{color:var(--text)}
+.opt.on{color:var(--text);background:var(--bg);border-color:var(--purple-l)}
+.back{font-size:.84rem;color:var(--mute)}
+.back:hover{color:var(--text)}
+.stage2{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg)}
+.box{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#0b0b14;flex:none}
+.box iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;background:#0b0b14;pointer-events:auto}
+.foot{margin:0;padding:6px 16px;font-size:.78rem;color:var(--mute);text-align:center;border-top:1px solid var(--line)}
+.foot code{font-size:.95em}
+@media (max-width:760px){.strip{padding:8px 12px}.switch .lab{display:none}.foot{font-size:.72rem}}
+
+/* The guided tour: four blurred and dimmed strips around the highlighted area, a ring on it, and a card */
+.tour{position:fixed;inset:0;z-index:100}
+.tour[hidden]{display:none}
+.tour-dim{position:fixed;background:rgba(8,8,16,.62);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);transition:left .25s,top .25s,width .25s,height .25s}
+.tour-ring{position:fixed;pointer-events:none;border-radius:10px;box-shadow:0 0 0 3px var(--purple-l),0 0 24px 4px rgba(88,80,248,.55);transition:left .25s,top .25s,width .25s,height .25s}
+.tour-card{position:fixed;width:min(340px,calc(100vw - 24px));padding:18px 20px;border-radius:14px;background:var(--bg);color:var(--text);border:1px solid var(--line);box-shadow:0 24px 60px -12px rgba(0,0,0,.6);z-index:2}
+.tour-card.dock{left:0;right:0;bottom:0;top:auto;width:auto;border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.tour-count{margin:0 0 6px;font:600 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tour-card h2{font-size:1.2rem;letter-spacing:-.02em;line-height:1.25;margin:0 0 8px}
+.tour-text{margin:0 0 14px;font-size:.92rem;line-height:1.5;color:var(--mute)}
+.tour-next{font:600 .9rem var(--sans);color:#fff;background:var(--purple);border:0;border-radius:9px;padding:9px 18px;cursor:pointer}
+.tour-next:hover{filter:brightness(1.1)}
+.tour.still .tour-dim,.tour.still .tour-ring{transition:none}
+@media (prefers-reduced-motion:reduce){.tour-dim,.tour-ring{transition:none}}
