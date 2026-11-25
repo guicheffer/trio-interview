@@ -103,6 +103,7 @@ def build_fib():
         'claudeAfter': neutral(terms['fibafter_claude']),
         'claudeBefore': neutral(terms['fibbefore_claude']),
         'inspectLite': open(os.path.join(os.path.dirname(__file__), 'inspect-lite.cjs')).read(),
+        'tests': open(os.path.join(os.path.dirname(__file__), '..', 'examples', 'fibonacci', 'fibonacci.test.js')).read(),
     }
     js = open(os.path.join(os.path.dirname(__file__), 'fib-scene.js')).read()
     scene('fib', page, 'window.FIB=' + json.dumps(data, ensure_ascii=False).replace('</', '<\\/') + ';\n' + COMMON_JS + js)

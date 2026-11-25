@@ -152,7 +152,13 @@
   var worker = null, runId = 0;
   function pane() { return doc.querySelectorAll('.xterm-rows')[0]; }
   function project(cmd, out) {
-    var rows = [HEAD, '', PROMPT + '<span>' + esc(cmd || ' ') + '</span>'].concat((out || []).map(function (l) { return '<span>' + esc(l) + '</span>'; })).slice(-12);
+    // the scene knows how to color a line of test results (a marker in front of it), plain lines stay plain
+    var fmt = win.fibTermLine || function (l) { return '<span>' + esc(l) + '</span>'; };
+    var rows = [HEAD, '', PROMPT + '<span>' + esc(cmd || ' ') + '</span>'].concat((out || []).map(fmt));
+    // keep the last rows that fit, so the total of a test run is never cut off below the pane
+    var host = pane(), term = doc.getElementById('terminal');
+    var room = host && term ? Math.floor((term.getBoundingClientRect().bottom - host.getBoundingClientRect().top) / 16) : 12;
+    rows = rows.slice(-Math.max(4, Math.min(12, room)));
     pane().innerHTML = rows.map(function (r) { return '<div style="width: 726px; height: 16px; line-height: 16px; overflow: hidden;">' + r + '</div>'; }).join('');
   }
   function runCode(src, done) {
@@ -172,6 +178,15 @@
     var id = ++runId;
     project('node fibonacci.js');
     setTimeout(function () { runCode(text['fibonacci.js'], function (out) { if (id === runId) project('node fibonacci.js', out); }); }, 250);
+  }
+  // Run tests and Run both: the exercise's test file runs against what the editor holds, results are printed like the terminal does
+  function runTests(both) {
+    var id = ++runId, cmds = win.fibTestCommands, cmd = both ? cmds.both : cmds.tests;
+    project(cmd);
+    setTimeout(function () {
+      var go = function (prefix) { win.fibTestLines(text['fibonacci.js'], function (lines) { if (id === runId) project(cmd, prefix.concat(lines)); }); };
+      if (both) runCode(text['fibonacci.js'], function (out) { go(out); }); else go([]);
+    }, 250);
   }
 
   /* ---------------- the empty starter, and the assistant's version ---------------- */
@@ -341,7 +356,9 @@
     doc.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('button');
       if (!b || !/^Run/.test(b.textContent.trim())) return;
-      e.preventDefault(); e.stopImmediatePropagation(); run();
+      e.preventDefault(); e.stopImmediatePropagation();
+      var label = b.textContent.trim();
+      if (/^Run tests/.test(label)) runTests(false); else if (/^Run both/.test(label)) runTests(true); else run();
     }, true);
     [].forEach.call(doc.querySelectorAll('#terminal button'), function (b) {
       if (b.title === 'Clear terminal') b.addEventListener('click', function () { runId++; project(); });

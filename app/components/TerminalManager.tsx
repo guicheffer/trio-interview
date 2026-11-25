@@ -8,6 +8,8 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { useRemoteKey } from '../hooks/useRemoteKey';
 import { isFollowing, isRestoringView, registerViewSnapshot } from '../lib/follow';
 import { useAction } from '../lib/actions';
+import { TestsPanel } from './TestsPanel';
+import { bothCommand, classifyCommand, mergeRuns, runButtons, testsCommand, type TestCase, type TestRun, type TestsConfig } from '../../shared/exercise-tests';
 
 interface TerminalTab {
   id: string;
@@ -23,6 +25,8 @@ interface TerminalManagerProps {
   onPreviewUrl?: (url: string) => void;
   onAppStarted?: () => void;
   runChallenge?: { start: string; description: string; port: number | null } | null;
+  /** The exercise's tests (the `tests` block of exercise.json). Without it only Run shows */
+  tests?: TestsConfig | null;
   previewAvailable?: boolean;
   previewActive?: boolean;
   previewFlash?: boolean;
@@ -52,7 +56,7 @@ function nextRunningTab(previous: string | null, isApp: boolean, tabId: string):
 }
 
 export function TerminalManager(props: TerminalManagerProps) {
-  const { runChallenge, onToggle, sessionKey } = props;
+  const { runChallenge, onToggle, sessionKey, tests } = props;
   const firstTabId = useRef(nanoid());
 
   const [tabs, setTabs] = useState<TerminalTab[]>(() => {
@@ -174,6 +178,41 @@ export function TerminalManager(props: TerminalManagerProps) {
     runFn(runChallenge.start);
   }, [activeTabId, runChallenge]);
 
+  // ---- tests: Run tests, Run both and a single test. The command is typed in the active terminal like Run does ----
+  const sendFnsRef = useRef<Record<string, (cmd: string) => void>>({});
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [testsRunning, setTestsRunning] = useState(false);
+  const [unreadable, setUnreadable] = useState(false);
+  const testCasesRef = useRef<TestCase[]>([]);
+  testCasesRef.current = testCases;
+  const buttons = runButtons({ start: runChallenge?.start ?? null, port: runChallenge?.port ?? null }, tests ?? null);
+
+  // A new exercise or a new list of names starts the panel over with the names the exercise lists
+  const declared = tests?.cases.join('\n') ?? '';
+  useEffect(() => { setTestCases(tests ? mergeRuns([], [], tests.cases) : []); setUnreadable(false); }, [declared, sessionKey]);
+
+  const onTestRun = useCallback((kind: string, run: TestRun | null, replayed: boolean) => {
+    if (!tests) return;
+    // What a terminal's history holds only fills the panel when this screen has nothing of its own yet
+    if (replayed && testCasesRef.current.some(c => c.status !== 'idle')) return;
+    if (!run) { setUnreadable(true); return; }
+    setUnreadable(false);
+    setTestCases(prev => mergeRuns(kind === 'test' ? prev : [], run.cases, tests.cases));
+  }, [tests]);
+
+  const typeInTerminal = useCallback((command: string) => {
+    const send = sendFnsRef.current[activeTabId];
+    if (!send) return false;
+    send(command);
+    return true;
+  }, [activeTabId]);
+
+  const handleRunTests = useCallback(() => { if (tests) typeInTerminal(testsCommand(tests)); }, [tests, typeInTerminal]);
+  const handleRunOneTest = useCallback((name: string) => { if (tests) typeInTerminal(testsCommand(tests, name)); }, [tests, typeInTerminal]);
+  const handleRunBoth = useCallback(() => {
+    if (tests && runChallenge?.start && buttons.both) typeInTerminal(bothCommand(runChallenge.start, tests));
+  }, [tests, runChallenge, buttons.both, typeInTerminal]);
+
   const handleStop = useCallback(async () => {
     try {
       await fetch('/api/terminal/stop', { method: 'POST' });
@@ -200,6 +239,9 @@ export function TerminalManager(props: TerminalManagerProps) {
   useAction('terminal:prev', () => cycleTab(-1));
   useAction('terminal:clear', () => handleClear());
   useAction('app:run', () => handleRun());
+  useAction('tests:run', () => handleRunTests());
+  useAction('tests:run-both', () => handleRunBoth());
+  useAction('tests:run-one', (name: string) => { if (typeof name === 'string') handleRunOneTest(name); });
   useAction('app:stop', () => { void handleStop(); });
   useAction('terminal:focus-input', () => {
     const panes = document.querySelectorAll<HTMLElement>('[data-terminal-pane]');
@@ -323,6 +365,40 @@ export function TerminalManager(props: TerminalManagerProps) {
               </button>
             )
           )}
+          {tests && (
+            <>
+              <button
+                onClick={handleRunTests}
+                disabled={testsRunning}
+                data-testid="run-tests"
+                className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-white font-medium transition-colors disabled:opacity-50"
+                title={tests.description ?? 'Run the tests'}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                Run tests
+              </button>
+              {buttons.both && (
+                <button
+                  onClick={handleRunBoth}
+                  disabled={testsRunning || isRunning}
+                  data-testid="run-both"
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-white font-medium transition-colors disabled:opacity-50"
+                  title="Run the script, then the tests"
+                >
+                  Run both
+                </button>
+              )}
+              <TestsPanel
+                tests={tests}
+                cases={testCases}
+                running={testsRunning}
+                unreadable={unreadable}
+                onRunAll={handleRunTests}
+                onRunOne={handleRunOneTest}
+                blockedReason={null}
+              />
+            </>
+          )}
           {props.previewAvailable && (isRunning || props.hasPreviewUrl) && (
             <button
               onClick={props.onOpenPreview}
@@ -364,6 +440,7 @@ export function TerminalManager(props: TerminalManagerProps) {
                 setUsedTabs(prev => (prev[tab.id] === (commandsRun > 0) ? prev : { ...prev, [tab.id]: commandsRun > 0 }));
                 const isApp = running && !!runChallenge?.start && command === runChallenge.start;
                 setRunningTabId(prev => nextRunningTab(prev, isApp, tab.id));
+                if (tab.id === activeTabId || !running) setTestsRunning(running && classifyCommand(command, runChallenge?.start, tests ?? null) !== null && classifyCommand(command, runChallenge?.start, tests ?? null) !== 'run');
               }}
               {...props}
               collapsed={false}
@@ -371,6 +448,9 @@ export function TerminalManager(props: TerminalManagerProps) {
               hideHeader
               persistKey={sessionKey ? `${sessionKey}_${tab.id}` : undefined}
               // Wire run/stop/clear to this tab's functions
+              tests={tests}
+              onTestRun={onTestRun}
+              onSendReady={(fn) => { sendFnsRef.current[tab.id] = fn; }}
               onRunReady={(fn) => {
                 runFnsRef.current[tab.id] = fn;
                 // Also register with parent for keyboard shortcut (use first tab's fn)

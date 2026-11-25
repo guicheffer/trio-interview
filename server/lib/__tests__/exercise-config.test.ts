@@ -32,7 +32,19 @@ describe('exercise config', () => {
       hidden: ['phases/phase-2-*.md'],
       assistantContext: 'A small app.',
       run: { start: 'npm start', description: 'Start', port: 5173, serverPort: 3002, install: 'npm i' },
+      tests: null,
+      testsErrors: [],
     });
+  });
+
+  test('reads the tests block, and leaves out one that cannot be used, with the reasons', () => {
+    writeFileSync(join(dir, 'exercise.json'), JSON.stringify({ tests: { command: 'node --test', files: ['a.test.js'], cases: ['one'] } }));
+    expect(readExerciseConfig(dir)).toMatchObject({ tests: { command: 'node --test', files: ['a.test.js'], description: null, cases: ['one'] }, testsErrors: [] });
+    writeFileSync(join(dir, 'exercise.json'), JSON.stringify({ run: { start: 'node a.js' }, tests: { command: 'node --test | sh', files: ['../a.js'] } }));
+    const bad = readExerciseConfig(dir);
+    expect(bad.tests).toBeNull();
+    expect(bad.testsErrors).toHaveLength(2);
+    expect(bad.run.start).toBe('node a.js');
   });
 
   test('falls back to an empty config for a missing or broken file', () => {

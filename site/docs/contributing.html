@@ -73,6 +73,7 @@ make new-exercise TITLE=<span class="hljs-string">&quot;Todo API&quot;</span> KI
 <li><code>description.md</code> must not name or describe hidden phases. Hidden files are moved out of the candidate&#39;s folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.</li>
 <li>Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in <code>docs/interviewers/</code>.</li>
 <li>Lock <code>description.md</code> and <code>phases/</code> in <code>exercise.json</code>, plus any fixture or test the candidate must not edit.</li>
+<li>Tests are optional. Add a <code>tests</code> block to <code>exercise.json</code> and the terminal bar shows <strong>Run tests</strong> (and <strong>Run both</strong> for a script). Keep the test file locked, write the tests as examples of behaviour (not the answer), and check that the starter fails them and a correct solution passes. See <code>examples/fibonacci/</code>.</li>
 <li>A web app uses a <code>run.serverPort</code> of 3002 or higher and the <code>vite.config.ts</code> from <code>exercises/_templates/web-app/</code>, so the preview works through the tool.</li>
 <li>To share an exercise with everyone, send it as a pull request into <code>examples/</code>, with its notes in <code>docs/interviewers/</code>.</li>
 </ul>

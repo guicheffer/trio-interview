@@ -125,7 +125,7 @@ async function create(): Promise<number> {
   console.log('');
   ok(`Created exercises/${id}/`);
   for (const rel of Object.keys(files)) note(rel);
-  console.log(`\n  Next: edit ${c(1, `exercises/${id}/description.md`)}, then ${c(1, 'make start')} and pick it.\n  An agent can fill it in for you: ask it to run the create-exercise skill.\n`);
+  console.log(`\n  Next: edit ${c(1, `exercises/${id}/description.md`)}, then ${c(1, 'make start')} and pick it.\n  An agent can fill it in for you: ask it to run the create-exercise skill.\n  Want Run tests and Run both? Add a "tests" block to exercise.json (see examples/fibonacci/exercise.json).\n`);
   return 0;
 }
 

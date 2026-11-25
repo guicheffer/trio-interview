@@ -45,7 +45,7 @@ Use it the way you would at work: ask it to explain code, find bugs, write and r
 
 ## 7. Run your code
 
-Click **Run** (or press Cmd or Ctrl and Enter). A web app opens in a preview tab. Cmd or Ctrl and K opens a palette of everything you can do.
+Click **Run** (or press Cmd or Ctrl and Enter). If the exercise has tests, **Run tests** runs them and the chip next to it shows how many pass. Click the chip to see each test, and the arrow next to a test runs only that one. **Run both** runs your code and then the tests. A web app opens in a preview tab. Cmd or Ctrl and K opens a palette of everything you can do.
 
 ## Try it first
 

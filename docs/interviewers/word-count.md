@@ -1,6 +1,6 @@
 # Word Count
 
-A 20 minute Node exercise with one file and no dependencies, a step up from Fibonacci. The candidate implements `wordCount` and `topWords` in `wordcount.js` until the eleven checks at the bottom pass, and runs them with `node wordcount.js`.
+A 20 minute Node exercise with one file and no dependencies, a step up from Fibonacci. The candidate implements `wordCount` and `topWords` in `wordcount.js` until the eleven tests in `wordcount.test.js` pass. The test file is read only for the candidate. **Run tests** runs them (or `node --test wordcount.test.js`), and the starter fails all eleven.
 
 ## What to watch
 
