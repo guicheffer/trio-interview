@@ -53,7 +53,7 @@ describe('the merged section: why, and what to expect', () => {
     expect(section).toMatch(/server decides/);
   });
   test('keeps the truth about what leaves the machine, and the alternatives line', () => {
-    expect(section).toMatch(/Only the chat goes to the assistant's provider/);
+    expect(section).toMatch(/Only what the assistants are asked goes to their provider/);
     for (const name of ['CoderPad', 'HackerRank', 'CodeSignal']) expect(section).toContain(name);
   });
   test('uses no dashes as punctuation', () => { expect(section).not.toMatch(/[\u2013\u2014]/); });
