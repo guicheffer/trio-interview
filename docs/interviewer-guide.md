@@ -39,7 +39,7 @@ Before a real interview, run a dry run with a made up candidate:
 
 ## Judging an interview with an assistant
 
-People work with assistants every day now, so a typing test no longer shows how someone works. What is worth seeing is how they work with the assistant, and this room lets you watch that in plain sight.
+People work with assistants every day now, so a typing test no longer shows how someone works. What is worth seeing is how they work with the assistant, and this room lets you watch all of it as it happens.
 
 In the saved conversation and on the live screen, look for these things:
 
