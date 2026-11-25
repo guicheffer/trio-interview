@@ -14,6 +14,8 @@ export interface ToolView {
   version: string;
   /** One line with the version, the login and the sandbox. Only the interviewer is told. */
   line: string;
+  /** Only a sign in is missing. Only the interviewer is told. */
+  needsSignIn: boolean;
 }
 
 export interface AgentModeView {

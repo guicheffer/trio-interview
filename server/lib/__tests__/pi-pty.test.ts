@@ -20,16 +20,35 @@ function piSetup(files: { settings?: unknown; auth?: unknown; models?: unknown }
 }
 
 describe('where the Pi login comes from', () => {
-  test('from Pi\'s own settings and auth file, the provider it already uses', () => {
-    const home = piSetup({ settings: { defaultProvider: 'openai', defaultModel: 'gpt-x' }, auth: { openai: { type: 'api_key', key: 'sk-test' }, anthropic: { type: 'api_key', key: 'other' } } });
+  test('from what Pi saved itself: the default provider first, a key or a /login sign in, copied as it is', () => {
+    const home = piSetup({ settings: { defaultProvider: 'openai', defaultModel: 'gpt-x' }, auth: { anthropic: { type: 'api_key', key: 'other' }, openai: { type: 'api_key', key: 'sk-test' } } });
     const { login } = readPiLogin(home, {});
     expect(login?.provider).toBe('openai');
     expect(login?.model).toBe('gpt-x');
     expect(login?.auth).toEqual({ type: 'api_key', key: 'sk-test' });
-    expect(login?.source).toBe('your own Pi setup');
   });
 
-  test('never from another tool: an Anthropic key in the environment, the Claude settings or OpenCode\'s login are not used', () => {
+  test('a subscription sign in (/login) is found with no settings at all, and Pi picks the model', () => {
+    const home = piSetup({ auth: { anthropic: { type: 'oauth', access: 'a', refresh: 'r', expires: 1 } } });
+    const { login } = readPiLogin(home, {});
+    expect(login?.provider).toBe('anthropic');
+    expect(login?.source).toBe('your Pi sign in');
+    expect(login?.auth).toMatchObject({ type: 'oauth' });
+  });
+
+  test('a documented key in the environment is used when Pi has nothing saved, with a mid sized model where one is known', () => {
+    const anthropic = readPiLogin(tmp(), { ANTHROPIC_API_KEY: 'k1' }).login;
+    expect(anthropic).toMatchObject({ provider: 'anthropic', model: 'claude-sonnet-4-6', source: 'ANTHROPIC_API_KEY', auth: { type: 'api_key', key: 'k1' } });
+    expect(readPiLogin(tmp(), { OPENAI_API_KEY: 'k2' }).login).toMatchObject({ provider: 'openai', model: '' });
+    expect(readPiLogin(tmp(), { ANTHROPIC_OAUTH_TOKEN: 'o', ANTHROPIC_API_KEY: 'k' }).login?.source).toBe('ANTHROPIC_OAUTH_TOKEN');
+  });
+
+  test('what Pi saved wins over the environment', () => {
+    const home = piSetup({ auth: { groq: { type: 'api_key', key: 'saved' } } });
+    expect(readPiLogin(home, { ANTHROPIC_API_KEY: 'env' }).login?.provider).toBe('groq');
+  });
+
+  test('never from another tool: router and cloud variables, the Claude settings and OpenCode\'s login are not used', () => {
     const home = tmp();
     mkdirSync(join(home, '.claude'), { recursive: true });
     writeFileSync(join(home, '.claude', 'settings.json'), JSON.stringify({ env: { ANTHROPIC_API_KEY: 'from-claude', ANTHROPIC_AUTH_TOKEN: 'tok' } }));
@@ -37,35 +56,30 @@ describe('where the Pi login comes from', () => {
     writeFileSync(join(home, '.local', 'share', 'opencode', 'auth.json'), JSON.stringify({ anthropic: { type: 'api', key: 'from-opencode' } }));
     mkdirSync(join(home, '.config', 'opencode'), { recursive: true });
     writeFileSync(join(home, '.config', 'opencode', 'opencode.json'), JSON.stringify({ model: 'anthropic/claude' }));
-    const result = readPiLogin(home, { ANTHROPIC_API_KEY: 'from-env', OPENAI_API_KEY: 'x', TRIO_OPENCODE_API_KEY: 'y' });
+    const result = readPiLogin(home, { ANTHROPIC_AUTH_TOKEN: 'router-token', ANTHROPIC_BASE_URL: 'http://router', AWS_PROFILE: 'company', AWS_REGION: 'x', TRIO_OPENCODE_API_KEY: 'y', CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1' });
     expect(result.login).toBeNull();
-    expect(JSON.stringify(result)).not.toMatch(/from-claude|from-opencode|from-env/);
+    expect(JSON.stringify(result)).not.toMatch(/from-claude|from-opencode|router-token|company/);
   });
 
-  test('Pi\'s settings name a provider but the auth file has no entry for it: no login, and it says which provider', () => {
-    const home = piSetup({ settings: { defaultProvider: 'openai' }, auth: { anthropic: { type: 'api_key', key: 'k' } } });
-    const result = readPiLogin(home, {});
+  test('nothing signed in is one short human sentence and no raw variable names', () => {
+    const result = readPiLogin(tmp(), {});
     expect(result.login).toBeNull();
-    expect(result.problem).toContain('openai');
+    expect(result.problem).toBe('Sign in once: run pi, then /login.');
+    expect(result.problem).not.toMatch(/TRIO_|_KEY/);
   });
 
-  test('no Pi setup at all says how to make one, and a key without a provider is not guessed', () => {
-    expect(readPiLogin(tmp(), {}).problem).toMatch(/\/login/);
-    const result = readPiLogin(tmp(), { TRIO_PI_API_KEY: 'k' });
-    expect(result.login).toBeNull();
-    expect(result.problem).toContain('TRIO_PI_PROVIDER');
+  test('an explicit key for one run wins, with anthropic when no provider is named', () => {
+    expect(readPiLogin(tmp(), { TRIO_PI_API_KEY: 'k', TRIO_PI_PROVIDER: 'groq', TRIO_PI_MODEL: 'm' }).login).toMatchObject({ provider: 'groq', model: 'm', auth: { type: 'api_key', key: 'k' }, source: 'TRIO_PI_API_KEY' });
+    expect(readPiLogin(tmp(), { TRIO_PI_API_KEY: 'k' }).login?.provider).toBe('anthropic');
   });
 
-  test('an explicit key and provider work without any Pi setup', () => {
-    const { login } = readPiLogin(tmp(), { TRIO_PI_API_KEY: 'k', TRIO_PI_PROVIDER: 'groq', TRIO_PI_MODEL: 'm' });
-    expect(login).toMatchObject({ provider: 'groq', model: 'm', auth: { type: 'api_key', key: 'k' }, source: 'TRIO_PI_API_KEY' });
-  });
-
-  test('a key that is a shell command is refused, because it would run inside the sandbox and fail or reach for the interviewer\'s keychain', () => {
-    const home = piSetup({ settings: { defaultProvider: 'anthropic' }, auth: { anthropic: { type: 'api_key', key: '!security find-generic-password -ws anthropic' } } });
-    const result = readPiLogin(home, {});
+  test('a key that is a shell command is skipped, because it would run inside the sandbox; another provider is used if there is one', () => {
+    const only = piSetup({ settings: { defaultProvider: 'anthropic' }, auth: { anthropic: { type: 'api_key', key: '!security find-generic-password -ws anthropic' } } });
+    const result = readPiLogin(only, {});
     expect(result.login).toBeNull();
-    expect(result.problem).toContain('shell command');
+    expect(result.problem).toContain('command');
+    const other = piSetup({ settings: { defaultProvider: 'anthropic' }, auth: { anthropic: { type: 'api_key', key: '!op read x' }, openai: { type: 'api_key', key: 'sk' } } });
+    expect(readPiLogin(other, {}).login?.provider).toBe('openai');
   });
 
   test('a custom provider keeps its definition (an address of your own)', () => {
@@ -108,7 +122,7 @@ describe('the private Pi home', () => {
   test('nothing is written when there is no login, and the reason is returned', () => {
     const home = join(tmp(), '.agent-pi-x');
     const reason = seedPiHome(home, readPiLogin(tmp(), {}));
-    expect(reason).toMatch(/default provider/);
+    expect(reason).toBe('Sign in once: run pi, then /login.');
     expect(() => statSync(home)).toThrow();
   });
 
@@ -143,7 +157,7 @@ describe('the private Pi home', () => {
   });
 
   test('keys other tools left in the environment are listed to be taken out', () => {
-    for (const key of ['ANTHROPIC_API_KEY', 'ANTHROPIC_OAUTH_TOKEN', 'OPENAI_API_KEY']) expect(PI_BLOCKED_ENVIRONMENT).toContain(key);
+    for (const key of ['ANTHROPIC_API_KEY', 'ANTHROPIC_OAUTH_TOKEN', 'OPENAI_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'AWS_PROFILE', 'GH_TOKEN']) expect(PI_BLOCKED_ENVIRONMENT).toContain(key);
   });
 });
 

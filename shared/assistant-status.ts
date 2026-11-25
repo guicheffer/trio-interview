@@ -28,6 +28,8 @@ export interface ToolReport {
   message: string;
   /** One line for a terminal: ready, or the reason, followed by the three facts */
   line: string;
+  /** True when the only thing missing is a sign in. Said softly and never as an error. */
+  needsSignIn: boolean;
 }
 
 export function describeTool(facts: ToolFacts): ToolReport {
@@ -37,9 +39,11 @@ export function describeTool(facts: ToolFacts): ToolReport {
   else if (facts.sandboxProblem) message = facts.sandboxProblem;
   else if (facts.login === null) message = facts.loginProblem || 'no login was found';
   const ok = message === 'OK';
+  const needsSignIn = facts.installed && !facts.versionProblem && !facts.sandboxProblem && facts.login === null;
   const state = facts.installed ? `installed${facts.version ? ` ${facts.version}` : ''}` : 'not installed';
   const detail = `${state}; login: ${facts.login ?? 'none found'}; sandbox: ${facts.sandboxProblem ?? facts.sandboxOk ?? 'ok'}`;
-  return { ok, message, line: ok ? `${facts.name}: ready (${detail})` : `${facts.name}: NOT ready, ${message} (${detail})` };
+  if (needsSignIn) return { ok, message, needsSignIn, line: `${facts.name}: ${facts.loginProblem || 'not signed in'} (installed${facts.version ? ` ${facts.version}` : ''})` };
+  return { ok, message, needsSignIn, line: ok ? `${facts.name}: ready (${detail})` : `${facts.name}: NOT ready, ${message} (${detail})` };
 }
 
 /** [major, minor] of the first version number in the text, or null */

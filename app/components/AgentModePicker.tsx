@@ -53,7 +53,8 @@ export function AgentModePicker({ canChoose, interviewer = false, tools, onChoos
   const hover = canChoose ? 'hover:border-accent-500' : '';
   // Only tools the interviewer allowed are offered, and the candidate sees nothing about why one cannot open
   const offered = tools.filter(t => t.allowed);
-  const problems = interviewer ? offered.filter(t => t.ok === false) : [];
+  // A tool that only needs a sign in is a quiet grey card with one line. A banner is for real failures (not installed, no sandbox).
+  const problems = interviewer ? offered.filter(t => t.ok === false && !t.needsSignIn) : [];
 
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto p-5">
@@ -79,7 +80,7 @@ export function AgentModePicker({ canChoose, interviewer = false, tools, onChoos
               <ToolIcon tool={t.tool} />
               <span>
                 <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">{LABELS[t.tool].name}</span>
-                <span className="block text-xs text-gray-500 dark:text-gray-400">{busy === t.tool ? 'Opening...' : t.ok === false ? 'Not available right now.' : LABELS[t.tool].hint}</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">{busy === t.tool ? 'Opening...' : t.ok === false ? (interviewer && t.needsSignIn ? t.line.replace(/^[^:]+: /, '').replace(/ \(installed.*$/, '') : 'Not available right now.') : LABELS[t.tool].hint}</span>
               </span>
             </button>
           ))}

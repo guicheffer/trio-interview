@@ -14,7 +14,7 @@ export function piHomeDir(workPath: string): string {
 /** What the private home needs from the interviewer's own Pi: the provider, the model, the login for that provider, and its definition when it is a custom one */
 export interface PiLogin {
   provider: string;
-  /** '' lets Pi pick the provider's default */
+  /** '' lets Pi pick the provider's own default */
   model: string;
   /** The saved login entry for that provider, copied as it is */
   auth: unknown;
@@ -26,35 +26,80 @@ export interface PiLogin {
 
 export interface PiLoginResult {
   login: PiLogin | null;
-  /** Why there is none, when login is null */
+  /** Why there is none, when login is null: one short sentence for the interviewer */
   problem: string;
 }
+
+/** The sentence said when nothing is signed in. Short on purpose: it is shown as it is. */
+export const PI_SIGN_IN_HINT = 'Sign in once: run pi, then /login.';
 
 const readJson = (path: string): any => { try { return JSON.parse(readFileSync(path, 'utf-8')); } catch { return null; } };
 
 /**
- * Reads the login from the interviewer's own Pi setup (~/.pi/agent) and nothing else: no extensions, skills, prompts or themes.
- * It never looks at another tool's files or at ANTHROPIC_API_KEY and friends. TRIO_PI_API_KEY with TRIO_PI_PROVIDER
- * (and TRIO_PI_MODEL) passes a key without any Pi setup. Without TRIO_PI_PROVIDER or a defaultProvider in Pi's settings there
- * is nothing to follow, so none is guessed.
+ * The key variables Pi documents for each provider (the ones it reads on its own). Only these are looked at: not the router
+ * and gateway variables of Claude Code, not cloud credentials such as AWS_*, and nothing from another tool's files.
+ * The order is the order Pi itself prefers a provider in.
+ */
+export const PI_PROVIDER_KEYS: Array<[provider: string, variables: string[]]> = [
+  ['anthropic', ['ANTHROPIC_OAUTH_TOKEN', 'ANTHROPIC_API_KEY']],
+  ['openai', ['OPENAI_API_KEY']],
+  ['deepseek', ['DEEPSEEK_API_KEY']],
+  ['google', ['GEMINI_API_KEY']],
+  ['github-copilot', ['COPILOT_GITHUB_TOKEN']],
+  ['openrouter', ['OPENROUTER_API_KEY']],
+  ['xai', ['XAI_API_KEY']],
+  ['groq', ['GROQ_API_KEY']],
+  ['cerebras', ['CEREBRAS_API_KEY']],
+  ['zai', ['ZAI_API_KEY']],
+  ['mistral', ['MISTRAL_API_KEY']],
+  ['minimax', ['MINIMAX_API_KEY']],
+  ['moonshotai', ['MOONSHOT_API_KEY']],
+  ['huggingface', ['HF_TOKEN']],
+  ['fireworks', ['FIREWORKS_API_KEY']],
+  ['kimi-coding', ['KIMI_API_KEY']],
+];
+
+/** A cheaper model than Pi's own pick for a provider, where Pi's pick is its largest one. Everything else keeps Pi's default. */
+const PREFERRED_MODEL: Record<string, string> = { anthropic: 'claude-sonnet-4-6' };
+
+/**
+ * Finds a login on the interviewer's machine, in this order, and copies only the first provider that has one:
+ *   1. TRIO_PI_API_KEY (with TRIO_PI_PROVIDER, anthropic when missing), an explicit choice for one run;
+ *   2. what Pi itself saved in ~/.pi/agent (/login, including a subscription, or a key), starting with its default provider;
+ *   3. a provider key in the environment that Pi documents (ANTHROPIC_API_KEY, OPENAI_API_KEY and so on).
+ * Nothing from Claude Code, OpenCode, a router or a cloud account is read. The model is Pi's own saved default when it belongs
+ * to the provider, else a mid sized one where that is known, else Pi picks.
  */
 export function readPiLogin(home: string = homedir(), env: Record<string, string | undefined> = process.env): PiLoginResult {
   const agent = join(home, '.pi', 'agent');
   const settings = readJson(join(agent, 'settings.json'));
-  const provider: string = env.TRIO_PI_PROVIDER || (typeof settings?.defaultProvider === 'string' ? settings.defaultProvider : '');
-  const model: string = env.TRIO_PI_MODEL || (!env.TRIO_PI_PROVIDER && typeof settings?.defaultModel === 'string' ? settings.defaultModel : '');
+  const saved = readJson(join(agent, 'auth.json')) ?? {};
+  const models = readJson(join(agent, 'models.json'))?.providers ?? {};
+  const modelFor = (provider: string): string => env.TRIO_PI_MODEL || (provider === settings?.defaultProvider && typeof settings?.defaultModel === 'string' ? settings.defaultModel : PREFERRED_MODEL[provider] ?? '');
+
   if (env.TRIO_PI_API_KEY) {
-    if (!provider) return { login: null, problem: 'TRIO_PI_API_KEY is set but TRIO_PI_PROVIDER is not. Set it to the provider the key is for, for example anthropic.' };
-    return { login: { provider, model, auth: { type: 'api_key', key: env.TRIO_PI_API_KEY }, source: 'TRIO_PI_API_KEY' }, problem: '' };
+    const provider = env.TRIO_PI_PROVIDER || 'anthropic';
+    return { login: { provider, model: modelFor(provider), auth: { type: 'api_key', key: env.TRIO_PI_API_KEY }, source: 'TRIO_PI_API_KEY' }, problem: '' };
   }
-  if (!provider) return { login: null, problem: 'Pi has no default provider. Run pi, use /login and pick a model (it is saved in ~/.pi/agent), or set TRIO_PI_PROVIDER with TRIO_PI_API_KEY.' };
-  const auth = readJson(join(agent, 'auth.json'))?.[provider];
-  const custom = readJson(join(agent, 'models.json'))?.providers?.[provider];
-  if (!auth && !custom) return { login: null, problem: `Pi has no saved login for ${provider}. Run pi and use /login, or set TRIO_PI_API_KEY.` };
-  if (auth && typeof auth.key === 'string' && auth.key.startsWith('!')) {
-    return { login: null, problem: `The Pi login for ${provider} is a shell command, which cannot run inside the sandbox. Put the key itself in Pi's auth.json, or set TRIO_PI_API_KEY.` };
+
+  // What Pi saved itself comes first (its default provider, then the others), then the keys in the environment
+  const savedOrder = [...new Set([...(typeof settings?.defaultProvider === 'string' ? [settings.defaultProvider] : []), ...Object.keys(saved), ...Object.keys(models)])];
+  let shellKey = '';
+  for (const provider of savedOrder) {
+    const entry = saved[provider];
+    if (entry && typeof entry === 'object') {
+      // a key that is a command would run inside the sandbox, where the interviewer's keychain and tools are closed
+      if (typeof entry.key === 'string' && entry.key.startsWith('!')) { shellKey = provider; continue; }
+      return { login: { provider, model: modelFor(provider), auth: entry, providerConfig: models[provider], source: entry.type === 'oauth' ? 'your Pi sign in' : 'your Pi setup' }, problem: '' };
+    }
+    if (models[provider]) return { login: { provider, model: modelFor(provider), auth: undefined, providerConfig: models[provider], source: 'your Pi setup' }, problem: '' };
   }
-  return { login: { provider, model, auth, providerConfig: custom, source: 'your own Pi setup' }, problem: '' };
+  for (const [provider, variables] of PI_PROVIDER_KEYS) {
+    const variable = variables.find(name => env[name]);
+    if (variable) return { login: { provider, model: modelFor(provider), auth: { type: 'api_key', key: env[variable] }, source: variable }, problem: '' };
+  }
+  if (shellKey) return { login: null, problem: `The Pi key for ${shellKey} is a command, which cannot run inside the sandbox. Run pi, use /login, or put the key itself in Pi.` };
+  return { login: null, problem: PI_SIGN_IN_HINT };
 }
 
 /** Writes the private config (the one provider, no packages or extensions) and the login, readable by the owner only. Returns why not when there is no login. */
@@ -108,8 +153,12 @@ export function piEnvironment(piHome: string): Record<string, string> {
   };
 }
 
-/** Keys of other tools that Pi would pick up from the environment on its own. They are taken out, so the only login is the one copied in. */
-export const PI_BLOCKED_ENVIRONMENT = ['ANTHROPIC_API_KEY', 'ANTHROPIC_OAUTH_TOKEN', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY'];
+/** Every key variable Pi reads on its own, plus the router and cloud ones of other tools. They are taken out of what Pi runs with, so the only login it has is the one copied into its private home. */
+export const PI_BLOCKED_ENVIRONMENT = [
+  ...PI_PROVIDER_KEYS.flatMap(([, variables]) => variables),
+  'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'CLAUDE_API_KEY', 'GH_TOKEN', 'GITHUB_TOKEN', 'AZURE_OPENAI_API_KEY', 'GOOGLE_CLOUD_API_KEY', 'CLOUDFLARE_API_KEY',
+  'AWS_PROFILE', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'AWS_BEARER_TOKEN_BEDROCK',
+];
 
 /** Nothing of the interviewer's machine is loaded: no extensions, skills, prompt templates, themes or context files (the rules come with the system prompt) */
 export function piArgs(resume: boolean): string[] {

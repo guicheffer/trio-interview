@@ -79,6 +79,8 @@ export async function registerAgentRoutes(server: FastifyInstance) {
       message: interviewer ? availability[tool].message : '',
       version: interviewer ? availability[tool].version : '',
       line: interviewer ? availability[tool].line : '',
+      // a plain fact the card needs to look quiet; it says nothing about why
+      needsSignIn: interviewer ? availability[tool].needsSignIn : false,
     }));
     return {
       mode: currentMode(),

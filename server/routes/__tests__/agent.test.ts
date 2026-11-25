@@ -7,8 +7,8 @@ import { LOCAL, TUNNEL, buildApp, makeWorkspace, type Workspace } from './harnes
 // The tools "work" here so the test is about who may choose and what is allowed, not about this machine
 vi.mock('../../lib/agent-mode.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../lib/agent-mode.js')>();
-  const ok = { ok: true, message: 'OK', version: 'test', checkedAt: 1, line: 'Tool: ready (installed test; login: test; sandbox: ok)' };
-  const broken = { ok: false, message: 'no login was found for the secret reason', version: 'test', checkedAt: 1, line: 'Pi: NOT ready, the secret reason (installed test; login: none found; sandbox: ok)' };
+  const ok = { ok: true, message: 'OK', version: 'test', checkedAt: 1, line: 'Tool: ready (installed test; login: test; sandbox: ok)', needsSignIn: false };
+  const broken = { ok: false, message: 'no login was found for the secret reason', version: 'test', checkedAt: 1, line: 'Pi: NOT ready, the secret reason (installed test; login: none found; sandbox: ok)', needsSignIn: false };
   return { ...original, checkClaudeCode: async () => ok, checkOpencode: async () => ok, checkPi: async () => broken, cachedAvailability: () => ({ 'claude-code': ok, opencode: ok, pi: broken }) };
 });
 
@@ -123,7 +123,7 @@ describe('who chooses the assistant', () => {
 
   test('the candidate is never told why a tool cannot open', async () => {
     const view = (await app.inject({ method: 'GET', url: '/api/agent-mode', headers: TUNNEL })).json();
-    for (const t of view.tools) { expect(t.message).toBe(''); expect(t.version).toBe(''); expect(t.line).toBe(''); }
+    for (const t of view.tools) { expect(t.message).toBe(''); expect(t.version).toBe(''); expect(t.line).toBe(''); expect(t.needsSignIn).toBe(false); }
     expect(existsSync(join(process.cwd(), 'interview.config.yaml'))).toBe(false);
     rmSync(join(process.cwd(), 'interview.config.yaml'), { force: true });
   });

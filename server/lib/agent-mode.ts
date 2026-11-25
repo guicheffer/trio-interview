@@ -51,9 +51,11 @@ export interface ToolAvailability {
   checkedAt: number | null;
   /** One plain line for the terminal: installed or not, version, login, sandbox, and ready or the reason */
   line: string;
+  /** Only a sign in is missing: shown quietly, not as a warning */
+  needsSignIn: boolean;
 }
 
-const NOT_CHECKED: ToolAvailability = { ok: null, message: 'not checked yet', version: '', checkedAt: null, line: '' };
+const NOT_CHECKED: ToolAvailability = { ok: null, message: 'not checked yet', version: '', checkedAt: null, line: '', needsSignIn: false };
 const cache: Record<TerminalAssistant, ToolAvailability> = { 'claude-code': NOT_CHECKED, opencode: NOT_CHECKED, pi: NOT_CHECKED };
 
 export function cachedAvailability(): Record<TerminalAssistant, ToolAvailability> {
@@ -89,7 +91,7 @@ function readVersion(bin: string): Promise<{ ok: boolean; version: string; error
 
 function finish(tool: TerminalAssistant, facts: ToolFacts): ToolAvailability {
   const report = describeTool(facts);
-  const result: ToolAvailability = { ok: report.ok, message: report.message, version: facts.version, checkedAt: Date.now(), line: report.line };
+  const result: ToolAvailability = { ok: report.ok, message: report.message, version: facts.version, checkedAt: Date.now(), line: report.line, needsSignIn: report.needsSignIn };
   cache[tool] = result;
   return result;
 }

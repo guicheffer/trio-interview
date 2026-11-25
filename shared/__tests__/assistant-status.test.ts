@@ -13,19 +13,27 @@ describe('what is said about an assistant', () => {
   test('each missing piece is named, and the first one that stops it is the reason', () => {
     expect(describeTool({ ...fine, installed: false, version: '' }).message).toContain('npm install -g pi');
     expect(describeTool({ ...fine, versionProblem: 'Pi 0.73 or later is needed' }).message).toBe('Pi 0.73 or later is needed');
-    expect(describeTool({ ...fine, login: null, loginProblem: 'Pi has no saved login' }).message).toBe('Pi has no saved login');
+    expect(describeTool({ ...fine, login: null, loginProblem: 'Sign in once: run pi, then /login.' }).message).toBe('Sign in once: run pi, then /login.');
     expect(describeTool({ ...fine, sandboxProblem: 'sandbox-exec was not found' }).message).toBe('sandbox-exec was not found');
-    for (const broken of [{ installed: false }, { login: null }, { sandboxProblem: 'no sandbox' }]) {
+    for (const broken of [{ installed: false }, { sandboxProblem: 'no sandbox' }]) {
       const report = describeTool({ ...fine, ...broken });
       expect(report.ok).toBe(false);
       expect(report.line).toContain('NOT ready');
+      expect(report.needsSignIn).toBe(false);
     }
   });
 
-  test('a program that is installed but has no login is not reported as ready', () => {
-    const report = describeTool({ ...fine, login: null });
-    expect(report.line).toContain('login: none found');
-    expect(report.line).not.toContain(': ready');
+  test('only a missing sign in is said softly, in one short line, and it is not an error', () => {
+    const report = describeTool({ ...fine, login: null, loginProblem: 'Sign in once: run pi, then /login.' });
+    expect(report.ok).toBe(false);
+    expect(report.needsSignIn).toBe(true);
+    expect(report.line).toBe('Pi: Sign in once: run pi, then /login. (installed 0.73.1)');
+    expect(report.line).not.toMatch(/NOT ready|login: none/);
+  });
+
+  test('a missing sign in on a program that cannot start anyway is not called a sign in problem', () => {
+    expect(describeTool({ ...fine, login: null, sandboxProblem: 'no sandbox' }).needsSignIn).toBe(false);
+    expect(describeTool({ ...fine, login: null, installed: false }).needsSignIn).toBe(false);
   });
 
   test('versions compare by major and minor', () => {
