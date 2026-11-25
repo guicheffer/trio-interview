@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { getActiveSession, getWorkPath } from '../lib/active-candidate.js';
 import { readExerciseConfig } from '../lib/exercise-config.js';
-import { cachedAvailability, checkClaudeCode, checkOpencode, clearAgentMode, isAgentMode, readAgentMode, writeAgentMode, type AgentMode } from '../lib/agent-mode.js';
+import { cachedAvailability, checkClaudeCode, checkOpencode, checkPi, TERMINAL_ASSISTANTS, clearAgentMode, isAgentMode, readAgentMode, writeAgentMode, type AgentMode } from '../lib/agent-mode.js';
 import { getAgentSession, getOrCreateAgentSession, type AgentClient, type TerminalTool } from '../lib/agent-pty.js';
 import { readInterviewConfig } from '../lib/interview-config.js';
 import { toolAllowed } from '../../shared/interview-config.js';
@@ -27,7 +27,7 @@ function sessionKey(): string {
 function attachSocket(socket: any) {
   // The terminal only exists for the tool the candidate chose, and only when the interviewer's settings allow it
   const mode = currentMode();
-  if (mode !== 'claude-code' && mode !== 'opencode') {
+  if (mode !== 'claude-code' && mode !== 'opencode' && mode !== 'pi') {
     try { socket.close(4403, 'not enabled'); } catch {}
     return;
   }
@@ -55,7 +55,7 @@ function attachSocket(socket: any) {
 
 /** Stops every terminal assistant of the active candidate, so one that is no longer chosen does not keep running (and spending) unseen */
 function stopTerminals(except?: AgentMode) {
-  for (const tool of ['claude-code', 'opencode'] as const) {
+  for (const tool of TERMINAL_ASSISTANTS) {
     if (tool !== except) getAgentSession(`${sessionKey()}/${tool}`)?.dispose();
   }
 }
@@ -72,12 +72,15 @@ export async function registerAgentRoutes(server: FastifyInstance) {
     const interviewer = roleForRequest(request) === 'interviewer';
     const config = readInterviewConfig();
     const availability = cachedAvailability();
-    const tools = (['claude-code', 'opencode'] as const).map(tool => ({
+    const tools = TERMINAL_ASSISTANTS.map(tool => ({
       tool,
       allowed: toolAllowed(config, tool),
       ok: availability[tool].ok,
       message: interviewer ? availability[tool].message : '',
       version: interviewer ? availability[tool].version : '',
+      line: interviewer ? availability[tool].line : '',
+      // a plain fact the card needs to look quiet; it says nothing about why
+      needsSignIn: interviewer ? availability[tool].needsSignIn : false,
     }));
     return {
       mode: currentMode(),
@@ -92,8 +95,8 @@ export async function registerAgentRoutes(server: FastifyInstance) {
     const { mode } = (request.body ?? {}) as { mode?: unknown };
     if (!isAgentMode(mode)) return reply.status(400).send({ error: 'unknown mode' });
     if (!toolAllowed(readInterviewConfig(), mode)) return reply.status(403).send({ error: 'The interviewer did not allow this assistant' });
-    if (mode === 'claude-code' || mode === 'opencode') {
-      const availability = mode === 'claude-code' ? await checkClaudeCode() : await checkOpencode();
+    if (mode === 'claude-code' || mode === 'opencode' || mode === 'pi') {
+      const availability = mode === 'claude-code' ? await checkClaudeCode() : mode === 'opencode' ? await checkOpencode() : await checkPi();
       // The reason (budget, router, install) is for the interviewer, the candidate only learns it cannot be used
       if (!availability.ok) return reply.status(409).send({ error: 'This assistant is not available right now' });
     }
@@ -111,7 +114,7 @@ export async function registerAgentRoutes(server: FastifyInstance) {
 
   server.post('/api/agent-mode/check', async (request, reply) => {
     if (!requireInterviewer(request, reply)) return;
-    await Promise.all([checkClaudeCode(), checkOpencode()]);
+    await Promise.all([checkClaudeCode(), checkOpencode(), checkPi()]);
     return reply.send(cachedAvailability());
   });
 

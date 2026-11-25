@@ -17,5 +17,5 @@ export function tunnelStatus(tunnel: Tunnel, has: (program: string) => boolean, 
     return { ready: true, message: 'ngrok is installed and signed in' };
   }
   if (!has('cloudflared')) return { ready: false, message: 'cloudflared is not installed', fix: 'brew install cloudflared' };
-  return { ready: true, message: 'cloudflared is installed (a quick tunnel needs no account). It holds back the chat\'s live stream, so Agent mode will not answer through it; Claude Code and OpenCode do' };
+  return { ready: true, message: 'cloudflared is installed (a quick tunnel needs no account). It holds back the chat\'s live stream, so Agent mode will not answer through it; Claude Code, OpenCode and Pi do' };
 }

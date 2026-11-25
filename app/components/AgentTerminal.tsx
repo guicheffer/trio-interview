@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { ClaudeCodeIcon } from './ClaudeCodeIcon';
 import { OpenCodeIcon } from './OpenCodeIcon';
+import { PiIcon } from './PiIcon';
 
 interface AgentTerminalProps {
   interviewer: boolean;
-  tool: 'claude-code' | 'opencode';
+  tool: 'claude-code' | 'opencode' | 'pi';
   /** Candidate only: go back and pick another assistant */
   onChange?: () => void;
 }
@@ -122,8 +123,8 @@ export function AgentTerminal({ interviewer, tool, onChange }: AgentTerminalProp
     <div className="flex h-full flex-col bg-gray-900 dark:bg-gray-950">
       <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700 bg-gray-800 px-3 py-1.5">
         <div className="flex items-center gap-2">
-          {tool === 'claude-code' ? <ClaudeCodeIcon /> : <OpenCodeIcon />}
-          <span className="text-xs font-medium text-gray-200">{tool === 'claude-code' ? 'Claude Code' : 'OpenCode'}</span>
+          {tool === 'claude-code' ? <ClaudeCodeIcon /> : tool === 'pi' ? <PiIcon /> : <OpenCodeIcon />}
+          <span className="text-xs font-medium text-gray-200">{tool === 'claude-code' ? 'Claude Code' : tool === 'pi' ? 'Pi' : 'OpenCode'}</span>
           {connected ? <span className="text-xs text-green-400">● connected</span> : <span className="text-xs text-gray-500">○ connecting...</span>}
         </div>
         {!interviewer && onChange && (

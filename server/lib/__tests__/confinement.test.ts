@@ -64,7 +64,8 @@ describe('what a terminal assistant may read', () => {
     const settings = confinedSettings({ workPath: work, configDir: config, projectRoot: root, home }) as any;
     expect(settings.permissions.blockReadsOutsideWorkingDirectories).toBe(true);
     expect(settings.permissions.blockWritesOutsideWorkingDirectories).toBe(true);
-    expect(settings.sandbox.enabled).toBe(true);
+    // the operating system's sandbox is around the whole process, and one cannot be started inside the other
+    expect(settings.sandbox.enabled).toBe(false);
     // a command the sandbox stops is not run again outside it
     expect(settings.sandbox.allowUnsandboxedCommands).toBe(false);
     // it may write in its own folder and nowhere else
@@ -78,7 +79,7 @@ describe('what a terminal assistant may read', () => {
     writeFileSync(join(config, 'settings.json'), JSON.stringify({ permissions: { defaultMode: 'bypassPermissions' } }));
     seedAgentConfig(config, work);
     const written = JSON.parse(readFileSync(join(config, 'settings.json'), 'utf-8'));
-    expect(written.sandbox.enabled).toBe(true);
+    expect(written.sandbox.enabled).toBe(false);
     expect(written.permissions.blockReadsOutsideWorkingDirectories).toBe(true);
     expect(written.skipDangerousModePermissionPrompt).toBe(true);
   });

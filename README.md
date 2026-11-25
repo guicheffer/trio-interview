@@ -20,7 +20,7 @@ People work with assistants every day now, so an interview that bans them tests 
 ## Quick start
 
 ```bash
-make install    # once: dependencies, and a check of Claude Code, OpenCode and the tunnel
+make install    # once: dependencies, and a check of Claude Code, OpenCode, Pi and the tunnel
 make config     # once: which assistants, exercises and tunnel you allow
 make start      # pick an exercise, get the link, interview
 make stop       # when you are done
@@ -28,7 +28,7 @@ make stop       # when you are done
 
 ![make start picks an exercise and prints the links](docs/images/make-start.gif)
 
-You need Node 25 and Claude Code signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). OpenCode 2 and a tunnel are optional, and `make config` checks what your choices still need. The assistant a candidate uses is paid by the account you signed in with, so use one with a limit.
+You need Node 25 and Claude Code signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). OpenCode 2, Pi and a tunnel are optional, and `make config` checks what your choices still need. The assistant a candidate uses is paid by the account you signed in with, so use one with a limit.
 
 ## How it works
 
@@ -46,7 +46,7 @@ flowchart LR
   classDef tool fill:#1a1a2b,stroke:#3b3b56,color:#ecebf5
 ```
 
-The candidate picks the assistant from the ones you allowed, the chat or Claude Code or OpenCode in a real terminal, and you see the same screen they do. You can follow them, look around on your own, edit files, and reveal the later phases of an exercise when they are ready. At the end `make export` zips their code and every conversation for the `evaluate-candidate` skill to review.
+The candidate picks the assistant from the ones you allowed, the chat, or Claude Code, OpenCode or Pi in a real terminal (Codex is shown as coming soon), and you see the same screen they do. You can follow them, look around on your own, edit files, and reveal the later phases of an exercise when they are ready. At the end `make export` zips their code and every conversation for the `evaluate-candidate` skill to review.
 
 <table>
   <tr>

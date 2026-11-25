@@ -2,16 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-export type AgentMode = 'agent' | 'claude-code' | 'opencode';
+export type AgentMode = 'agent' | 'claude-code' | 'opencode' | 'pi';
 
 export interface ToolView {
-  tool: 'claude-code' | 'opencode';
+  tool: 'claude-code' | 'opencode' | 'pi';
   /** The interviewer's settings allow it */
   allowed: boolean;
   ok: boolean | null;
   /** Why it cannot open. Only the interviewer is told. */
   message: string;
   version: string;
+  /** One line with the version, the login and the sandbox. Only the interviewer is told. */
+  line: string;
+  /** Only a sign in is missing. Only the interviewer is told. */
+  needsSignIn: boolean;
 }
 
 export interface AgentModeView {

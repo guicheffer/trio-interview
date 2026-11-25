@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { AgentMode, ToolView } from '../hooks/useAgentMode';
 import { ClaudeCodeIcon } from './ClaudeCodeIcon';
 import { OpenCodeIcon } from './OpenCodeIcon';
+import { PiIcon } from './PiIcon';
+import { CodexIcon } from './CodexIcon';
 
 interface AgentModePickerProps {
   /** Whether this screen may choose. Both may; the server decides and still refuses a tool that is switched off. */
@@ -15,10 +17,18 @@ interface AgentModePickerProps {
   onRecheck: () => Promise<void>;
 }
 
-const LABELS: Record<'claude-code' | 'opencode', { name: string; hint: string }> = {
+const LABELS: Record<'claude-code' | 'opencode' | 'pi', { name: string; hint: string }> = {
   'claude-code': { name: 'Claude Code', hint: 'The real terminal program, Sonnet by default.' },
   opencode: { name: 'OpenCode', hint: 'The OpenCode terminal program, Sonnet by default.' },
+  pi: { name: 'Pi', hint: 'The Pi terminal program, a small agent with four tools.' },
 };
+
+function ToolIcon({ tool }: { tool: 'claude-code' | 'opencode' | 'pi' }) {
+  const className = 'mt-0.5 h-4 w-4 flex-shrink-0';
+  if (tool === 'claude-code') return <ClaudeCodeIcon className={className} />;
+  if (tool === 'pi') return <PiIcon className={className} />;
+  return <OpenCodeIcon className={className} />;
+}
 
 /** Shown in the side panel before any assistant is opened. The candidate picks; the interviewer watches. */
 export function AgentModePicker({ canChoose, interviewer = false, tools, onChoose, onRecheck }: AgentModePickerProps) {
@@ -43,7 +53,8 @@ export function AgentModePicker({ canChoose, interviewer = false, tools, onChoos
   const hover = canChoose ? 'hover:border-accent-500' : '';
   // Only tools the interviewer allowed are offered, and the candidate sees nothing about why one cannot open
   const offered = tools.filter(t => t.allowed);
-  const problems = interviewer ? offered.filter(t => t.ok === false) : [];
+  // A tool that only needs a sign in is a quiet grey card with one line. A banner is for real failures (not installed, no sandbox).
+  const problems = interviewer ? offered.filter(t => t.ok === false && !t.needsSignIn) : [];
 
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto p-5">
@@ -66,18 +77,28 @@ export function AgentModePicker({ canChoose, interviewer = false, tools, onChoos
 
           {offered.map(t => (
             <button key={t.tool} onClick={() => choose(t.tool)} disabled={!canChoose || busy !== null || t.ok === false} className={`${card} ${hover}`}>
-              {t.tool === 'claude-code' ? <ClaudeCodeIcon className="mt-0.5 h-4 w-4 flex-shrink-0" /> : <OpenCodeIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              <ToolIcon tool={t.tool} />
               <span>
                 <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">{LABELS[t.tool].name}</span>
-                <span className="block text-xs text-gray-500 dark:text-gray-400">{busy === t.tool ? 'Opening...' : t.ok === false ? 'Not available right now.' : LABELS[t.tool].hint}</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">{busy === t.tool ? 'Opening...' : t.ok === false ? (interviewer && t.needsSignIn ? t.line.replace(/^[^:]+: /, '').replace(/ \(installed.*$/, '') : 'Not available right now.') : LABELS[t.tool].hint}</span>
               </span>
             </button>
           ))}
+
+          {/* Shown to everybody and never selectable: there is no server route behind it */}
+          <button type="button" disabled aria-disabled="true" data-testid="assistant-codex" className={`${card} opacity-50`}>
+            <CodexIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>
+              <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">Codex</span>
+              <span className="block text-xs text-gray-500 dark:text-gray-400">Coming soon.</span>
+            </span>
+          </button>
         </div>
 
         {problems.map(t => (
           <div key={t.tool} className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
-            <p>{LABELS[t.tool].name} cannot open: {t.message || 'the check failed'}</p>
+            <p>{LABELS[t.tool].name} cannot open.</p>
+            <p className="mt-1">{t.line || t.message || 'the check failed'}</p>
             <button onClick={recheck} disabled={busy !== null} className="mt-2 rounded bg-amber-600 px-2 py-1 font-medium text-white hover:bg-amber-700 disabled:opacity-50">
               {busy === 'check' ? 'Checking...' : 'Check again'}
             </button>

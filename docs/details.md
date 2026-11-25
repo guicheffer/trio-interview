@@ -16,10 +16,11 @@ Each candidate gets their own copy of the exercise in `.solutions/<name>/<exerci
 - Node 25 (see `.nvmrc`, run `nvm use`)
 - The **Claude Code CLI**, installed and signed in (`npm install -g @anthropic-ai/claude-code`, then run `claude` once). The chat and the Claude Code terminal both run on it, with your login, so your account pays for what candidates use.
 - Optional: **OpenCode 2** (`brew install anomalyco/tap/opencode-v2`), signed in to a provider with a default model. Version 1 is not supported.
+- Optional: **Pi** (`npm install -g @mariozechner/pi-coding-agent`, Node 20.6 or later). Run `pi` once and use `/login` to sign in with a subscription or a key. Nothing else is needed: the tool finds what Pi saved, or a key Pi documents in your environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and so on), and uses only that provider. Router and cloud logins that belong to other tools are never used.
 - Optional, to share with a remote candidate, one of: `ngrok` (needs a free account and an authtoken: sign up at https://dashboard.ngrok.com/signup, then `ngrok config add-authtoken <token>`; on the free plan candidates see a one time "Visit Site" page) or `cloudflared` (`brew install cloudflared`, no account needed). `make config` asks which and checks what it still needs from you.
 - Some budget on the account the assistants are signed in to: candidates spend yours.
 
-`make install` installs the dependencies and checks all of this: Node, Claude Code, OpenCode and the tunnel (including whether ngrok is logged in). In a terminal it offers to install what it can.
+`make install` installs the dependencies and checks all of this: Node, Claude Code, OpenCode, Pi and the tunnel (including whether ngrok is logged in). In a terminal it offers to install what it can.
 
 `make config` then asks which assistants and exercises you allow. `make start` installs dependencies when `node_modules` is missing or `package-lock.json` changed, refuses to start if Claude Code is missing, and reports (without stopping) when something you allowed is not ready.
 
@@ -88,7 +89,7 @@ Paths may use `*` and `**`. Hidden files are moved out of the candidate's folder
 
 ## Assistants and models
 
-The candidate picks the assistant from what you allowed in `interview.config.yaml`: the chat, Claude Code or OpenCode. The interviewer can choose too, to rehearse alone or to set the room up, and both screens show the choice once it is made. See [SECURITY.md](../SECURITY.md) for how the terminal assistants are kept apart from your own setup.
+The candidate picks the assistant from what you allowed in `interview.config.yaml`: the chat, Claude Code, OpenCode or Pi (Codex shows as coming soon). `make config CHECK=1` and `make start` print one line for each assistant: installed or not, its version, whether a login was found and whether it can start inside the sandbox, with the exact reason when it cannot. The interviewer can choose too, to rehearse alone or to set the room up, and both screens show the choice once it is made. See [SECURITY.md](../SECURITY.md) for how the terminal assistants are kept apart from your own setup.
 
 The chat runs the Claude Code CLI on your machine, through whatever login that CLI uses. Every message a candidate sends is paid for by that account, so make sure it has enough left.
 
@@ -100,6 +101,10 @@ TRIO_MODEL_OPUS=my-opus-id make start
 
 The terminal assistants start on Sonnet 5.5.
 
+Each program is found on your `PATH`. To use another copy, point one variable at it: `TRIO_CLAUDE_BIN`, `TRIO_OPENCODE_BIN` or `TRIO_PI_BIN`. Keep the program in a permanent folder such as your home or `/usr/local`: the operating system sandbox keeps temporary folders closed, so a copy under `/tmp` cannot start, and `make config CHECK=1` says so.
+
+To try Pi or OpenCode with a key of your own for one run, set it in the environment, for example `TRIO_PI_API_KEY=... make start` (Pi uses Anthropic unless `TRIO_PI_PROVIDER` names another provider) or `TRIO_OPENCODE_API_KEY=...` with `TRIO_OPENCODE_PROVIDER`. Only that key reaches the assistant, and `make config CHECK=1` shows which login it found without printing it.
+
 Subagents (the Task tool) work. The server sets `CLAUDE_CODE_SUBAGENT_MODEL` to the model the candidate picked.
 
 ## Sharing with a remote candidate
@@ -110,7 +115,7 @@ The candidate only ever uses one URL, the tunnel URL. It serves exactly the same
 
 With `ngrok`, the free plan needs an account (once), always gives the same address (the private part of the link is what changes), and shows a one time "You are about to visit" page that the candidate clicks through once. Everything works through it.
 
-With `cloudflared` a quick tunnel needs no account and gives a new address every time, and a link just made can take a little while to open on the candidate's side while the name spreads. It carries the terminal assistants (Claude Code and OpenCode) and everything else that uses a WebSocket, but not the chat's live answers: they travel as server sent events, which a quick tunnel holds back, so the chat would stay empty. Tell the candidate to pick a terminal assistant. `make start` says so under the link.
+With `cloudflared` a quick tunnel needs no account and gives a new address every time, and a link just made can take a little while to open on the candidate's side while the name spreads. It carries the terminal assistants (Claude Code, OpenCode and Pi) and everything else that uses a WebSocket, but not the chat's live answers: they travel as server sent events, which a quick tunnel holds back, so the chat would stay empty. Tell the candidate to pick a terminal assistant. `make start` says so under the link.
 
 
 The address is not what keeps strangers out. `make start` makes a new secret for every interview and prints the link as `https://<tunnel-address>/#k=<secret>`. The page trades the secret for an HttpOnly cookie (12 hours) and removes it from the address bar; the backend (`server/lib/access-gate.ts`) answers a candidate only with that cookie, WebSockets and the preview included. The secret lives only in the environment of the servers and in the printed link, never on disk or in a log, and the next `make start` replaces it. Without `make start` (plain `npm run dev`) there is no secret and nothing is asked for.

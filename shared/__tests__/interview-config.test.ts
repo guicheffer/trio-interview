@@ -35,6 +35,15 @@ exercises:
     expect(parseConfig(renderConfig(config))).toEqual(config);
   });
 
+  test('Pi is a tool that can be allowed, and Codex is not a tool at all, so a file that names it is ignored', () => {
+    expect(DEFAULT_CONFIG.tools).toContain('pi');
+    expect(parseConfig('tools:\n  - pi').tools).toEqual(['agent', 'pi']);
+    expect(toolAllowed(parseConfig('tools:\n  - claude-code'), 'pi')).toBe(false);
+    expect(parseConfig('tools:\n  - claude-code\n  - codex').tools).toEqual(['agent', 'claude-code']);
+    const config = { tools: ['agent' as const, 'pi' as const], exercises: [], tunnel: 'none' as const, sources: [] };
+    expect(parseConfig(renderConfig(config))).toEqual(config);
+  });
+
   test('the tunnel defaults to ngrok, accepts the known ones, and ignores anything else instead of stopping the interview', () => {
     expect(parseConfig('').tunnel).toBe('ngrok');
     expect(parseConfig('tunnel: cloudflared').tunnel).toBe('cloudflared');

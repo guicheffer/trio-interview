@@ -1,10 +1,10 @@
 import { spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { sandboxed } from '../agent-pty.js';
-import { sandboxAvailable, sandboxProfile, wrapCommand } from '../os-sandbox.js';
+import { claudeProgramFolders, sandboxed } from '../agent-pty.js';
+import { resolveProgram, sandboxAvailable, sandboxProfile, wrapCommand } from '../os-sandbox.js';
 
 // The profile is run by the real operating system sandbox here, with ordinary programs, so what is checked is what the system does and
 // not what the text looks like. It needs macOS, where the sandbox exists; elsewhere these tests have nothing to run against.
@@ -155,6 +155,79 @@ run('what the assistant may ask about above its folder', () => {
       expect(text).toContain('read=1');
       expect(text).toContain('gitread=1');
       expect(text).toContain('list=1');
+    } finally { rmSync(base, { recursive: true, force: true }); }
+  });
+});
+
+// Pi and OpenCode are installed under the interviewer's home. node looks up every folder above the program one by one, and the home
+// is closed, so those folders may be asked about (name only) and the program itself is opened again. The home stays unreadable.
+run('a program installed inside the interviewer\'s home', () => {
+  test('starts, and still cannot read anything else of the home', () => {
+    const base = realpathSync(mkdtempSync(join(homedir(), '.trio-prog-')));
+    try {
+      const w = join(base, '.solutions', 'maya', 'fibonacci');
+      const c = join(base, '.solutions', 'maya', '.agent-pi-fibonacci');
+      const pkg = join(base, 'tools', 'node_modules', 'pi');
+      mkdirSync(w, { recursive: true });
+      mkdirSync(c, { recursive: true });
+      mkdirSync(pkg, { recursive: true });
+      writeFileSync(join(base, 'tools', 'secret.txt'), 'TOOLS-SECRET');
+      writeFileSync(join(pkg, 'cli.js'), `const fs = require('fs'); console.log('started'); try { console.log(fs.readFileSync(${JSON.stringify(join(base, 'tools', 'secret.txt'))}, 'utf8')); } catch (e) { console.log('closed'); }`);
+      const plan = sandboxed({ bin: process.execPath, args: [join(pkg, 'cli.js')], workPath: w, configDir: c, writable: [w, c], programFolders: [join(base, 'tools', 'node_modules')] }) as { bin: string; args: string[] };
+      const out = spawnSync(plan.bin, plan.args, { cwd: w, encoding: 'utf-8' });
+      expect(out.stdout).toContain('started');
+      expect(out.stdout).not.toContain('TOOLS-SECRET');
+    } finally { rmSync(base, { recursive: true, force: true }); }
+  });
+});
+
+// A program named without a path ("opencode", found in PATH) once made the profile open "." which is the folder the server runs in:
+// the whole tool, its settings and every other candidate. The tool's folder must stay closed whatever the program is called.
+run('a program named without a path', () => {
+  test('does not open the folder the server runs in, and still starts', () => {
+    const bin = join(root, 'tools');
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, 'fakeassistant'), '#!/bin/sh\ncat "$1" 2>&1 | head -c 40\n', { mode: 0o755 });
+    const text = sandboxProfile({ workPath: work, configDir: config, projectRoot: root, home, program: 'fakeassistant', writable: [work, config] });
+    expect(text).not.toContain('(allow file-read* (subpath "fakeassistant"))');
+    expect(text).not.toMatch(/\(allow file-read\* \(subpath "[^/]/);
+    const old = process.cwd();
+    try {
+      process.chdir(root);
+      const again = sandboxProfile({ workPath: work, configDir: config, projectRoot: root, home, program: 'fakeassistant', writable: [work, config] });
+      expect(again).not.toContain(`(allow file-read* (subpath ${JSON.stringify(root)}))`);
+    } finally { process.chdir(old); }
+  });
+
+  test('is looked up in PATH like a shell does, and a name that is not found stays a name', () => {
+    const bin = join(root, 'tools');
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, 'fakeassistant'), '#!/bin/sh\n', { mode: 0o755 });
+    expect(resolveProgram('fakeassistant', `relative/bin:${bin}`)).toBe(join(bin, 'fakeassistant'));
+    expect(resolveProgram('nothing-here', bin)).toBe('nothing-here');
+    expect(resolveProgram('/abs/program', '')).toBe('/abs/program');
+  });
+});
+
+// Claude Code is installed as a link in a bin folder that points into a versions folder, both under the home. Both are opened (the program
+// must start), nothing else of the home is, and a shell started from it cannot read the interviewer's files.
+run('Claude Code installed as a link into a versions folder', () => {
+  test('starts, and the shell it opens is as closed as for the other assistants', () => {
+    const base = realpathSync(mkdtempSync(join(homedir(), '.trio-claude-')));
+    try {
+      const w = join(base, '.solutions', 'maya', 'fibonacci');
+      const c = join(base, '.solutions', 'maya', '.agent-claude-fibonacci');
+      const versions = join(base, 'share', 'claude', 'versions', '2.0.0');
+      const bin = join(base, 'local', 'bin');
+      for (const dir of [w, c, join(versions, '..'), bin]) mkdirSync(dir, { recursive: true });
+      writeFileSync(versions, `#!/bin/sh\ncat "$1" 2>&1 | head -c 40\n`, { mode: 0o755 });
+      writeFileSync(join(base, 'share', 'secret.txt'), 'SHARE-SECRET');
+      symlinkSync(versions, join(bin, 'claude'));
+      expect(claudeProgramFolders(join(bin, 'claude'))).toEqual(expect.arrayContaining([join(base, 'share', 'claude', 'versions'), bin]));
+      const plan = sandboxed({ bin: join(bin, 'claude'), args: [join(base, 'share', 'secret.txt')], workPath: w, configDir: c, writable: [w, c], programFolders: claudeProgramFolders(join(bin, 'claude')) }) as { bin: string; args: string[] };
+      const out = spawnSync(plan.bin, plan.args, { cwd: w, encoding: 'utf-8' });
+      expect(out.stdout + out.stderr).not.toContain('SHARE-SECRET');
+      expect(out.status).toBe(0);
     } finally { rmSync(base, { recursive: true, force: true }); }
   });
 });
