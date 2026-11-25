@@ -30,7 +30,7 @@
   </nav>
 </div></header>
 <div class="docs">
-  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html" aria-current="page">Contributing</a></li></ul></aside>
+  <aside class="side" aria-label="Docs"><h4>Start</h4><ul><li><a href="index.html">Run an interview</a></li><li><a href="candidate.html">For candidates</a></li></ul><h4>Guides</h4><ul><li><a href="details.html">Sharing, hiding files and exporting</a></li><li><a href="exercises.html">The exercises</a></li></ul><h4>Project</h4><ul><li><a href="contributing.html" aria-current="page">Contributing</a></li></ul><h4>Try it</h4><ul><li><a href="../demo/">Live demo as a candidate</a></li></ul></aside>
   <main class="doc">
     <article class="md"><h1 id="contributing">Contributing</h1>
 <p>Thank you for wanting to help. There are two ways in, and the first needs no code: you can add an exercise, or you can change the tool itself. Small pull requests that do one thing are the easiest to review, so start there.</p>
@@ -38,7 +38,7 @@
 <pre><code class="hljs language-bash">nvm use           <span class="hljs-comment"># Node 25, see .nvmrc</span>
 make install      <span class="hljs-comment"># installs dependencies and checks Claude Code, OpenCode and the tunnel</span>
 make <span class="hljs-built_in">help</span>         <span class="hljs-comment"># every command</span></code></pre>
-<p><code>make dev</code> starts the frontend and the backend with hot reload, <code>make test</code> runs the unit tests and <code>make typecheck</code> the type check. <a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> explains how the tool is put together, and it is the file to give any AI agent that works on this repository.</p>
+<p><code>make dev</code> starts the frontend and the backend with hot reload, <code>make test</code> runs the unit tests and <code>make typecheck</code> the type check. <a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a> explains how the tool is put together, and it is the file to give any AI agent that works on this repository.</p>
 <h2 id="send-a-change">Send a change</h2>
 <p><img src="images/contribute.gif" alt="Branch, check, commit and open a pull request" loading="lazy"></p>
 <ol>
@@ -68,7 +68,7 @@ make new-exercise TITLE=<span class="hljs-string">&quot;Todo API&quot;</span> KI
   exercise.json      locked files, hidden files, first file, assistant overview, how Run starts the app
   phases/            phase briefs (optional)
   codebase/          the starting code, or a single starter file for small exercises</code></pre>
-<p><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md</a> has the details of every file in &quot;Creating an exercise&quot;. The rules that matter most:</p>
+<p><a href="https://github.com/guicheffer/trio-interview/blob/main/AGENTS.md" target="_blank" rel="noopener">AGENTS.md<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a> has the details of every file in &quot;Creating an exercise&quot;. The rules that matter most:</p>
 <ul>
 <li><code>description.md</code> must not name or describe hidden phases. Hidden files are moved out of the candidate&#39;s folder, so the tree, the terminal and the assistant cannot see them, but all three read the description.</li>
 <li>Notes for the interviewer (guides, solutions, grading) stay hidden or live outside the exercise, like the ones in <code>docs/interviewers/</code>.</li>
@@ -86,7 +86,7 @@ make new-exercise TITLE=<span class="hljs-string">&quot;Todo API&quot;</span> KI
 <h2 id="house-rules">House rules</h2>
 <p>English for code, docs and commit messages, short and plain, no emojis, and no dashes in prose. Never skip the git hooks. The tool is licensed under the AGPL-3.0, and by sending a change you agree that it is shared under the same license.</p>
 </article>
-    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Edit this page on GitHub</a></p>
+    <p class="edit"><a href="https://github.com/guicheffer/trio-interview/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Edit this page on GitHub<svg class="ext" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   </main>
   <nav class="toc" aria-label="On this page"><h4>On this page</h4><ul><li><a href="#set-up">Set up</a></li><li><a href="#send-a-change">Send a change</a></li><li><a href="#add-an-exercise">Add an exercise</a></li><li><a href="#things-worth-knowing">Things worth knowing</a></li><li><a href="#house-rules">House rules</a></li></ul></nav>
 </div>
