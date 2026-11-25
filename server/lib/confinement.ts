@@ -96,7 +96,10 @@ export function confinedSettings(input: ConfinementInput): Record<string, unknow
       blockWritesOutsideWorkingDirectories: true,
     },
     sandbox: {
-      enabled: true,
+      // Off, on purpose. The whole process runs inside the operating system's sandbox (os-sandbox.ts), which also covers what a person
+      // types after "!" in the terminal, that this setting never did. The two cannot be stacked: a sandbox started inside another one
+      // is refused by the system (measured: sandbox_apply: Operation not permitted). The lists below stay as the record of what is closed.
+      enabled: false,
       // a command the sandbox would stop does not get a second chance outside it
       allowUnsandboxedCommands: false,
       autoAllowBashIfSandboxed: true,

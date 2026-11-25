@@ -6,7 +6,7 @@ import { sanitizeEnvironment } from './sanitize-env.js';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
 import { BLOCKED_TOOLS, resolveModelId } from './claude-proxy.js';
 import { assistantTmpDir, confinedSettings } from './confinement.js';
-import { sandboxed } from './os-sandbox.js';
+import { resolveProgram, sandboxed } from './os-sandbox.js';
 export { sandboxed };
 import { loadPty } from './terminal-session.js';
 import { BIN } from './binaries.js';
@@ -19,6 +19,17 @@ export type TerminalTool = 'claude-code' | 'opencode' | 'pi';
 const TOOL_NAMES: Record<TerminalTool, string> = { 'claude-code': 'Claude Code', opencode: 'OpenCode', pi: 'Pi' };
 
 const MAX_SCROLLBACK = 400_000;
+
+/**
+ * The folders Claude Code needs to be read to start: where the program really is (it is often a link into a versions folder under
+ * the home) and the folder that holds the link. Nothing else of the home is opened.
+ */
+export function claudeProgramFolders(bin: string): string[] {
+  const full = resolveProgram(bin);
+  let real = full;
+  try { real = realpathSync(full); } catch {}
+  return [...new Set([dirname(real), dirname(full)].filter(path => path.startsWith('/')))];
+}
 
 /** What the interviewer's own settings give the terminal: the login and the model names it understands. Nothing else (no status line, hooks, plugins or MCP servers). */
 const ROUTER_VARIABLES = [
@@ -192,9 +203,14 @@ export class AgentPtySession {
     }
     const configDir = agentConfigDir(workPath);
     seedAgentConfig(configDir, workPath);
+    // Claude Code's own sandbox only covers the commands the model runs. What a person types after "!" in its terminal runs outside
+    // it (measured: it read a file in the interviewer's home, the settings of the interview, another candidate and a hidden phase),
+    // so the operating system's sandbox is put around the whole process, the same as for the other two.
+    const walled = sandboxed({ bin: BIN.claude, args: claudeArgs(assistantContext, existsSync(join(configDir, 'projects'))), workPath, configDir, writable: [workPath, configDir], programFolders: claudeProgramFolders(BIN.claude) });
+    if ('error' in walled) return walled;
     return {
-      bin: BIN.claude,
-      args: claudeArgs(assistantContext, existsSync(join(configDir, 'projects'))),
+      bin: walled.bin,
+      args: walled.args,
       env: {
         ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>),
         ...routerEnvironment(),

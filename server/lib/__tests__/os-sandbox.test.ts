@@ -1,9 +1,9 @@
 import { spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { sandboxed } from '../agent-pty.js';
+import { claudeProgramFolders, sandboxed } from '../agent-pty.js';
 import { resolveProgram, sandboxAvailable, sandboxProfile, wrapCommand } from '../os-sandbox.js';
 
 // The profile is run by the real operating system sandbox here, with ordinary programs, so what is checked is what the system does and
@@ -206,5 +206,28 @@ run('a program named without a path', () => {
     expect(resolveProgram('fakeassistant', `relative/bin:${bin}`)).toBe(join(bin, 'fakeassistant'));
     expect(resolveProgram('nothing-here', bin)).toBe('nothing-here');
     expect(resolveProgram('/abs/program', '')).toBe('/abs/program');
+  });
+});
+
+// Claude Code is installed as a link in a bin folder that points into a versions folder, both under the home. Both are opened (the program
+// must start), nothing else of the home is, and a shell started from it cannot read the interviewer's files.
+run('Claude Code installed as a link into a versions folder', () => {
+  test('starts, and the shell it opens is as closed as for the other assistants', () => {
+    const base = realpathSync(mkdtempSync(join(homedir(), '.trio-claude-')));
+    try {
+      const w = join(base, '.solutions', 'maya', 'fibonacci');
+      const c = join(base, '.solutions', 'maya', '.agent-claude-fibonacci');
+      const versions = join(base, 'share', 'claude', 'versions', '2.0.0');
+      const bin = join(base, 'local', 'bin');
+      for (const dir of [w, c, join(versions, '..'), bin]) mkdirSync(dir, { recursive: true });
+      writeFileSync(versions, `#!/bin/sh\ncat "$1" 2>&1 | head -c 40\n`, { mode: 0o755 });
+      writeFileSync(join(base, 'share', 'secret.txt'), 'SHARE-SECRET');
+      symlinkSync(versions, join(bin, 'claude'));
+      expect(claudeProgramFolders(join(bin, 'claude'))).toEqual(expect.arrayContaining([join(base, 'share', 'claude', 'versions'), bin]));
+      const plan = sandboxed({ bin: join(bin, 'claude'), args: [join(base, 'share', 'secret.txt')], workPath: w, configDir: c, writable: [w, c], programFolders: claudeProgramFolders(join(bin, 'claude')) }) as { bin: string; args: string[] };
+      const out = spawnSync(plan.bin, plan.args, { cwd: w, encoding: 'utf-8' });
+      expect(out.stdout + out.stderr).not.toContain('SHARE-SECRET');
+      expect(out.status).toBe(0);
+    } finally { rmSync(base, { recursive: true, force: true }); }
   });
 });

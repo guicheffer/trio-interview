@@ -241,3 +241,38 @@ describe('a program kept where the sandbox cannot open it', () => {
     }
   });
 });
+
+describe('Claude Code inside the operating system sandbox', () => {
+  const claudeSession = async () => {
+    const { AgentPtySession } = await import('../agent-pty.js');
+    const work = join(tmp(), '.solutions', 'maya', 'fibonacci');
+    mkdirSync(work, { recursive: true });
+    return { work, make: (key: string) => new AgentPtySession({ key, tool: 'claude-code', workPath: work, assistantContext: '' }) };
+  };
+
+  test('is started through the sandbox, because its own sandbox never covered what a person types after "!"', async () => {
+    const { make } = await claudeSession();
+    spawn.mockReset().mockReturnValue({ onData: () => {}, onExit: () => {}, write: () => {}, resize: () => {}, kill: () => {} });
+    sandboxWorks = true;
+    try {
+      make('c1').start();
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [bin, args] = spawn.mock.calls[0];
+      expect(bin).toBe('/usr/bin/sandbox-exec');
+      // the program itself comes after the profile, still with the limits it always had
+      expect(args).toEqual(expect.arrayContaining(['--strict-mcp-config', '--no-chrome']));
+    } finally { sandboxWorks = false; }
+  });
+
+  test('is not started at all when there is no sandbox, and the terminal says so', async () => {
+    const { make } = await claudeSession();
+    spawn.mockReset();
+    sandboxWorks = false;
+    const session = make('c2');
+    session.start();
+    expect(spawn).not.toHaveBeenCalled();
+    expect(session.running).toBe(false);
+    expect(session.scrollback).toContain('Could not start Claude Code');
+    expect(session.scrollback).toMatch(/sandbox/);
+  });
+});
