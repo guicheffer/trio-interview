@@ -192,3 +192,27 @@ describe('the labels of the landing window', () => {
     expect(script).not.toMatch(/note: '(replica|scripted answer|runs for real)'/);
   });
 });
+
+describe('the tests of the scene', () => {
+  const demo = read('scripts/demo/demo.js');
+  test('a test run that does not finish says so, and a run always ends in PASS or FAIL', () => {
+    expect(scene).toContain("'the test run did not finish'");
+    expect(scene).toMatch(/PASS: /);
+    expect(scene).toMatch(/FAIL: /);
+  });
+  test('only one test run is alive: starting anything else drops the old one', () => {
+    expect(scene).toMatch(/function cancelTests\(\) \{ testRun\+\+;/);
+    expect(scene).toMatch(/function clear\(\) \{.*cancelTests\(\)/);
+    expect(scene).toMatch(/if \(finished \|\| id !== testRun\) return;/);
+  });
+  test('a failing test says why', () => { expect(scene).toMatch(/why: why/); });
+  test('the terminals draw every row and scroll, in the scene and in the demo', () => {
+    expect(scene).not.toMatch(/rows = rows\.slice\(-room\)/);
+    expect(demo).not.toMatch(/rows\.slice\(-Math\.max/);
+    expect(scene).toContain('window.fibScrollers = {');
+    expect(demo).toContain('fibScrollers.project.update(true)');
+  });
+  test('the wheel goes on to the page when a pane cannot move that way', () => {
+    expect(scene).toMatch(/\(dy < 0 && top <= 0\) \|\| \(dy > 0 && top >= max\)\) return;/);
+  });
+});
