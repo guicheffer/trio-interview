@@ -59,7 +59,7 @@ export function assistantFacts(tool: AssistantName, version: string | null, erro
   const installed = version !== null;
   // Claude Code is confined by its own settings and not by the sandbox profile, so only the other two need a place the sandbox can open
   const place = installed && tool !== 'claude-code' ? programPlaceProblem(bin, ASSISTANT_NAMES[tool]) : null;
-  const base = { name: ASSISTANT_NAMES[tool], installed, version: version ?? '', installHint: INSTALL_HINT[tool], sandboxProblem: sandboxProblem() ?? place };
+  const base = { name: ASSISTANT_NAMES[tool], installed, version: version ?? '', installHint: INSTALL_HINT[tool], sandboxProblem: place ?? sandboxProblem() };
   if (tool === 'claude-code') {
     return { ...base, versionProblem: installed ? undefined : error || undefined, login: claudeLogin.login, loginProblem: claudeLogin.problem };
   }
