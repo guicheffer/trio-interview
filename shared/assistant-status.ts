@@ -34,8 +34,8 @@ export function describeTool(facts: ToolFacts): ToolReport {
   let message = 'OK';
   if (!facts.installed) message = facts.versionProblem || `the ${facts.name} program was not found. Install it with: ${facts.installHint}`;
   else if (facts.versionProblem) message = facts.versionProblem;
-  else if (facts.login === null) message = facts.loginProblem || 'no login was found';
   else if (facts.sandboxProblem) message = facts.sandboxProblem;
+  else if (facts.login === null) message = facts.loginProblem || 'no login was found';
   const ok = message === 'OK';
   const state = facts.installed ? `installed${facts.version ? ` ${facts.version}` : ''}` : 'not installed';
   const detail = `${state}; login: ${facts.login ?? 'none found'}; sandbox: ${facts.sandboxProblem ?? facts.sandboxOk ?? 'ok'}`;

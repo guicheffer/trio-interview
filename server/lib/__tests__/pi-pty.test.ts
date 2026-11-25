@@ -206,3 +206,24 @@ describe('Pi without the operating system sandbox', () => {
     }
   });
 });
+
+describe('a program kept where the sandbox cannot open it', () => {
+  test('is reported before it fails to start, with the reason and what to do', async () => {
+    const { programPlaceProblem } = await import('../assistant-facts.js');
+    expect(programPlaceProblem('/tmp/pi-prefix/node_modules/.bin/pi', 'Pi')).toMatch(/temporary folder.*install it somewhere permanent/i);
+    expect(programPlaceProblem('/private/var/folders/ab/T/x/pi', 'Pi')).toMatch(/temporary folder/);
+    expect(programPlaceProblem('/usr/local/bin/pi', 'Pi')).toBeNull();
+    expect(programPlaceProblem('/Users/someone/.npm-global/bin/pi', 'Pi')).toBeNull();
+    expect(programPlaceProblem('pi-not-in-path-xyz', 'Pi')).toBeNull();
+  });
+
+  test('the check for Pi and OpenCode says so, so the picker and make config do not call it ready', async () => {
+    const { assistantFacts } = await import('../assistant-facts.js');
+    const { describeTool } = await import('../../../shared/assistant-status.js');
+    for (const tool of ['pi', 'opencode'] as const) {
+      const report = describeTool(assistantFacts(tool, '9.9.9', '', undefined, `/tmp/somewhere/${tool}`));
+      expect(report.ok).toBe(false);
+      expect(report.message).toMatch(/temporary folder/);
+    }
+  });
+});

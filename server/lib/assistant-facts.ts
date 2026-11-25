@@ -4,7 +4,9 @@ import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { sandboxAvailable, sandboxMissing, wrapCommand } from './os-sandbox.js';
+import { realpathSync } from 'fs';
+import { isAbsolute } from 'path';
+import { resolveProgram, sandboxAvailable, sandboxMissing, wrapCommand } from './os-sandbox.js';
 import { versionAtLeast, type ToolFacts } from '../../shared/assistant-status.js';
 
 export type AssistantName = 'claude-code' | 'opencode' | 'pi';
@@ -20,6 +22,17 @@ export const INSTALL_HINT: Record<AssistantName, string> = {
 let probed: string | null | undefined;
 
 /** Why the sandbox cannot be used, or null when it can: the program exists and really runs a command under a profile (tried once) */
+/** A program kept in a temporary folder cannot start inside the sandbox, which keeps those folders closed. Said before it fails. */
+export function programPlaceProblem(bin: string, name: string): string | null {
+  const full = resolveProgram(bin);
+  if (!isAbsolute(full)) return null;
+  let real = full;
+  try { real = realpathSync(full); } catch {}
+  return /^(\/private)?\/(tmp|var\/folders)\//.test(real) || /^(\/private)?\/(tmp|var\/folders)\//.test(full)
+    ? `${name} is installed in a temporary folder (${real}), which the sandbox keeps closed, so it cannot start there. Install it somewhere permanent, for example under your home.`
+    : null;
+}
+
 export function sandboxProblem(): string | null {
   if (!sandboxAvailable()) return sandboxMissing().error;
   if (probed !== undefined) return probed;
@@ -42,9 +55,11 @@ const majorOf = (text: string): number => Number(/(\d+)\.\d+/.exec(text)?.[1] ??
  * What is known about one terminal assistant, read from this machine: the program (as `<bin> --version` answered, null when it did not),
  * the login it would be given and the sandbox. Claude Code's login is only really proven by a test message, so the caller passes what it knows.
  */
-export function assistantFacts(tool: AssistantName, version: string | null, error = '', claudeLogin: { login: string | null; problem: string } = { login: 'not tested here', problem: '' }): ToolFacts {
+export function assistantFacts(tool: AssistantName, version: string | null, error = '', claudeLogin: { login: string | null; problem: string } = { login: 'not tested here', problem: '' }, bin: string = process.env[`TRIO_${tool === 'claude-code' ? 'CLAUDE' : tool.toUpperCase()}_BIN`] || (tool === 'claude-code' ? 'claude' : tool)): ToolFacts {
   const installed = version !== null;
-  const base = { name: ASSISTANT_NAMES[tool], installed, version: version ?? '', installHint: INSTALL_HINT[tool], sandboxProblem: sandboxProblem() };
+  // Claude Code is confined by its own settings and not by the sandbox profile, so only the other two need a place the sandbox can open
+  const place = installed && tool !== 'claude-code' ? programPlaceProblem(bin, ASSISTANT_NAMES[tool]) : null;
+  const base = { name: ASSISTANT_NAMES[tool], installed, version: version ?? '', installHint: INSTALL_HINT[tool], sandboxProblem: sandboxProblem() ?? place };
   if (tool === 'claude-code') {
     return { ...base, versionProblem: installed ? undefined : error || undefined, login: claudeLogin.login, loginProblem: claudeLogin.problem };
   }
