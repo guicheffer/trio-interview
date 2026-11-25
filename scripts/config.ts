@@ -5,7 +5,7 @@ import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs
 import { homedir } from 'os';
 import { join } from 'path';
 import { createInterface } from 'readline/promises';
-import { DEFAULT_CONFIG, TOOLS, TUNNELS, parseConfig, renderConfig, type InterviewConfig, type Tool, type Tunnel } from '../shared/interview-config.js';
+import { DEFAULT_CONFIG, PI_PROVIDERS, TOOLS, TUNNELS, parseConfig, renderConfig, type InterviewConfig, type PiProvider, type Tool, type Tunnel } from '../shared/interview-config.js';
 import { tunnelStatus } from '../shared/tunnel.js';
 import { describeTool } from '../shared/assistant-status.js';
 import { assistantFacts, ASSISTANT_NAMES, INSTALL_HINT } from '../server/lib/assistant-facts.js';
@@ -127,6 +127,19 @@ async function main() {
   const answer = await ask('Offer which? (comma separated, or "all")', current.exercises.length ? current.exercises.join(',') : 'all');
   const exercises = answer.toLowerCase() === 'all' ? [] : answer.split(',').map(s => s.trim()).filter(id => folders.includes(id));
 
+  // Where Pi gets its model, only asked when Pi is allowed: the choice only matters then
+  let pi = current.pi;
+  if (tools.includes('pi')) {
+    console.log(`\n${c(1, 'Where Pi gets its model')}`);
+    console.log('  auto        a Pi login if you have one, else the model router your Claude Code uses, else a note to sign in once');
+    console.log('  router      always the model router your Claude Code uses (its address and key are read, never written down)');
+    console.log('  own-login   only a login you made in Pi (run pi, then /login)');
+    const answer = (await ask(`Which? (${PI_PROVIDERS.join(', ')})`, current.pi.provider)).toLowerCase();
+    const provider = (PI_PROVIDERS as readonly string[]).includes(answer) ? (answer as PiProvider) : current.pi.provider;
+    if (provider !== answer) warn(`"${answer}" is not one of ${PI_PROVIDERS.join(', ')}, so ${provider} stays.`);
+    pi = { ...current.pi, provider };
+  }
+
   // 3. How the candidate reaches this machine. Each answer says what it needs from you, and it is checked right away.
   console.log(`\n${c(1, 'Sharing the link')}`);
   console.log('  ngrok         needs a free account and a token (once). The address stays the same between interviews. Works with every assistant.');
@@ -139,7 +152,7 @@ async function main() {
   if (!status.ready) { warn(status.message); if (status.fix) note(status.fix); }
   rl.close();
 
-  const config: InterviewConfig = { tools, exercises, tunnel, sources: current.sources };
+  const config: InterviewConfig = { tools, exercises, tunnel, pi, sources: current.sources };
   writeFileSync(file, renderConfig(config));
   console.log(`\n  Saved ${c(1, 'interview.config.yaml')} ${c(2, '(ignored by git, edit it any time)')}`);
   const ready = report(config);

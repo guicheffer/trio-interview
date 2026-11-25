@@ -31,7 +31,7 @@ exercises:
   });
 
   test('writing the file and reading it back gives the same settings', () => {
-    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const, sources: ['https://github.com/acme/interview-exercises.git', '../my-exercises'] };
+    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const, pi: { provider: 'router' as const, model: 'sonnet' }, sources: ['https://github.com/acme/interview-exercises.git', '../my-exercises'] };
     expect(parseConfig(renderConfig(config))).toEqual(config);
   });
 
@@ -40,8 +40,27 @@ exercises:
     expect(parseConfig('tools:\n  - pi').tools).toEqual(['agent', 'pi']);
     expect(toolAllowed(parseConfig('tools:\n  - claude-code'), 'pi')).toBe(false);
     expect(parseConfig('tools:\n  - claude-code\n  - codex').tools).toEqual(['agent', 'claude-code']);
-    const config = { tools: ['agent' as const, 'pi' as const], exercises: [], tunnel: 'none' as const, sources: [] };
+    const config = { tools: ['agent' as const, 'pi' as const], exercises: [], tunnel: 'none' as const, pi: { provider: 'auto' as const, model: '' }, sources: [] };
     expect(parseConfig(renderConfig(config))).toEqual(config);
+  });
+
+  test('the pi block chooses where Pi gets its model, auto by default, and nothing else can get in', () => {
+    expect(parseConfig('').pi).toEqual({ provider: 'auto', model: '' });
+    expect(parseConfig('pi:\n  provider: router\n  model: sonnet-x').pi).toEqual({ provider: 'router', model: 'sonnet-x' });
+    expect(parseConfig('pi:\n  provider: Own-Login').pi.provider).toBe('own-login');
+    // a typo or an unknown value keeps the default instead of stopping the interview
+    expect(parseConfig('pi:\n  provider: cloud\n  model: "a;b"').pi).toEqual({ provider: 'auto', model: '' });
+    expect(parseConfig('pi:\n  model: $(id)').pi.model).toBe('');
+    expect(parseConfig('pi:\n  model: ' + 'x'.repeat(200)).pi.model).toBe('');
+    // keys of another block are not read as Pi's
+    expect(parseConfig('pi:\n  provider: router\ntunnel: none\nprovider: own-login').pi.provider).toBe('router');
+    expect(parseConfig('tunnel: none\n  provider: router').pi.provider).toBe('auto');
+  });
+
+  test('the pi block is written and read back', () => {
+    const config = { ...DEFAULT_CONFIG, pi: { provider: 'own-login' as const, model: 'm1' } };
+    expect(parseConfig(renderConfig(config)).pi).toEqual(config.pi);
+    expect(parseConfig(renderConfig(DEFAULT_CONFIG)).pi).toEqual(DEFAULT_CONFIG.pi);
   });
 
   test('the tunnel defaults to ngrok, accepts the known ones, and ignores anything else instead of stopping the interview', () => {
@@ -54,7 +73,7 @@ exercises:
   });
 
   test('the tunnel is written to the file and read back', () => {
-    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const, sources: [] };
+    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const, pi: { provider: 'auto' as const, model: '' }, sources: [] };
     expect(parseConfig(renderConfig(config)).tunnel).toBe('cloudflared');
   });
 
