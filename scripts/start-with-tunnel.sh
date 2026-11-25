@@ -188,7 +188,10 @@ step_preflight() { node scripts/preflight.mjs; }
 STEP_LIMIT=90 run_step "Checking your setup" step_preflight || exit 1
 # Reports whether the settings in interview.config.yaml match this machine. It only warns, it never stops an interview.
 step_config() { npx tsx scripts/config.ts --check; }
-if [ "$LOG_MODE" = "1" ]; then step_config || true; else step_config > .logs/config-check.log 2>&1 || echo -e "${YELLOW}Some interview settings need a look (run: make config CHECK=1)${NC}"; fi
+# In quiet mode the progress bar is one line that is redrawn in place, so a message printed while it runs lands on the end of that line.
+# The note is kept and shown after the links instead, on lines of its own.
+CONFIG_NOTE=""
+if [ "$LOG_MODE" = "1" ]; then step_config || true; else step_config > .logs/config-check.log 2>&1 || CONFIG_NOTE="Some interview settings need a look (run: make config CHECK=1)"; fi
 export TRIO_PREFLIGHT_DONE=1
 
 # A new secret for every interview. It lives only in the environment of the servers and in the link below, never on disk.
@@ -396,7 +399,7 @@ else
     fi
 fi
 echo -e "${DIM}Tip: ask the candidate to share their screen too, it is more real time than Follow.${NC}"
-echo -e "${DIM}The candidate picks the assistant (the chat, Claude Code or OpenCode) from what make config allows.${NC}"
+echo -e "${DIM}The candidate picks the assistant (the chat, Claude Code, OpenCode or Pi) from what make config allows.${NC}"
 echo ""
 
 cleanup() {
@@ -416,5 +419,6 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
+[ -n "$CONFIG_NOTE" ] && { echo -e "${YELLOW}${CONFIG_NOTE}${NC}"; echo ""; }
 echo -e "${DIM}Press Ctrl+C to stop${NC}"
 wait

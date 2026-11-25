@@ -44,3 +44,21 @@ describe('the progress line of make start', () => {
     expect(run.stdout.trim()).toBe('80');
   });
 });
+
+// The bar is one line redrawn in place with \r and no newline. Anything printed while it runs lands on the end of that line,
+// which is how "Some interview settings need a look" ended up glued to the bar. The note is kept and printed after the links.
+describe('the settings note of make start', () => {
+  const lineOf = (text: string) => source.indexOf(text);
+
+  test('is not printed while the progress bar is on screen', () => {
+    const check = source.slice(lineOf('step_config > .logs/config-check.log'), lineOf('export TRIO_PREFLIGHT_DONE=1'));
+    expect(check).toContain('CONFIG_NOTE=');
+    expect(check).not.toMatch(/\|\|\s*echo/);
+  });
+
+  test('is shown after the links, on its own line', () => {
+    const printed = lineOf('[ -n "$CONFIG_NOTE" ]');
+    expect(printed).toBeGreaterThan(lineOf('Interview platform is ready'));
+    expect(printed).toBeLessThan(lineOf('Press Ctrl+C to stop'));
+  });
+});
