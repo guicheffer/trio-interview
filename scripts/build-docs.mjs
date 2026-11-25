@@ -145,6 +145,20 @@ ${sprite}
 `;
 }
 
+/**
+ * The files the demo shows, read from the exercise and the instructions the app puts in every candidate's folder. The markdown ones
+ * are rendered here, so the page needs no markdown library.
+ */
+export function demoFiles() {
+  const sources = { 'fibonacci.js': 'examples/fibonacci/fibonacci.js', 'description.md': 'examples/fibonacci/description.md', 'AGENTS.md': 'exercises/AGENTS.md', 'CLAUDE.md': 'exercises/CLAUDE.md' };
+  const files = {};
+  for (const [name, from] of Object.entries(sources)) {
+    const text = readFileSync(join(root, from), 'utf-8');
+    files[name] = /\.md$/.test(name) ? { text, html: marked.parse(text, { gfm: true }) } : { text };
+  }
+  return `window.DEMO_FILES = ${JSON.stringify(files).replace(/</g, '\\u003c')};\n`;
+}
+
 /** The live demo: the page around the scene of the landing page, with the same top bar as the docs */
 export function buildDemo() {
   const dir = join(root, 'site', 'demo');
@@ -155,8 +169,8 @@ export function buildDemo() {
     .replace('<!--sprite--><!--/sprite-->', sprite)
     .replace('<!--nav--><!--/nav-->', demoNav());
   writeFileSync(join(dir, 'index.html'), html);
-  cpSync(join(src, 'demo.css'), join(dir, 'demo.css'));
-  cpSync(join(src, 'demo.js'), join(dir, 'demo.js'));
+  for (const f of ['demo.css', 'demo.js', 'tour.js', 'tokenize.js']) cpSync(join(src, f), join(dir, f));
+  writeFileSync(join(dir, 'files.js'), demoFiles());
 }
 
 export function build() {

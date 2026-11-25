@@ -47,11 +47,12 @@ describe('the pages kept in the repository', () => {
     const root = join(__dirname, '..', '..');
     const before = join(mkdtempSync(join(tmpdir(), 'trio-docs-')), 'docs');
     cpSync(join(root, 'site', 'docs'), before, { recursive: true });
-    const demoBefore = readFileSync(join(root, 'site', 'demo', 'index.html'), 'utf-8');
+    const DEMO = ['index.html', 'demo.css', 'demo.js', 'tour.js', 'tokenize.js', 'files.js'];
+    const demoBefore = Object.fromEntries(DEMO.map(f => [f, readFileSync(join(root, 'site', 'demo', f), 'utf-8')]));
     try {
       const run = spawnSync('node', ['scripts/build-docs.mjs'], { cwd: root, encoding: 'utf-8' });
       expect(run.status, run.stderr).toBe(0);
-      expect(readFileSync(join(root, 'site', 'demo', 'index.html'), 'utf-8'), 'demo page is out of date: run node scripts/build-docs.mjs').toBe(demoBefore);
+      for (const f of DEMO) expect(readFileSync(join(root, 'site', 'demo', f), 'utf-8'), `site/demo/${f} is out of date: run node scripts/build-docs.mjs`).toBe(demoBefore[f]);
       for (const file of readdirSync(before).filter(f => f.endsWith('.html'))) {
         expect(readFileSync(join(root, 'site', 'docs', file), 'utf-8'), `${file} is out of date: run node scripts/build-docs.mjs`).toBe(readFileSync(join(before, file), 'utf-8'));
       }
@@ -105,7 +106,7 @@ describe('the live demo page', () => {
   test('is in the docs menu under Try it, and its files are copied next to the page', async () => {
     const { existsSync } = await import('fs');
     expect(read('site/docs/index.html')).toMatch(/<h4>Try it<\/h4><ul><li><a href="\.\.\/demo\/">/);
-    for (const f of ['index.html', 'demo.css', 'demo.js']) expect(existsSync(join(ROOT, 'site', 'demo', f)), f).toBe(true);
+    for (const f of ['index.html', 'demo.css', 'demo.js', 'tour.js', 'tokenize.js', 'files.js']) expect(existsSync(join(ROOT, 'site', 'demo', f)), f).toBe(true);
   });
 
   test('is linked from the candidate guide with the full address, so it works on GitHub too', () => {

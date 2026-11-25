@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Try it as a candidate | Trio Interview</title>
-<meta name="description" content="A replica of the candidate workspace of Trio Interview. Press Run and the code runs in your browser. Nothing is sent anywhere.">
+<meta name="description" content="A replica of the candidate workspace of Trio Interview. Open files, edit and run the code, and look at each assistant. Nothing is sent anywhere.">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../site.css">
 <link rel="stylesheet" href="demo.css">
@@ -16,6 +16,7 @@
     <path d="M40 190 L58 206 L40 222" fill="none" stroke="var(--bg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
     <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
   </symbol>
+  <symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7.5 8.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
   <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
 </svg>
@@ -35,7 +36,10 @@
     <button type="button" class="opt" data-mode="chat" aria-pressed="false">Chat</button>
     <button type="button" class="opt on" data-mode="claude-code" aria-pressed="true">Claude Code</button>
     <button type="button" class="opt" data-mode="opencode" aria-pressed="false">OpenCode</button>
+    <button type="button" class="opt" data-mode="pi" aria-pressed="false">Pi</button>
+    <button type="button" class="opt" disabled aria-disabled="true" title="Coming soon">Codex (soon)</button>
   </div>
+  <a class="back" href="#" id="tour-again">Show the tour again</a>
   <a class="back" href="../docs/candidate.html">Back to the docs</a>
 </div>
 <main class="stage2" id="stage">
@@ -43,7 +47,20 @@
     <iframe id="app" src="../app/scene-fib.html" title="The candidate workspace with the Fibonacci exercise" class="live"></iframe>
   </div>
 </main>
-<p class="foot">Press <b>Run</b> in the editor to run <code>fibonacci.js</code> for real. The assistant is shown, not connected: nobody can send it a message here.</p>
+<p class="foot">Click files to open them. You can type in <code>fibonacci.js</code> (nothing is saved) and press <b>Run</b> to run it for real. The assistant is shown, not connected: nobody can send it a message here.</p>
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tour-title">
+  <div class="tour-dim tour-top"></div><div class="tour-dim tour-bottom"></div><div class="tour-dim tour-left"></div><div class="tour-dim tour-right"></div>
+  <div class="tour-ring"></div>
+  <div class="tour-card">
+    <p class="tour-count"></p>
+    <h2 id="tour-title"></h2>
+    <p class="tour-text"></p>
+    <button type="button" class="tour-next">Next</button>
+  </div>
+</div>
+<script src="files.js"></script>
+<script src="tokenize.js"></script>
+<script src="tour.js"></script>
 <script src="demo.js"></script>
 </body>
 </html>
