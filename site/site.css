@@ -106,8 +106,8 @@ footer a .ext{margin-left:.35em}
 .ranmsg{font:600 .85rem var(--mono);color:var(--mute);min-height:1.2em}
 .ranmsg.ok{color:var(--green)}
 .ranmsg.ok:before{content:"\2713 "}
-.ranmsg.pulse{animation:ranpulse .9s ease-out}
-@keyframes ranpulse{0%{transform:scale(1.15);text-shadow:0 0 14px var(--green)}100%{transform:none;text-shadow:none}}
+.ranmsg.pulse{animation:ranglow .8s ease-out}
+@keyframes ranglow{from{opacity:.3}to{opacity:1}}
 .pager{display:flex;align-items:center;gap:14px;margin-top:22px;font:500 .85rem var(--mono);color:var(--mute)}
 .pg{appearance:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1}
 .pg:hover:not(:disabled){border-color:var(--mute)}
