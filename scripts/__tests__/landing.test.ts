@@ -216,3 +216,37 @@ describe('the tests of the scene', () => {
     expect(scene).toMatch(/\(dy < 0 && top <= 0\) \|\| \(dy > 0 && top >= max\)\) return;/);
   });
 });
+
+describe('the story of the assistant, built from the code', () => {
+  const session = JSON.parse(read('site/source/fibonacci-session.json'));
+  const run = (code: string) => {
+    const module = { exports: {} as any };
+    new Function('module', 'console', code)(module, { log() {} });
+    return module.exports as { fibonacci: (n: any) => number[]; fibonacciUpTo: (n: any) => number[] };
+  };
+  test('the answer implements both functions and passes what the exercise expects', () => {
+    const f = run(session.after);
+    expect(f.fibonacci(10)).toEqual([0, 1, 1, 2, 3, 5, 8, 13, 21, 34]);
+    expect(f.fibonacciUpTo(10)).toEqual([0, 1, 1, 2, 3, 5, 8]);
+    expect(f.fibonacciUpTo(8)).toEqual([0, 1, 1, 2, 3, 5]);
+    expect(f.fibonacciUpTo(0)).toEqual([]);
+    expect(f.fibonacciUpTo(1)).toEqual([0]);
+    expect(() => f.fibonacci(-1)).toThrow(RangeError);
+    expect(() => f.fibonacci(2.5)).toThrow(RangeError);
+    expect(() => f.fibonacciUpTo(-1)).toThrow(RangeError);
+  });
+  test('the starter still fails, which is honest when the code is empty', () => {
+    const f = run(session.before);
+    expect(f.fibonacci(5)).toBeUndefined();
+    expect(f.fibonacciUpTo(8)).toBeUndefined();
+  });
+  test('nothing in the story says that a function is left undone', () => {
+    const shown = [read('scripts/story_rows.py'), read('scripts/fib-scene.js'), read('scripts/demo/demo.js')].join('\n');
+    expect(shown).not.toMatch(/still a stub|leaves fibonacciUpTo|fibonacciUpTo for you|prints undefined because/);
+    expect(scene).toContain('Implement fibonacci(n) and fibonacciUpTo(limit)');
+  });
+  test('the scene reads the story from the data, not from fixed row numbers', () => {
+    expect(scene).not.toMatch(/FOOT = \[39/);
+    expect(scene).toContain('var BODY = AFTER_ROWS.slice(0, AFTER_ROWS.length - 4)');
+  });
+});

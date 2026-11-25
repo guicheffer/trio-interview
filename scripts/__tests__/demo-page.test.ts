@@ -184,8 +184,10 @@ describe('the empty starter', () => {
   });
 
   test('says honestly what the assistant version covers', () => {
-    expect(js()).toMatch(/fills in fibonacci\(n\) and leaves fibonacciUpTo for you/);
+    expect(js()).toMatch(/fills in fibonacci\(n\) and fibonacciUpTo\(limit\)/);
     const after = (() => { const m = read('site/app/scene-fib.html').match(/window\.FIB=(\{[\s\S]*?\});\n/); return JSON.parse(m![1]).after as string; })();
-    expect(after).toMatch(/function fibonacciUpTo\(limit\) \{\s*\/\/ TODO/);
+    // the note says both functions are filled in, so neither may still be a TODO in that version
+    expect(after).not.toMatch(/TODO: implement this/);
+    expect(after).toMatch(/function fibonacciUpTo\(limit\) \{\s*if /);
   });
 });
