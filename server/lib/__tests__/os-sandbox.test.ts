@@ -4,7 +4,7 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { sandboxed } from '../agent-pty.js';
-import { sandboxAvailable, sandboxProfile, wrapCommand } from '../os-sandbox.js';
+import { resolveProgram, sandboxAvailable, sandboxProfile, wrapCommand } from '../os-sandbox.js';
 
 // The profile is run by the real operating system sandbox here, with ordinary programs, so what is checked is what the system does and
 // not what the text looks like. It needs macOS, where the sandbox exists; elsewhere these tests have nothing to run against.
@@ -178,5 +178,33 @@ run('a program installed inside the interviewer\'s home', () => {
       expect(out.stdout).toContain('started');
       expect(out.stdout).not.toContain('TOOLS-SECRET');
     } finally { rmSync(base, { recursive: true, force: true }); }
+  });
+});
+
+// A program named without a path ("opencode", found in PATH) once made the profile open "." which is the folder the server runs in:
+// the whole tool, its settings and every other candidate. The tool's folder must stay closed whatever the program is called.
+run('a program named without a path', () => {
+  test('does not open the folder the server runs in, and still starts', () => {
+    const bin = join(root, 'tools');
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, 'fakeassistant'), '#!/bin/sh\ncat "$1" 2>&1 | head -c 40\n', { mode: 0o755 });
+    const text = sandboxProfile({ workPath: work, configDir: config, projectRoot: root, home, program: 'fakeassistant', writable: [work, config] });
+    expect(text).not.toContain('(allow file-read* (subpath "fakeassistant"))');
+    expect(text).not.toMatch(/\(allow file-read\* \(subpath "[^/]/);
+    const old = process.cwd();
+    try {
+      process.chdir(root);
+      const again = sandboxProfile({ workPath: work, configDir: config, projectRoot: root, home, program: 'fakeassistant', writable: [work, config] });
+      expect(again).not.toContain(`(allow file-read* (subpath ${JSON.stringify(root)}))`);
+    } finally { process.chdir(old); }
+  });
+
+  test('is looked up in PATH like a shell does, and a name that is not found stays a name', () => {
+    const bin = join(root, 'tools');
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, 'fakeassistant'), '#!/bin/sh\n', { mode: 0o755 });
+    expect(resolveProgram('fakeassistant', `relative/bin:${bin}`)).toBe(join(bin, 'fakeassistant'));
+    expect(resolveProgram('nothing-here', bin)).toBe('nothing-here');
+    expect(resolveProgram('/abs/program', '')).toBe('/abs/program');
   });
 });

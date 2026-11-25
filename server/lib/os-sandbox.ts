@@ -1,5 +1,5 @@
-import { mkdirSync, realpathSync, rmSync, writeFileSync } from 'fs';
-import { basename, dirname, join } from 'path';
+import { accessSync, constants, mkdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'fs';
+import { basename, dirname, isAbsolute, join, resolve } from 'path';
 import { confinementFor, type ConfinementInput } from './confinement.js';
 
 /**
@@ -23,6 +23,20 @@ export interface SandboxUnavailable {
 }
 
 const real = (path: string): string => { try { return realpathSync(path); } catch { return path; } };
+
+/**
+ * The full path of a program that was named without one ("opencode"), looked up in PATH the way a shell does. A bare name must never
+ * reach the profile as it is: its folder would come out as "." which is the folder the server runs in, the whole tool.
+ */
+export function resolveProgram(program: string, pathVariable: string = process.env.PATH ?? ''): string {
+  if (program.includes('/')) return resolve(program);
+  for (const folder of pathVariable.split(':')) {
+    if (!folder || !isAbsolute(folder)) continue;
+    const candidate = join(folder, program);
+    try { accessSync(candidate, constants.X_OK); if (statSync(candidate).isFile()) return candidate; } catch {}
+  }
+  return program;
+}
 const quote = (path: string): string => `"${path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 const subpath = (path: string): string => `(subpath ${quote(path)})`;
 
@@ -44,9 +58,10 @@ export interface ProfileInput extends ConfinementInput {
  */
 export function sandboxProfile(input: ProfileInput): string {
   const { denyRead, allowRead } = confinementFor(input);
+  const program = resolveProgram(input.program);
   const hidden = denyRead.filter(path => path.endsWith('/.hidden'));
   const closed = denyRead.filter(path => !path.endsWith('/.hidden'));
-  const open = [...new Set([...allowRead, ...(input.readable ?? []), ...(input.programFolders ?? []), real(dirname(input.program)), real(input.program)])];
+  const open = [...new Set([...allowRead, ...(input.readable ?? []), ...(input.programFolders ?? []), ...(isAbsolute(program) ? [real(dirname(program)), real(program)] : [])].filter(isAbsolute))];
   const write = [...new Set(input.writable.flatMap(path => [path, real(path)]))];
   const lines = [
     '(version 1)',
@@ -58,7 +73,7 @@ export function sandboxProfile(input: ProfileInput): string {
     ';; the assistant looks upward for the root of the project (it asks about .git in each folder above its own), and a refusal makes it stop',
     ';; so the folders above may be asked about, with no contents: a name can be looked up, a file cannot be opened',
     ';; a program written in JavaScript is started by node, which looks up each folder above the program one by one (metadata only, as above)',
-    ...[...new Set([input.workPath, ...(input.programFolders ?? []), input.program].flatMap(path => ancestors(path)))].map(path => `(allow file-read-metadata (literal ${quote(path)}))`),
+    ...[...new Set([input.workPath, ...(input.programFolders ?? []), program].filter(isAbsolute).flatMap(path => ancestors(path)))].map(path => `(allow file-read-metadata (literal ${quote(path)}))`),
     ';; the only places it may write',
     ...write.map(path => `(allow file-write* ${subpath(path)})`),
     ';; closed last of all: the phases the interviewer has not released',
@@ -112,5 +127,5 @@ export function sandboxed(input: { bin: string; args: string[]; workPath: string
   // Written fresh on every start (the file is read only, so it is removed first): the tool owns this folder, the assistant does not.
   rmSync(profilePath, { force: true });
   writeFileSync(profilePath, sandboxProfile({ workPath: input.workPath, configDir: input.configDir, program: input.bin, writable: input.writable, readable: [walls], programFolders: input.programFolders }), { mode: 0o444 });
-  return wrapCommand(profilePath, input.bin, input.args);
+  return wrapCommand(profilePath, resolveProgram(input.bin), input.args);
 }
