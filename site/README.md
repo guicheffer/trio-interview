@@ -22,7 +22,7 @@ To capture a screen, open it in the app, serialize the document with the stylesh
 
 ## What is real and what is a script
 
-The editor draws the exercise file with the same classes and colours as the app, and the Run button runs the code that is in it, in a Worker, and prints what it logs the way Node does. The request to the assistant and its answer are a script, copied from a session on the real tool.
+The editor draws the exercise file with the same classes and colours as the app, and the Run button runs the code that is in it, in a Worker, and prints what it logs the way Node does. The request to the assistant and its answer are a script: the terminal rows are written by `scripts/` from the exercise file before and after (the colours are those the real tool printed), and the closing message is text we wrote, so it is not a recording of a session.
 
 ## Credits
 
