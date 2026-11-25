@@ -260,6 +260,7 @@ describe('Claude Code inside the operating system sandbox', () => {
     sandboxWorks = true;
     try {
       make('c1').start();
+      await settle();
       expect(spawn).toHaveBeenCalledTimes(1);
       const [bin, args] = spawn.mock.calls[0];
       expect(bin).toBe('/usr/bin/sandbox-exec');
@@ -274,6 +275,7 @@ describe('Claude Code inside the operating system sandbox', () => {
     sandboxWorks = false;
     const session = make('c2');
     session.start();
+    await settle();
     expect(spawn).not.toHaveBeenCalled();
     expect(session.running).toBe(false);
     expect(session.scrollback).toContain('Could not start Claude Code');
@@ -392,5 +394,198 @@ describe('a Pi session that goes through the router', () => {
       for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
       Object.assign(process.env, saved);
     }
+  });
+});
+
+describe('where OpenCode gets its model from', () => {
+  const own = { provider: 'someprovider', model: 'someprovider/m', auth: { type: 'api', key: 'k' } };
+  const router = { baseUrl: 'https://router.example', token: 'fake' };
+
+  test('auto prefers a login OpenCode already has, then the router, then a note', async () => {
+    const { chooseOpencodeSource } = await import('../opencode-pty.js');
+    expect(chooseOpencodeSource('auto', own, router).kind).toBe('own-login');
+    expect(chooseOpencodeSource('auto', null, router).kind).toBe('router');
+    expect(chooseOpencodeSource('auto', null, null).kind).toBe('none');
+  });
+
+  test('router and own-login force one, and say why when it is not there', async () => {
+    const { chooseOpencodeSource } = await import('../opencode-pty.js');
+    expect(chooseOpencodeSource('router', own, router).kind).toBe('router');
+    expect(chooseOpencodeSource('own-login', own, router).kind).toBe('own-login');
+    expect(chooseOpencodeSource('router', own, null).kind).toBe('none');
+    expect(chooseOpencodeSource('own-login', null, router).kind).toBe('none');
+  });
+});
+
+describe('the private home when OpenCode goes through the router', () => {
+  test('holds only the loopback address and the random key, offers no other provider, and ignores the interviewer\'s own model', async () => {
+    const { seedOpencodeRouterHome } = await import('../opencode-pty.js');
+    const home = join(tmp(), '.agent-opencode-x');
+    seedOpencodeRouterHome(home, { url: 'http://127.0.0.1:41000', key: 'random-session-key' }, 'Claude Sonnet 9.9');
+    const config = JSON.parse(readFileSync(join(home, 'config', 'opencode.json'), 'utf-8'));
+    expect(config.model).toBe('router/Claude Sonnet 9.9');
+    expect(config.enabled_providers).toEqual(['router']);
+    expect(config.provider.router.npm).toBe('@ai-sdk/anthropic');
+    expect(config.provider.router.options).toEqual({ baseURL: 'http://127.0.0.1:41000/v1', apiKey: 'random-session-key' });
+    expect(Object.keys(config.provider.router.models)).toEqual(['Claude Sonnet 9.9']);
+    expect(config.permission).toMatchObject({ webfetch: 'deny', websearch: 'deny', subagent: 'deny' });
+    expect(statSync(join(home, 'config', 'opencode.json')).mode & 0o777).toBe(0o600);
+    expect(JSON.parse(readFileSync(join(home, 'data', 'opencode', 'auth.json'), 'utf-8'))).toEqual({});
+  });
+});
+
+describe('an OpenCode session that goes through the router', () => {
+  const withRouter = async (run: (ctx: { port: number; hits: string[]; work: string }) => Promise<void>) => {
+    const { createServer } = await import('http');
+    const hits: string[] = [];
+    const fake = createServer((req, res) => {
+      hits.push(`${req.method} ${req.url} ${req.headers.authorization}`);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(req.url?.endsWith('/v1/models') ? JSON.stringify({ data: [{ id: 'Claude Sonnet 9.9', created_at: '2026-01-01' }] }) : '{"content":[{"text":"hi"}]}');
+    });
+    await new Promise<void>(resolve => fake.listen(0, '127.0.0.1', () => resolve()));
+    const port = (fake.address() as { port: number }).port;
+    const saved = { ...process.env };
+    for (const key of Object.keys(process.env)) if (/^(ANTHROPIC_|TRIO_OPENCODE_|TRIO_PI_)/.test(key)) delete process.env[key];
+    // a home with no OpenCode login in it, so the test does not depend on the machine it runs on
+    process.env.HOME = tmp();
+    process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${port}`;
+    process.env.ANTHROPIC_AUTH_TOKEN = 'fake-router-secret-value';
+    const work = join(tmp(), '.solutions', 'maya', 'fibonacci');
+    mkdirSync(work, { recursive: true });
+    spawn.mockReset().mockReturnValue({ onData: () => {}, onExit: () => {}, write: () => {}, resize: () => {}, kill: () => {} });
+    sandboxWorks = true;
+    try { await run({ port, hits, work }); } finally {
+      sandboxWorks = false;
+      for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+      Object.assign(process.env, saved);
+      fake.closeAllConnections?.();
+      fake.close();
+    }
+  };
+
+  test('starts OpenCode pointing at the loopback forwarder, and the router\'s key is in no file, argument or variable it has', async () => {
+    await withRouter(async ({ port, hits, work }) => {
+      const { AgentPtySession } = await import('../agent-pty.js');
+      const session = new AgentPtySession({ key: 'oc-router-1', tool: 'opencode', workPath: work, assistantContext: '' });
+      session.start();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [bin, args, options] = spawn.mock.calls[0];
+      expect(JSON.stringify({ bin, args, env: options.env })).not.toContain('fake-router-secret-value');
+      expect(options.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined();
+      expect(options.env.ANTHROPIC_BASE_URL).toBeUndefined();
+      const oc = join(work, '..', '.agent-opencode-fibonacci');
+      const files = ['config/opencode.json', 'config/AGENTS.md', 'data/opencode/auth.json'].map(f => readFileSync(join(oc, f), 'utf-8')).join('\n');
+      expect(files).not.toContain('fake-router-secret-value');
+      expect(files).not.toContain(String(port));
+      const config = JSON.parse(readFileSync(join(oc, 'config', 'opencode.json'), 'utf-8'));
+      expect(config.provider.router.options.baseURL).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/v1$/);
+      expect(config.model).toBe('router/Claude Sonnet 9.9');
+      expect(hits.some(h => h.includes('/v1/messages') && h.includes('fake-router-secret-value'))).toBe(true);
+      const through = await fetch(`${config.provider.router.options.baseURL}/models`, { headers: { 'x-api-key': config.provider.router.options.apiKey } });
+      expect(through.status).toBe(200);
+      expect(hits.at(-1)).toContain('Bearer fake-router-secret-value');
+      session.dispose();
+    });
+  });
+
+  test('a router configured with an API key variable does not leak that variable into OpenCode either', async () => {
+    await withRouter(async ({ work }) => {
+      // the sanitizer lets ANTHROPIC_API_KEY through for the chat, so this is the case where only removing it keeps the key out
+      process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_AUTH_TOKEN;
+      delete process.env.ANTHROPIC_AUTH_TOKEN;
+      const { AgentPtySession } = await import('../agent-pty.js');
+      const session = new AgentPtySession({ key: 'oc-router-3', tool: 'opencode', workPath: work, assistantContext: '' });
+      session.start();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [, args, options] = spawn.mock.calls[0];
+      expect(options.env.ANTHROPIC_API_KEY).toBeUndefined();
+      expect(JSON.stringify({ args, env: options.env })).not.toContain('fake-router-secret-value');
+      session.dispose();
+    });
+  });
+
+  test('says one plain sentence when the router does not answer, and starts nothing', async () => {
+    await withRouter(async ({ work }) => {
+      process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:1';
+      const { AgentPtySession } = await import('../agent-pty.js');
+      const session = new AgentPtySession({ key: 'oc-router-2', tool: 'opencode', workPath: work, assistantContext: '' });
+      session.start();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      expect(spawn).not.toHaveBeenCalled();
+      expect(session.scrollback).toContain('the model router did not answer');
+      expect(session.scrollback).not.toMatch(/127\.0\.0\.1|fake/);
+    });
+  });
+});
+
+
+describe('Claude Code and the model router', () => {
+  const withRouter = async (run: (ctx: { port: number; work: string }) => Promise<void>) => {
+    const { createServer } = await import('http');
+    const fake = createServer((_req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); });
+    await new Promise<void>(resolve => fake.listen(0, '127.0.0.1', () => resolve()));
+    const port = (fake.address() as { port: number }).port;
+    const saved = { ...process.env };
+    for (const key of Object.keys(process.env)) if (/^(ANTHROPIC_|TRIO_)/.test(key)) delete process.env[key];
+    process.env.HOME = tmp();
+    process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${port}`;
+    process.env.ANTHROPIC_AUTH_TOKEN = 'fake-router-secret-value';
+    process.env.ANTHROPIC_DEFAULT_SONNET_MODEL = 'the-name-the-interviewer-set';
+    const work = join(tmp(), '.solutions', 'maya', 'fibonacci');
+    mkdirSync(work, { recursive: true });
+    spawn.mockReset().mockReturnValue({ onData: () => {}, onExit: () => {}, write: () => {}, resize: () => {}, kill: () => {} });
+    sandboxWorks = true;
+    try { await run({ port, work }); } finally {
+      sandboxWorks = false;
+      for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+      Object.assign(process.env, saved);
+      fake.closeAllConnections?.();
+      fake.close();
+    }
+  };
+
+  test('is given the loopback forwarder and a random key, never the router\'s key or address, and keeps the model names it was configured with', async () => {
+    await withRouter(async ({ port, work }) => {
+      const { AgentPtySession } = await import('../agent-pty.js');
+      const session = new AgentPtySession({ key: 'cc-router-1', tool: 'claude-code', workPath: work, assistantContext: '' });
+      session.start();
+      await settle();
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [bin, args, options] = spawn.mock.calls[0];
+      expect(JSON.stringify({ bin, args, env: options.env })).not.toContain('fake-router-secret-value');
+      expect(JSON.stringify(options.env)).not.toContain(`:${port}`);
+      expect(options.env.ANTHROPIC_BASE_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(options.env.ANTHROPIC_AUTH_TOKEN).toHaveLength(48);
+      // nothing is lost: the names the interviewer set are passed as they were
+      expect(options.env.ANTHROPIC_DEFAULT_SONNET_MODEL).toBe('the-name-the-interviewer-set');
+      session.dispose();
+    });
+  });
+
+  test('a router set up with an API key variable is replaced too, so that variable is not left behind', async () => {
+    await withRouter(async ({ work }) => {
+      process.env.ANTHROPIC_API_KEY = 'fake-router-secret-value';
+      delete process.env.ANTHROPIC_AUTH_TOKEN;
+      const { AgentPtySession } = await import('../agent-pty.js');
+      new AgentPtySession({ key: 'cc-router-2', tool: 'claude-code', workPath: work, assistantContext: '' }).start();
+      await settle();
+      const [, , options] = spawn.mock.calls[0];
+      expect(options.env.ANTHROPIC_API_KEY).toBeUndefined();
+      expect(JSON.stringify(options.env)).not.toContain('fake-router-secret-value');
+    });
+  });
+
+  test('without a router, nothing changes: its own sign in is used and no forwarder is started', async () => {
+    await withRouter(async ({ work }) => {
+      for (const key of Object.keys(process.env)) if (/^ANTHROPIC_/.test(key)) delete process.env[key];
+      const { AgentPtySession } = await import('../agent-pty.js');
+      new AgentPtySession({ key: 'cc-router-3', tool: 'claude-code', workPath: work, assistantContext: '' }).start();
+      await settle();
+      const [, , options] = spawn.mock.calls[0];
+      expect(options.env.ANTHROPIC_BASE_URL).toBeUndefined();
+    });
   });
 });

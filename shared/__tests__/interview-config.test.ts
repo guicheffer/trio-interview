@@ -31,7 +31,7 @@ exercises:
   });
 
   test('writing the file and reading it back gives the same settings', () => {
-    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const, pi: { provider: 'router' as const, model: 'sonnet' }, sources: ['https://github.com/acme/interview-exercises.git', '../my-exercises'] };
+    const config = { tools: ['agent' as const, 'opencode' as const], exercises: ['fibonacci', 'gearshare'], tunnel: 'none' as const, pi: { provider: 'router' as const, model: 'sonnet' }, opencode: { provider: 'own-login' as const, model: '' }, sources: ['https://github.com/acme/interview-exercises.git', '../my-exercises'] };
     expect(parseConfig(renderConfig(config))).toEqual(config);
   });
 
@@ -40,7 +40,7 @@ exercises:
     expect(parseConfig('tools:\n  - pi').tools).toEqual(['agent', 'pi']);
     expect(toolAllowed(parseConfig('tools:\n  - claude-code'), 'pi')).toBe(false);
     expect(parseConfig('tools:\n  - claude-code\n  - codex').tools).toEqual(['agent', 'claude-code']);
-    const config = { tools: ['agent' as const, 'pi' as const], exercises: [], tunnel: 'none' as const, pi: { provider: 'auto' as const, model: '' }, sources: [] };
+    const config = { tools: ['agent' as const, 'pi' as const], exercises: [], tunnel: 'none' as const, pi: { provider: 'auto' as const, model: '' }, opencode: { provider: 'auto' as const, model: '' }, sources: [] };
     expect(parseConfig(renderConfig(config))).toEqual(config);
   });
 
@@ -55,6 +55,16 @@ exercises:
     // keys of another block are not read as Pi's
     expect(parseConfig('pi:\n  provider: router\ntunnel: none\nprovider: own-login').pi.provider).toBe('router');
     expect(parseConfig('tunnel: none\n  provider: router').pi.provider).toBe('auto');
+  });
+
+  test('OpenCode has the same block, and the two never read each other\'s keys', () => {
+    expect(parseConfig('').opencode).toEqual({ provider: 'auto', model: '' });
+    const config = parseConfig('pi:\n  provider: router\n  model: a\nopencode:\n  provider: own-login\n  model: b');
+    expect(config.pi).toEqual({ provider: 'router', model: 'a' });
+    expect(config.opencode).toEqual({ provider: 'own-login', model: 'b' });
+    expect(parseConfig('opencode:\n  provider: nonsense\n  model: "x;y"').opencode).toEqual({ provider: 'auto', model: '' });
+    const written = { ...DEFAULT_CONFIG, opencode: { provider: 'router' as const, model: 'm' } };
+    expect(parseConfig(renderConfig(written)).opencode).toEqual(written.opencode);
   });
 
   test('the pi block is written and read back', () => {
@@ -73,7 +83,7 @@ exercises:
   });
 
   test('the tunnel is written to the file and read back', () => {
-    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const, pi: { provider: 'auto' as const, model: '' }, sources: [] };
+    const config = { tools: ['agent' as const], exercises: [], tunnel: 'cloudflared' as const, pi: { provider: 'auto' as const, model: '' }, opencode: { provider: 'auto' as const, model: '' }, sources: [] };
     expect(parseConfig(renderConfig(config)).tunnel).toBe('cloudflared');
   });
 

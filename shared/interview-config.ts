@@ -10,6 +10,9 @@ export type Tool = (typeof TOOLS)[number];
 export const PI_PROVIDERS = ['auto', 'router', 'own-login'] as const;
 export type PiProvider = (typeof PI_PROVIDERS)[number];
 
+/** Where OpenCode gets its model from. Same meaning as for Pi. */
+export type OpencodeProvider = PiProvider;
+
 export interface PiConfig {
   provider: PiProvider;
   /** A model name to use instead of the one the tool picks. Empty means the tool picks. */
@@ -29,6 +32,8 @@ export interface InterviewConfig {
   tunnel: Tunnel;
   /** Where Pi gets its model from, and an optional model to use. */
   pi: PiConfig;
+  /** Where OpenCode gets its model from, and an optional model to use. */
+  opencode: PiConfig;
   /** Other places exercises come from (a git repository or a folder), copied into exercises/ by `make exercises`. */
   sources: string[];
 }
@@ -38,6 +43,7 @@ export const DEFAULT_CONFIG: InterviewConfig = {
   exercises: [],
   tunnel: 'ngrok',
   pi: { provider: 'auto', model: '' },
+  opencode: { provider: 'auto', model: '' },
   sources: [],
 };
 
@@ -81,7 +87,7 @@ function unquote(value: string): string {
  * Anything it does not understand is ignored and the default stays, so a typo never stops an interview.
  */
 export function parseConfig(text: string): InterviewConfig {
-  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [], tunnel: DEFAULT_CONFIG.tunnel, pi: { ...DEFAULT_CONFIG.pi }, sources: [] };
+  const config: InterviewConfig = { tools: [...DEFAULT_CONFIG.tools], exercises: [], tunnel: DEFAULT_CONFIG.tunnel, pi: { ...DEFAULT_CONFIG.pi }, opencode: { ...DEFAULT_CONFIG.opencode }, sources: [] };
   let listKey = '';
   let block = '';
   let tools: Tool[] | null = null;
@@ -108,11 +114,12 @@ export function parseConfig(text: string): InterviewConfig {
     const value = body.slice(colon + 1).trim();
     if (indent === 0) { listKey = ''; block = ''; }
 
-    if (indent === 0 && key === 'pi' && value === '') { block = 'pi'; continue; }
-    if (indent > 0 && block === 'pi') {
+    if (indent === 0 && (key === 'pi' || key === 'opencode') && value === '') { block = key; continue; }
+    if (indent > 0 && (block === 'pi' || block === 'opencode')) {
       const v = unquote(value);
-      if (key === 'provider' && isPiProvider(v.toLowerCase())) config.pi.provider = v.toLowerCase() as PiProvider;
-      else if (key === 'model' && (v === '' || isModelName(v))) config.pi.model = v;
+      const target = block === 'pi' ? config.pi : config.opencode;
+      if (key === 'provider' && isPiProvider(v.toLowerCase())) target.provider = v.toLowerCase() as PiProvider;
+      else if (key === 'model' && (v === '' || isModelName(v))) target.model = v;
       continue;
     }
 
@@ -154,6 +161,10 @@ sources:${config.sources.length ? '\n' + list(config.sources) : ''}
 # Where Pi gets its model: auto (a Pi login if there is one, else your model router, else a note to sign in), router, or own-login. model is optional.
 pi:
   provider: ${config.pi.provider}${config.pi.model ? `\n  model: ${config.pi.model}` : ''}
+
+# Same choice for OpenCode: auto, router or own-login
+opencode:
+  provider: ${config.opencode.provider}${config.opencode.model ? `\n  model: ${config.opencode.model}` : ''}
 
 # How the candidate reaches this machine: ngrok (checked), cloudflared (see SECURITY.md before relying on it) or none
 tunnel: ${config.tunnel}

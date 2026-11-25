@@ -121,9 +121,11 @@ export function startRouterProxy(router: Router): Promise<RouterProxy> {
   const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
   const basePath = target.pathname.replace(/\/+$/, '');
   const server: Server = createServer((req: IncomingMessage, res) => {
+    const path = (req.url ?? '/').split('?')[0];
+    // Claude Code asks this once at start to see that the router is there, with no key and nothing to forward: answered here
+    if (req.method === 'HEAD' && path === '/api/hello') { res.writeHead(200); res.end(); return; }
     const given = String(req.headers['x-api-key'] ?? '') || String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
     if (!same(given, key)) { res.writeHead(401, { 'content-type': 'application/json' }); res.end('{"error":"unauthorized"}'); return; }
-    const path = (req.url ?? '/').split('?')[0];
     if (!/^\/v1\/(messages|models|complete)(\/[A-Za-z0-9._:-]+)?$/.test(path)) { res.writeHead(404, { 'content-type': 'application/json' }); res.end('{"error":"not found"}'); return; }
     const headers: Record<string, string | string[]> = {};
     for (const [name, value] of Object.entries(req.headers)) {

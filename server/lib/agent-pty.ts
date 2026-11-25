@@ -14,7 +14,7 @@ import { DEFAULT_MODEL } from '../../shared/models.js';
 import { choosePiSource, hasPiHistory, piArgs, piEnvironment, piHomeDir, piProgramFolders, PI_BLOCKED_ENVIRONMENT, readPiLogin, seedPiHome, seedPiRouterHome, writePiRules, type PiSource } from './pi-pty.js';
 import { chooseRouterModel, readRouter, startRouterProxy, type RouterProxy } from './router-proxy.js';
 import { readInterviewConfig } from './interview-config.js';
-import { hasOpencodeHistory, opencodeArgs, opencodeEnvironment, opencodeHomeDir, seedOpencodeHome, writeOpencodeRules } from './opencode-pty.js';
+import { chooseOpencodeSource, hasOpencodeHistory, opencodeArgs, opencodeEnvironment, opencodeHomeDir, readOpencodeLogin, seedOpencodeHome, seedOpencodeRouterHome, writeOpencodeRules, type OpencodeSource } from './opencode-pty.js';
 
 export type TerminalTool = 'claude-code' | 'opencode' | 'pi';
 
@@ -146,6 +146,8 @@ export class AgentPtySession {
   private rows = 30;
   private disposed = false;
   private piSource: PiSource | null = null;
+  private opencodeSource: OpencodeSource | null = null;
+  private claudeBlocked = '';
   private routerProxy: RouterProxy | null = null;
   private routerModel = '';
 
@@ -181,7 +183,16 @@ export class AgentPtySession {
     const base = { TERM: 'xterm-256color', COLORTERM: 'truecolor' };
     if (tool === 'opencode') {
       const home = opencodeHomeDir(workPath);
-      if (!seedOpencodeHome(home)) return { error: 'No OpenCode login was found to copy. Sign in to a provider in OpenCode and pick a default model, or set TRIO_OPENCODE_API_KEY.' };
+      const source = this.opencodeSource;
+      if (!source) return { error: 'OpenCode was not prepared.' };
+      if (source.kind === 'none') return { error: source.problem };
+      if (source.kind === 'own-login') {
+        if (!seedOpencodeHome(home)) return { error: 'No OpenCode login was found to copy. Sign in to a provider in OpenCode and pick a default model, or set TRIO_OPENCODE_API_KEY.' };
+      } else if (this.routerProxy && this.routerModel) {
+        seedOpencodeRouterHome(home, this.routerProxy, this.routerModel);
+      } else {
+        return { error: 'The model router did not answer.' };
+      }
       writeOpencodeRules(home, assistantContext);
       // OpenCode has no sandbox of its own, so the operating system's is put around the whole process. Without one the assistant is
       // not started at all: running it open is the thing this exists to prevent.
@@ -190,7 +201,7 @@ export class AgentPtySession {
       return {
         bin: walled.bin,
         args: walled.args,
-        env: { ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>), ...opencodeEnvironment(home), ...base },
+        env: this.withoutKeys({ ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>), ...opencodeEnvironment(home), ...base }, source.kind === 'router'),
       };
     }
     if (tool === 'pi') {
@@ -215,19 +226,27 @@ export class AgentPtySession {
       for (const key of PI_BLOCKED_ENVIRONMENT) delete env[key];
       return { bin: walled.bin, args: walled.args, env };
     }
+    if (this.claudeBlocked) return { error: this.claudeBlocked };
     const configDir = agentConfigDir(workPath);
     seedAgentConfig(configDir, workPath);
+    // The router's address and key are replaced by the loopback forwarder's address and a random key. The model names stay as the
+    // interviewer set them. Without a forwarder (no router, or only a key of its own) nothing changes from before.
+    const login = this.routerProxy ? { ...routerEnvironment(), ANTHROPIC_BASE_URL: this.routerProxy.url, ANTHROPIC_AUTH_TOKEN: this.routerProxy.key } : routerEnvironment();
+    if (this.routerProxy) delete login.ANTHROPIC_API_KEY;
     // Claude Code's own sandbox only covers the commands the model runs. What a person types after "!" in its terminal runs outside
     // it (measured: it read a file in the interviewer's home, the settings of the interview, another candidate and a hidden phase),
     // so the operating system's sandbox is put around the whole process, the same as for the other two.
     const walled = sandboxed({ bin: BIN.claude, args: claudeArgs(assistantContext, existsSync(join(configDir, 'projects'))), workPath, configDir, writable: [workPath, configDir], programFolders: claudeProgramFolders(BIN.claude) });
     if ('error' in walled) return walled;
+    // the general sanitizer lets ANTHROPIC_API_KEY through for the chat, so with a forwarder it is taken out of the final environment too
+    const inherited = sanitizeEnvironment(workPath) as Record<string, string | undefined>;
+    if (this.routerProxy) { delete inherited.ANTHROPIC_API_KEY; delete inherited.CLAUDE_API_KEY; }
     return {
       bin: walled.bin,
       args: walled.args,
       env: {
-        ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>),
-        ...routerEnvironment(),
+        ...inherited,
+        ...login,
         CLAUDE_CONFIG_DIR: configDir,
         CLAUDE_CODE_TMPDIR: assistantTmpDir(configDir),
         // every program the assistant runs writes its small files here, so it never needs the interviewer's temporary folders
@@ -244,20 +263,43 @@ export class AgentPtySession {
 
   /** Starts the tool, continuing the conversation it had if the process ended earlier */
   /**
-   * Pi's source is settled before it starts: its own login, or the model router (asked once for a model that answers, with the
-   * router's key staying in this process behind a loopback proxy). Other assistants need nothing here.
+   * Pi's and OpenCode's source is settled before they start: a login of their own, or the model router (asked once for a model that
+   * answers, with the router's key staying in this process behind a loopback forwarder). Other assistants need nothing here.
    */
-  private async preparePi(): Promise<void> {
+  private async prepareRouterTool(): Promise<void> {
     this.closeRouter();
-    const config = readInterviewConfig().pi;
+    const settings = readInterviewConfig();
     const router = readRouter();
-    const source = choosePiSource(config, readPiLogin(), router);
-    this.piSource = source;
-    if (source.kind !== 'router' || !router) return;
-    const chosen = await chooseRouterModel(router, config.model);
-    if (!chosen.ok) { this.piSource = { kind: 'none', problem: `The model router is set up but ${chosen.problem}.` }; return; }
+    if (this.opts.tool === 'claude-code') {
+      // Claude Code keeps the model names the interviewer set, so there is nothing to ask the router: only the key is kept out of reach
+      if (router) this.routerProxy = await startRouterProxy(router);
+      return;
+    }
+    let wanted: PiSource | OpencodeSource;
+    let preferred = '';
+    if (this.opts.tool === 'pi') {
+      wanted = this.piSource = choosePiSource(settings.pi, readPiLogin(), router);
+      preferred = settings.pi.model;
+    } else {
+      wanted = this.opencodeSource = chooseOpencodeSource(settings.opencode.provider, readOpencodeLogin(), router);
+      preferred = settings.opencode.model;
+    }
+    if (wanted.kind !== 'router' || !router) return;
+    const chosen = await chooseRouterModel(router, preferred);
+    if (!chosen.ok) {
+      const none = { kind: 'none' as const, problem: `The model router is set up but ${chosen.problem}.` };
+      if (this.opts.tool === 'pi') this.piSource = none; else this.opencodeSource = none;
+      return;
+    }
     this.routerProxy = await startRouterProxy(router);
     this.routerModel = chosen.model;
+  }
+
+  /** Every variable that carries a key or a router address is taken out, so the only login is the one this tool wrote into the private home */
+  private withoutKeys(env: Record<string, string | undefined>, router: boolean): Record<string, string | undefined> {
+    if (!router) return env;
+    for (const key of PI_BLOCKED_ENVIRONMENT) delete env[key];
+    return env;
   }
 
   private closeRouter() {
@@ -270,9 +312,14 @@ export class AgentPtySession {
 
   start() {
     if (this.child || this.disposed || this.starting) return;
-    if (this.opts.tool === 'pi') {
+    if (this.opts.tool === 'pi' || this.opts.tool === 'opencode' || this.opts.tool === 'claude-code') {
       this.starting = true;
-      this.preparePi().catch(() => { this.piSource = { kind: 'none', problem: 'Pi could not be prepared.' }; }).finally(() => { this.starting = false; this.launch(); });
+      this.prepareRouterTool().catch(() => {
+        const none = { kind: 'none' as const, problem: `${TOOL_NAMES[this.opts.tool]} could not be prepared.` };
+        if (this.opts.tool === 'pi') this.piSource = none; else if (this.opts.tool === 'opencode') this.opencodeSource = none;
+        // Claude Code without a forwarder would hand the key to the terminal, so it is not started
+        else this.claudeBlocked = 'The model router could not be reached from here.';
+      }).finally(() => { this.starting = false; this.launch(); });
       return;
     }
     this.launch();
