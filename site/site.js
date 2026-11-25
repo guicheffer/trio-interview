@@ -15,12 +15,12 @@
 
   // What each of the six steps shows. The scenes are the real screens of the app; `fib` is the one that runs.
   var plan = [
-    { scene: 'welcome', note: 'replica' },
-    { scene: 'fib', note: 'scripted answer', ask: true, live: true },
-    { scene: 'fib', note: 'runs for real', run: true, live: true },
-    { scene: 'picker', note: 'replica' },
-    { scene: 'view', note: 'replica', reveal: false },
-    { scene: 'view', note: 'replica', reveal: true }
+    { scene: 'welcome', note: '' },
+    { scene: 'fib', note: '', ask: true, live: true },
+    { scene: 'fib', note: '', run: true, live: true },
+    { scene: 'picker', note: '' },
+    { scene: 'view', note: '', reveal: false },
+    { scene: 'view', note: '', reveal: true }
   ];
   var cur = -1, timers = [];
   function call(f, fn, arg) { try { f.contentWindow[fn](arg); } catch (e) { /* the scene is still loading */ } }
