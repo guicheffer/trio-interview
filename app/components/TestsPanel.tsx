@@ -112,7 +112,7 @@ export function TestsPanel({ tests, cases, running, unreadable, onRunAll, onRunO
                     disabled={!!blockedReason || running}
                     title={blockedReason ?? `Run only: ${c.name}`}
                     aria-label={`Run only ${c.name}`}
-                    className="flex-shrink-0 px-1 rounded text-gray-500 hover:text-green-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                    className="flex-shrink-0 px-1 rounded text-gray-500 hover:text-green-300 opacity-50 group-hover:opacity-100 focus:opacity-100 transition-opacity disabled:cursor-not-allowed"
                   >
                     ▶
                   </button>

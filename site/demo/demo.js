@@ -155,11 +155,9 @@
     // the scene knows how to color a line of test results (a marker in front of it), plain lines stay plain
     var fmt = win.fibTermLine || function (l) { return '<span>' + esc(l) + '</span>'; };
     var rows = [HEAD, '', PROMPT + '<span>' + esc(cmd || ' ') + '</span>'].concat((out || []).map(fmt));
-    // keep the last rows that fit, so the total of a test run is never cut off below the pane
-    var host = pane(), term = doc.getElementById('terminal');
-    var room = host && term ? Math.floor((term.getBoundingClientRect().bottom - host.getBoundingClientRect().top) / 16) : 12;
-    rows = rows.slice(-Math.max(4, Math.min(12, room)));
+    // every row is drawn; the scene's scroller (scripts/fib-scene.js) keeps the newest in view and lets the wheel and the bar go back up
     pane().innerHTML = rows.map(function (r) { return '<div style="width: 726px; height: 16px; line-height: 16px; overflow: hidden;">' + r + '</div>'; }).join('');
+    if (win.fibScrollers) win.fibScrollers.project.update(true);
   }
   function runCode(src, done) {
     var lite = win.FIB && win.FIB.inspectLite;
@@ -213,7 +211,7 @@
     if (active === 'fibonacci.js') drawBody();
     project();
     starterNote.querySelector('.t').textContent = on
-      ? 'This is the version the assistant wrote in the story of the landing page. It fills in fibonacci(n) and leaves fibonacciUpTo for you. Press Run to try it.'
+      ? 'This is the version the assistant wrote in the story of the landing page. It fills in fibonacci(n) and fibonacciUpTo(limit). Press Run, Run tests or Run both to try it.'
       : 'The starter is empty on purpose: the assistant is what would fill it in. It is shown here, not connected.';
     versionBtn.textContent = on ? 'Back to the empty starter' : "Show the assistant's version";
   }

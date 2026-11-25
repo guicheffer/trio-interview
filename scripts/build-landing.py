@@ -91,6 +91,10 @@ def fib_page():
     return page.replace('/\u2026/.solutions/maya/fibonacci', '~/interviews/fibonacci')
 
 
+_sr_spec = _u.spec_from_file_location('story_rows', os.path.join(os.path.dirname(__file__), 'story_rows.py'))
+story = _u.module_from_spec(_sr_spec); _sr_spec.loader.exec_module(story)
+
+
 def build_fib():
     session = json.load(open(os.path.join(SRC, 'fibonacci-session.json')))
     src_before, src_after, terms = session['before'], session['after'], session['terminals']
@@ -100,7 +104,7 @@ def build_fib():
         'before': src_before, 'after': src_after,
         'linesBefore': mv.lines_markup(src_before), 'linesAfter': mv.lines_markup(src_after),
         'gutterBefore': mv.gutter_markup(src_before, mv.foldable_lines(src_before)), 'gutterAfter': mv.gutter_markup(src_after, mv.foldable_lines(src_after)),
-        'claudeAfter': neutral(terms['fibafter_claude']),
+        'claudeAfter': neutral(story.after_screen(src_before, src_after, terms['fibafter_claude_captured'])),
         'claudeBefore': neutral(terms['fibbefore_claude']),
         'inspectLite': open(os.path.join(os.path.dirname(__file__), 'inspect-lite.cjs')).read(),
         'tests': open(os.path.join(os.path.dirname(__file__), '..', 'examples', 'fibonacci', 'fibonacci.test.js')).read(),
