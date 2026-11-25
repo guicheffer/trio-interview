@@ -22,6 +22,11 @@
     <rect x="79" y="182" width="9" height="48" rx="4.5" fill="var(--bg)"/>
   </symbol>
   <symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7.5 8.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.4 3.1 7.7 7.5 9.5 4.4-1.8 7.5-5.1 7.5-9.5V6L12 3Z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l3 3M14 9l2 2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
   <symbol id="interviewer" viewBox="0 0 279 241"><rect x="19.75" y="46.70" width="178.50" height="68.60" rx="34.30" fill="#5850F8" transform="rotate(121.1 109.00 81.00)"/></symbol>
   <symbol id="candidate" viewBox="0 0 279 241"><rect x="126.90" y="114.05" width="178.20" height="68.90" rx="34.45" fill="#00C068" transform="rotate(59.2 216.00 148.50)"/></symbol>
 </svg>
@@ -95,35 +100,20 @@
 </section>
 
 <section class="s alt" id="why">
-  <div class="wrap twocol">
-    <div class="lead">
-      <div class="kicker">Why this</div>
-      <h2>An interview that looks like the job</h2>
-      <p>Candidates already work with assistants every day, so a room that bans them tests something they will never do at work. What is worth judging now is how a person works with the assistant: how they frame the problem, whether they read and question what comes back, whether they check it by running it, when they take over and when they let it work, and how they explain their choices. Seeing the whole conversation and the code change live is what lets you judge that.</p>
-      <p>Tell the candidate up front that the assistant is allowed and expected, ask them to think aloud, and judge the reasoning and the checking more than the typing. <a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md">More on how to read an AI assisted interview<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></p>
-      <p>It runs on your machine, so the code is yours to read and the exercises stay yours, and there is no seat to buy.</p>
-      <p class="small">Other tools exist, such as <a href="https://coderpad.io/">CoderPad<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, <a href="https://www.hackerrank.com/">HackerRank<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a> and <a href="https://codesignal.com/">CodeSignal<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, and what they offer is on their own sites.</p>
-    </div>
-    <div class="ledger" aria-label="What runs where">
-      <div><span>The room</span><b>your machine</b></div>
-      <div><span>The candidate's code</span><b>your machine</b></div>
-      <div><span>Exercises</span><b>your repository</b></div>
-      <div><span>Seats to buy</span><b>none</b></div>
-      <div><span>Sent to the assistant's provider</span><b>the chat</b></div>
-    </div>
-  </div>
-</section>
-
-<section class="s" id="safe">
   <div class="wrap">
     <div class="lead">
-      <div class="kicker">Security</div>
-      <h2>Built to be used with care</h2>
-      <p>Trio Interview is a local tool, not a hosted service. The servers listen on your machine only, and the tunnel you start is the way in. A candidate gets through it only with the private link that <code>make start</code> makes for each interview, and which side of the room someone is on is decided on the server, not in the page, so a candidate cannot open the interviewer's screens by changing what their browser sends.</p>
-      <p>Claude Code and OpenCode in a terminal run inside the operating system's sandbox, limited to the candidate's own folder, and the tool refuses to start them without one, which today means macOS. The chat assistant is kept on the exercise by instructions, so a determined candidate can talk it into reading further than it should.</p>
-      <p>This is a guard rail and not a full sandbox for the candidate's own code. That code runs as your user and the network is open, so use a machine and an account without production credentials.</p>
-      <div class="acts"><a class="btn" href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md">Read the security notes<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></div>
+      <div class="kicker">Why this</div>
+      <h2>Made for how people work now</h2>
+      <p>Candidates already work with assistants, so see how they work with one: how they ask, what they check and when they take over.</p>
     </div>
+    <ul class="cards" aria-label="What to expect">
+      <li class="card"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-eye"/></svg><h3>See how they work</h3><p>The whole conversation and every code change, live. Judge the reasoning and the checking.</p><a href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md">How to read an AI assisted interview<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></li>
+      <li class="card"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-laptop"/></svg><h3>Runs on your machine</h3><p>No seats and no account. The code and the exercises stay yours. Only what the assistants are asked goes to their provider.</p></li>
+      <li class="card"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg><h3>Sandboxed assistants</h3><p>The terminal assistants (Claude Code, OpenCode and Pi) stay in the candidate's folder and refuse to start without the sandbox, which is macOS for now.</p><a href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md">Read the security notes<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a></li>
+      <li class="card"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-key"/></svg><h3>A private link</h3><p>Each interview has its own link, and the server decides who is the interviewer and who is the candidate.</p></li>
+      <li class="card limit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><h3>An honest limit</h3><p>A guard rail, not a full sandbox for the candidate's code. The network is open, so use a machine without production credentials.</p></li>
+    </ul>
+    <p class="small others">Other tools exist, such as <a href="https://coderpad.io/">CoderPad<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, <a href="https://www.hackerrank.com/">HackerRank<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a> and <a href="https://codesignal.com/">CodeSignal<svg class="ext" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#ext"/></svg></a>, and what they offer is on their own sites.</p>
   </div>
 </section>
 

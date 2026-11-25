@@ -25,20 +25,44 @@ describe('links that leave the page', () => {
   });
 });
 
-describe('the security section', () => {
-  const section = /<section[^>]*id="safe"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
-  test('sits between Why this and the commands, and links to the notes', () => {
-    expect(html.indexOf('id="why"')).toBeLessThan(html.indexOf('id="safe"'));
-    expect(html.indexOf('id="safe"')).toBeLessThan(html.indexOf('id="start"'));
+describe('the merged section: why, and what to expect', () => {
+  const section = /<section[^>]*id="why"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
+  test('there is one section for it, with one #why, and the old security and ledger blocks are gone', () => {
+    expect((html.match(/id="why"/g) ?? []).length).toBe(1);
+    expect(html).not.toContain('id="safe"');
+    expect(html).not.toContain('class="ledger"');
+    expect(html.indexOf('id="why"')).toBeLessThan(html.indexOf('id="start"'));
+  });
+  test('is short: a lead of at most 35 words and cards of at most 24 words', () => {
+    const lead = /<div class="lead">[\s\S]*?<p>([\s\S]*?)<\/p>/.exec(section)?.[1] ?? '';
+    expect(lead.split(/\s+/).length).toBeLessThanOrEqual(35);
+    const cards = [...section.matchAll(/<li class="card[^>]*>([\s\S]*?)<\/li>/g)].map(m => m[1].replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length);
+    expect(cards.length).toBe(5);
+    for (const n of cards) expect(n).toBeLessThanOrEqual(24 + 8);   // the title and the link text count too
+  });
+  test('every card has a hidden line icon taken from the sprite', () => {
+    const cards = [...section.matchAll(/<li class="card[^>]*>([\s\S]*?)<\/li>/g)].map(m => m[1]);
+    for (const c of cards) expect(c).toMatch(/<svg class="ico"[^>]*aria-hidden="true"[^>]*><use href="#i-[a-z]+"\/>/);
+    for (const id of ['i-eye', 'i-laptop', 'i-shield', 'i-key', 'i-alert']) expect(html).toContain(`<symbol id="${id}"`);
+  });
+  test('links to the security notes and the guide, and the honest limit stays visible', () => {
     expect(section).toContain('href="https://github.com/guicheffer/trio-interview/blob/main/SECURITY.md"');
+    expect(section).toContain('href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md"');
+    expect(section).toMatch(/<li class="card limit">[\s\S]*guard rail, not a full sandbox[\s\S]*network is open[\s\S]*production credentials/);
+    expect(section).toMatch(/refuse to start without the sandbox, which is macOS for now/);
+    expect(section).toMatch(/server decides/);
   });
-  test('says it is a guard rail with the network open, and that the sandbox is required', () => {
-    expect(section).toMatch(/guard rail/);
-    expect(section).toMatch(/network is open/);
-    expect(section).toMatch(/refuses to start them without one/);
-    expect(section).toMatch(/decided on the server/);
+  test('keeps the truth about what leaves the machine, and the alternatives line', () => {
+    expect(section).toMatch(/Only what the assistants are asked goes to their provider/);
+    for (const name of ['CoderPad', 'HackerRank', 'CodeSignal']) expect(section).toContain(name);
   });
-  test('uses no dashes as punctuation', () => { expect(section).not.toMatch(/[–—]/); });
+  test('uses no dashes as punctuation', () => { expect(section).not.toMatch(/[\u2013\u2014]/); });
+  test('the cards fill the grid on a wide screen and fall to two and one column', () => {
+    expect(css).toMatch(/\.cards\{[^}]*grid-template-columns:repeat\(3,1fr\)/);
+    expect(css).toMatch(/\.card\.limit\{grid-column:span 2/);
+    expect(css).toMatch(/max-width:1100px\) and \(min-width:601px\)\{ \.cards\{grid-template-columns:repeat\(2,1fr\)\}/);
+    expect(css).toMatch(/max-width:600px\)\{ \.cards\{grid-template-columns:1fr\}/);
+  });
 });
 
 describe('the logo section', () => {
@@ -108,15 +132,6 @@ describe('the scene can be clicked on every Fibonacci step', () => {
   });
 });
 
-describe('Why this', () => {
-  const why = /<section[^>]*id="why"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
-  test('gives the reason in the age of assistants, links the guide, keeps the ledger, and uses no dashes', () => {
-    expect(why).toMatch(/how a person works with the assistant/);
-    expect(why).toContain('href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md"');
-    expect(why).toContain('class="ledger"');
-    expect(why).not.toMatch(/[\u2013\u2014]/);
-  });
-});
 
 describe('the scenes of the stage', () => {
   const dir = join(root, 'site', 'app');
