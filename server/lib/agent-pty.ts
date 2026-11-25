@@ -5,6 +5,7 @@ import type { IPty } from 'node-pty';
 import { sanitizeEnvironment } from './sanitize-env.js';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
 import { BLOCKED_TOOLS, resolveModelId } from './claude-proxy.js';
+import { assistantTmpDir, confinedSettings } from './confinement.js';
 import { loadPty } from './terminal-session.js';
 import { BIN } from './binaries.js';
 import { DEFAULT_MODEL } from '../../shared/models.js';
@@ -46,12 +47,13 @@ export function agentConfigDir(workPath: string): string {
 /** The config the terminal starts with: no status line, no hooks, no plugins, onboarding and the folder trust question already answered */
 export function seedAgentConfig(configDir: string, workPath: string): void {
   mkdirSync(configDir, { recursive: true });
+  mkdirSync(assistantTmpDir(configDir), { recursive: true });
   const settingsPath = join(configDir, 'settings.json');
   // Always written, so a config seeded by an older version gets the same answers.
   // disableAutoMode (top level) is what stops the "make auto mode your default" offer; skipAutoPermissionPrompt does not,
   // because Claude Code removes it at startup whenever the default mode is not auto.
   writeFileSync(settingsPath, JSON.stringify({
-    permissions: { defaultMode: 'bypassPermissions' },
+    ...confinedSettings({ workPath, configDir }),
     skipDangerousModePermissionPrompt: true,
     disableAutoMode: 'disable',
     theme: 'dark',
@@ -177,6 +179,11 @@ export class AgentPtySession {
         ...(sanitizeEnvironment(workPath) as Record<string, string | undefined>),
         ...routerEnvironment(),
         CLAUDE_CONFIG_DIR: configDir,
+        CLAUDE_CODE_TMPDIR: assistantTmpDir(configDir),
+        // every program the assistant runs writes its small files here, so it never needs the interviewer's temporary folders
+        TMPDIR: assistantTmpDir(configDir),
+        TEMP: assistantTmpDir(configDir),
+        TMP: assistantTmpDir(configDir),
         CLAUDE_CODE_SUBAGENT_MODEL: resolveModelId(DEFAULT_MODEL),
         DISABLE_AUTOUPDATER: '1',
         DISABLE_TELEMETRY: '1',
