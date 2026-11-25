@@ -138,7 +138,7 @@
   // ---- project terminal ----
   var HEAD = '<span class="xterm-fg-2">● maya / fibonacci</span>';
   var PROMPT = '<span class="xterm-fg-2">maya/fibonacci</span><span> $ </span>';
-  function project(extra) { setPane(projectRows, [HEAD, '', PROMPT + (extra && extra.cmd ? '<span>' + esc(extra.cmd) + '</span>' : '<span> </span>')].concat((extra && extra.out || []).map(function (l) { return '<span>' + esc(l) + '</span>'; }))); }
+  function project(extra) { setPane(projectRows, [HEAD, '', PROMPT + (extra && extra.cmd ? '<span>' + esc(extra.cmd) + '</span>' : '<span> </span>')].concat((extra && extra.out || []).map(function (l) { return l.indexOf('<ok>') === 0 ? '<span class="xterm-fg-2 xterm-dim">' + esc(l.slice(4)) + '</span>' : '<span>' + esc(l) + '</span>'; }))); }
 
   // ---- the code, run for real in a Worker ----
   var worker;
@@ -201,21 +201,16 @@
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
   function clear() { timers.forEach(clearTimeout); timers = []; if (worker) { worker.terminate(); worker = null; } }
 
-  // ---- what shows that the code ran ----
+  // ---- what shows that the code ran: a quiet line in the terminal and a soft glow on the Run buttons ----
   var css = document.createElement('style');
-  css.textContent = '@keyframes ranflash{0%{box-shadow:inset 0 0 0 3px #00C068,inset 0 0 40px rgba(0,192,104,.35)}100%{box-shadow:inset 0 0 0 3px rgba(0,192,104,0),inset 0 0 40px rgba(0,192,104,0)}}' +
-    '@keyframes ranbadge{0%{opacity:0;transform:translateY(6px)}12%,80%{opacity:1;transform:none}100%{opacity:0}}' +
-    '.ran-flash{animation:ranflash 1.2s ease-out}.ran-badge{position:fixed;z-index:60;pointer-events:none;background:#00C068;color:#04230f;font:700 12px system-ui;padding:4px 10px;border-radius:999px;animation:ranbadge 2.4s ease both}' +
-    '@media (prefers-reduced-motion: reduce){.ran-flash{animation:none;box-shadow:inset 0 0 0 3px #00C068}.ran-badge{animation:none}}';
+  css.textContent = '@keyframes ranglow{0%{box-shadow:0 0 0 0 rgba(0,192,104,.55)}100%{box-shadow:0 0 0 7px rgba(0,192,104,0)}}' +
+    '.ran-glow{animation:ranglow .8s ease-out}' +
+    '@media (prefers-reduced-motion: reduce){.ran-glow{animation:none}}';
   document.head.appendChild(css);
-  var termBox = projectRows.closest('.xterm-scrollable-element') || projectRows.parentNode;
   function celebrate() {
-    termBox.classList.remove('ran-flash'); void termBox.offsetWidth; termBox.classList.add('ran-flash');
-    var old = document.querySelector('.ran-badge'); if (old) old.remove();
-    var r = termBox.getBoundingClientRect(), b = document.createElement('div');
-    b.className = 'ran-badge'; b.textContent = '✓ ran'; b.style.left = (r.right - 70) + 'px'; b.style.top = (r.top + 6) + 'px';
-    document.body.appendChild(b); setTimeout(function () { b.remove(); }, 2500);
+    runButtons.forEach(function (b) { b.classList.remove('ran-glow'); void b.offsetWidth; b.classList.add('ran-glow'); });
   }
+  function fmt(ms) { return ms < 10 ? 'under 0.01s' : ms < 1000 ? (ms / 1000).toFixed(2) + 's' : (ms / 1000).toFixed(1) + 's'; }
   function tell(state, n) { try { parent.postMessage({ trio: 'fib', state: state, n: n }, '*'); } catch (e) { /* not in a page */ } }
 
   function markRun(on) { runButtons.forEach(function (b) { b.style.outline = on ? '2px solid #5850F8' : ''; b.style.outlineOffset = on ? '2px' : ''; }); }
@@ -234,9 +229,11 @@
     project();
     later(function () { project({ cmd: 'node fibonacci.js' }); }, 220);
     later(function () {
+      var t0 = performance.now();
       runCode(code(), function (out) {
         markRun(false);
-        project({ cmd: 'node fibonacci.js', out: printOut(out) });
+        var took = Math.round(performance.now() - t0);
+        project({ cmd: 'node fibonacci.js', out: printOut(out).concat(['<ok>\u2713 ran in ' + fmt(took)]) });
         celebrate(); tell('done', n);
         if (cb) cb(out);
       });

@@ -43,6 +43,8 @@ code{font-family:var(--mono);font-size:.88em}
 .bar nav{display:flex;align-items:center;gap:26px;font-size:.88rem;color:var(--mute)}
 .bar nav a{text-decoration:none}
 .bar nav a:hover{color:var(--text)}
+.bar nav a.demo{display:inline-flex;align-items:center;gap:7px;color:var(--text)}
+.bar nav a.demo:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--purple);box-shadow:0 0 0 3px color-mix(in srgb,var(--purple) 22%,transparent)}
 
 /* a link that leaves this page */
 .ext{width:.8em;height:.8em;margin-left:.4em;vertical-align:-.04em;flex:none;opacity:.7}
@@ -106,8 +108,8 @@ footer a .ext{margin-left:.35em}
 .ranmsg{font:600 .85rem var(--mono);color:var(--mute);min-height:1.2em}
 .ranmsg.ok{color:var(--green)}
 .ranmsg.ok:before{content:"\2713 "}
-.ranmsg.pulse{animation:ranpulse .9s ease-out}
-@keyframes ranpulse{0%{transform:scale(1.15);text-shadow:0 0 14px var(--green)}100%{transform:none;text-shadow:none}}
+.ranmsg.pulse{animation:ranglow .8s ease-out}
+@keyframes ranglow{from{opacity:.3}to{opacity:1}}
 .pager{display:flex;align-items:center;gap:14px;margin-top:22px;font:500 .85rem var(--mono);color:var(--mute)}
 .pg{appearance:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1}
 .pg:hover:not(:disabled){border-color:var(--mute)}
@@ -186,7 +188,8 @@ footer a:hover{color:var(--text)}
   .cmd{border-left:0;border-top:1px solid var(--line)}
   .cmd:first-child{border-top:0}
   section.s{padding:84px 0}
-  .bar nav a:not(.star){display:none}
+  .bar nav a:not(.star):not(.demo){display:none}
+  .bar nav{gap:16px}
   .h1,.h2{opacity:.4}
   .parts{height:auto}
   .parts .pin{position:static;min-height:0;padding:84px 0}

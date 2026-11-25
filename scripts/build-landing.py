@@ -14,8 +14,10 @@ def frag(name):
 
 def scene(name, body, extra_js=''):
     html = f'''<!doctype html><html class="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=1440">
-<link rel="stylesheet" href="app.css"><style>
+<link rel="stylesheet" href="app.css" onload="document.documentElement.classList.add('styled')"><style>
 html,body{{margin:0;height:100%;overflow:hidden;background:#0b0b14}}
+/* nothing of the scene shows until its stylesheet has been applied, so a slow connection shows the dark frame and never the bare page */
+html:not(.styled) body{{visibility:hidden}}
 /* the app hides the real cursor of the other person with its own element; we only need these */
 .demo-cursor{{position:absolute;z-index:50;pointer-events:none;transition:left .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1)}}
 .demo-cursor i{{display:block;width:14px;height:14px;background:#e0529c;clip-path:polygon(0 0,100% 55%,45% 60%,30% 100%)}}
