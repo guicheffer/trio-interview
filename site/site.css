@@ -139,10 +139,19 @@ section.s.alt{background:var(--bg2);border-block:1px solid var(--line)}
 .kicker{font:600 .75rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--purple-l);margin-bottom:22px}
 .lead{max-width:44rem}
 .lead h2{margin-bottom:26px}
+#why .lead h2{max-width:16ch}
 .lead p{color:var(--mute);font-size:1.15rem}
 .lead p a{color:var(--text)}
 .lede{max-width:40rem;color:var(--mute);font-size:1.15rem;margin-top:22px}
-.twocol{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.cards{list-style:none;margin:48px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:24px 24px 26px;display:flex;flex-direction:column;align-items:flex-start}
+.card .ico{width:26px;height:26px;color:var(--purple-l);margin-bottom:16px;flex:none}
+.card h3{margin-bottom:8px}
+.card p{color:var(--mute);font-size:.98rem;line-height:1.5;margin:0}
+.card a{margin-top:14px;font-size:.95rem;color:var(--text);text-underline-offset:3px}
+.card.limit{grid-column:span 2;border-color:color-mix(in srgb,var(--green) 45%,var(--line))}
+.card.limit .ico{color:var(--green)}
+.others{margin:28px 0 0}
 .cmds{display:grid;grid-template-columns:repeat(3,1fr);margin-top:48px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .cmd{padding:26px 26px 30px;border-left:1px solid var(--line)}
 .cmd:first-child{border-left:0}
@@ -150,11 +159,6 @@ section.s.alt{background:var(--bg2);border-block:1px solid var(--line)}
 .cmd pre{margin:18px 0 0;font:500 1rem var(--mono);color:var(--green)}
 .cmd pre:before{content:"$ ";color:var(--mute)}
 .cmd p{color:var(--mute);font-size:.98rem;margin:8px 0 0}
-.ledger{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:1rem;background:var(--bg)}
-.ledger div{display:flex;justify-content:space-between;gap:20px;padding:17px 22px;border-top:1px solid var(--line)}
-.ledger div:first-child{border-top:0}
-.ledger span{color:var(--mute)}
-.ledger b{font-weight:500;font-family:var(--mono);font-size:.92rem;text-align:right}
 
 /* the three parts of the logo: the block stays on screen and the scroll moves the parts one at a time */
 .parts{position:relative;height:210svh}
@@ -177,6 +181,7 @@ footer .wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px}
 footer a{display:block;text-decoration:none;margin-bottom:8px}
 footer a:hover{color:var(--text)}
 
+@media (max-width:1100px) and (min-width:601px){ .cards{grid-template-columns:repeat(2,1fr)} .card.limit{grid-column:1/-1} }
 @media (min-width:1500px){ .stage .pin{grid-template-columns:minmax(280px,340px) 1fr} }
 @media (max-width:900px){
   .stage .pin{grid-template-columns:1fr;gap:16px;align-content:start;padding-top:72px}
@@ -185,7 +190,8 @@ footer a:hover{color:var(--text)}
   .steps{min-height:190px}
   .step h2{font-size:1.5rem;margin-bottom:8px}
   .step p{font-size:.98rem}
-  .twocol,.cmds,footer .wrap,.trio{grid-template-columns:1fr}
+  .cmds,footer .wrap,.trio{grid-template-columns:1fr}
+  .cards{margin-top:32px}
   .cmd{border-left:0;border-top:1px solid var(--line)}
   .cmd:first-child{border-top:0}
   section.s{padding:84px 0}
@@ -196,6 +202,7 @@ footer a:hover{color:var(--text)}
   .parts .pin{position:static;min-height:0;padding:84px 0}
   .slot{display:none}
 }
+@media (max-width:600px){ .cards{grid-template-columns:1fr} .card.limit{grid-column:auto} }
 @media (prefers-reduced-motion: reduce){
   .brand svg use{animation:none}
   html{scroll-behavior:auto}
