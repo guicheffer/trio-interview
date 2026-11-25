@@ -91,3 +91,27 @@ describe('the logo easter egg', () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce\)\{\n  \.brand svg use\{animation:none\}/);
   });
 });
+
+describe('the scene can be clicked on every Fibonacci step', () => {
+  const plan = /var plan = \[([\s\S]*?)\n  \];/.exec(js)?.[1] ?? '';
+  test('both Fibonacci steps are live, so the iframe takes real clicks, and the other scenes are not', () => {
+    const entries = plan.split('\n').filter(l => l.includes('scene:'));
+    expect(entries.length).toBe(6);
+    for (const l of entries) expect(/scene: 'fib'/.test(l), l).toBe(/live: true/.test(l));
+    expect(css).toMatch(/\.screen iframe\{[^}]*pointer-events:none/);
+    expect(css).toMatch(/\.screen iframe\.live\.on\{pointer-events:auto\}/);
+  });
+  test('Run pressed while the answer is still being drawn finishes the answer first', () => {
+    expect(scene).toMatch(/if \(asking\) \{ clear\(\); asking = false; startChange\(\);/);
+  });
+});
+
+describe('Why this', () => {
+  const why = /<section[^>]*id="why"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
+  test('gives the reason in the age of assistants, links the guide, keeps the ledger, and uses no dashes', () => {
+    expect(why).toMatch(/how a person works with the assistant/);
+    expect(why).toContain('href="https://github.com/guicheffer/trio-interview/blob/main/docs/interviewer-guide.md"');
+    expect(why).toContain('class="ledger"');
+    expect(why).not.toMatch(/[\u2013\u2014]/);
+  });
+});
