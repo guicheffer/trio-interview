@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { hasPiHistory, piArgs, piEnvironment, piHomeDir, PI_BLOCKED_ENVIRONMENT, readPiLogin, seedPiHome, writePiRules } from '../pi-pty.js';
+import { choosePiSource, hasPiHistory, piArgs, piEnvironment, piHomeDir, PI_BLOCKED_ENVIRONMENT, readPiLogin, seedPiHome, seedPiRouterHome, writePiRules } from '../pi-pty.js';
 
 const dirs: string[] = [];
 const tmp = () => { const d = mkdtempSync(join(tmpdir(), 'pi-')); dirs.push(d); return d; };
@@ -168,6 +168,8 @@ vi.mock('../os-sandbox.js', async (importOriginal) => {
   return { ...original, sandboxed: (input: { bin: string; args: string[] }) => (sandboxWorks ? { bin: '/usr/bin/sandbox-exec', args: ['-f', 'p.sb', input.bin, ...input.args] } : original.sandboxMissing('linux')) };
 });
 const spawn = vi.fn();
+/** Pi prepares itself before it starts (it may ask the model router), so a test waits for that */
+const settle = () => new Promise(resolve => setTimeout(resolve, 50));
 vi.mock('../terminal-session.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../terminal-session.js')>();
   return { ...original, loadPty: () => ({ spawn }) };
@@ -184,6 +186,7 @@ describe('Pi without the operating system sandbox', () => {
     try {
       const session = new AgentPtySession({ key: 'k', tool: 'pi', workPath: work, assistantContext: '' });
       session.start();
+      await settle();
       expect(spawn).not.toHaveBeenCalled();
       expect(session.running).toBe(false);
       expect(session.scrollback).toContain('Could not start Pi');
@@ -205,6 +208,7 @@ describe('Pi without the operating system sandbox', () => {
     sandboxWorks = true;
     try {
       new AgentPtySession({ key: 'k2', tool: 'pi', workPath: work, assistantContext: '' }).start();
+      await settle();
       expect(spawn).toHaveBeenCalledTimes(1);
       const [bin, args, options] = spawn.mock.calls[0];
       expect(bin).toBe('/usr/bin/sandbox-exec');
@@ -274,5 +278,119 @@ describe('Claude Code inside the operating system sandbox', () => {
     expect(session.running).toBe(false);
     expect(session.scrollback).toContain('Could not start Claude Code');
     expect(session.scrollback).toMatch(/sandbox/);
+  });
+});
+
+
+describe('where Pi gets its model from', () => {
+  const own = { login: { provider: 'openai', model: '', auth: { type: 'api_key', key: 'k' }, source: 'your Pi setup' }, problem: '' };
+  const nobody = { login: null, problem: 'Sign in once: run pi, then /login.' };
+  const router = { baseUrl: 'https://router.example', token: 'fake' };
+
+  test('auto prefers a Pi login that is already there, then the router, then the quiet note', () => {
+    expect(choosePiSource({ provider: 'auto', model: '' }, own, router).kind).toBe('own-login');
+    expect(choosePiSource({ provider: 'auto', model: '' }, nobody, router).kind).toBe('router');
+    expect(choosePiSource({ provider: 'auto', model: '' }, nobody, null)).toEqual({ kind: 'none', problem: 'Sign in once: run pi, then /login.' });
+  });
+
+  test('router and own-login force one, and say why when it is not there', () => {
+    expect(choosePiSource({ provider: 'router', model: '' }, own, router).kind).toBe('router');
+    expect(choosePiSource({ provider: 'own-login', model: '' }, own, router).kind).toBe('own-login');
+    expect(choosePiSource({ provider: 'router', model: '' }, own, null).kind).toBe('none');
+    expect(choosePiSource({ provider: 'own-login', model: '' }, nobody, router)).toEqual({ kind: 'none', problem: 'Sign in once: run pi, then /login.' });
+  });
+});
+
+describe('the private home when Pi goes through the router', () => {
+  test('holds only the loopback address and the random key, never the router\'s address or key', () => {
+    const home = join(tmp(), '.agent-pi-x');
+    seedPiRouterHome(home, { url: 'http://127.0.0.1:41000', key: 'random-session-key' }, 'Claude Sonnet 9.9');
+    const models = JSON.parse(readFileSync(join(home, 'agent', 'models.json'), 'utf-8'));
+    expect(models.providers.router).toMatchObject({ baseUrl: 'http://127.0.0.1:41000', api: 'anthropic-messages', apiKey: 'random-session-key' });
+    expect(models.providers.router.models[0].id).toBe('Claude Sonnet 9.9');
+    const settings = JSON.parse(readFileSync(join(home, 'agent', 'settings.json'), 'utf-8'));
+    expect(settings).toMatchObject({ defaultProvider: 'router', defaultModel: 'Claude Sonnet 9.9', packages: [], extensions: [] });
+    expect(statSync(join(home, 'agent', 'models.json')).mode & 0o777).toBe(0o600);
+    expect(statSync(join(home, 'agent', 'auth.json')).mode & 0o777).toBe(0o600);
+    expect(JSON.parse(readFileSync(join(home, 'agent', 'auth.json'), 'utf-8'))).toEqual({});
+  });
+});
+
+
+describe('a Pi session that goes through the router', () => {
+  test('starts Pi pointing at the loopback proxy, and the router\'s key is in no file, argument or environment variable Pi has', async () => {
+    const { createServer } = await import('http');
+    const hits: string[] = [];
+    const fake = createServer((req, res) => {
+      hits.push(`${req.method} ${req.url} ${req.headers.authorization}`);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(req.url?.endsWith('/v1/models') ? JSON.stringify({ data: [{ id: 'Claude Sonnet 9.9', created_at: '2026-01-01' }] }) : '{"content":[{"text":"hi"}]}');
+    });
+    await new Promise<void>(resolve => fake.listen(0, '127.0.0.1', () => resolve()));
+    const address = fake.address() as { port: number };
+    const saved = { ...process.env };
+    for (const key of Object.keys(process.env)) if (/^(ANTHROPIC_|TRIO_PI_)/.test(key)) delete process.env[key];
+    process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${address.port}`;
+    process.env.ANTHROPIC_AUTH_TOKEN = 'fake-router-secret-value';
+    const { AgentPtySession } = await import('../agent-pty.js');
+    const work = join(tmp(), '.solutions', 'maya', 'fibonacci');
+    mkdirSync(work, { recursive: true });
+    spawn.mockReset().mockReturnValue({ onData: () => {}, onExit: () => {}, write: () => {}, resize: () => {}, kill: () => {} });
+    sandboxWorks = true;
+    const home = piHomeDir(work);
+    try {
+      const session = new AgentPtySession({ key: 'router-1', tool: 'pi', workPath: work, assistantContext: '' });
+      session.start();
+      await new Promise(resolve => setTimeout(resolve, 400));
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [bin, args, options] = spawn.mock.calls[0];
+      const everything = JSON.stringify({ bin, args, env: options.env });
+      expect(everything).not.toContain('fake-router-secret-value');
+      expect(options.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined();
+      expect(options.env.ANTHROPIC_BASE_URL).toBeUndefined();
+      const files = ['models.json', 'auth.json', 'settings.json', 'APPEND_SYSTEM.md'].map(f => readFileSync(join(home, 'agent', f), 'utf-8')).join('\n');
+      expect(files).not.toContain('fake-router-secret-value');
+      expect(files).not.toContain(String(address.port));
+      const models = JSON.parse(readFileSync(join(home, 'agent', 'models.json'), 'utf-8'));
+      expect(models.providers.router.baseUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(models.providers.router.baseUrl).not.toContain(String(address.port));
+      // the model was asked for with a tiny request, using the real key, from this process
+      expect(hits.some(h => h.includes('/v1/messages') && h.includes('fake-router-secret-value'))).toBe(true);
+      // and a call through the loopback proxy with the session key reaches the router with the real key
+      const through = await fetch(`${models.providers.router.baseUrl}/v1/models`, { headers: { 'x-api-key': models.providers.router.apiKey } });
+      expect(through.status).toBe(200);
+      expect(hits.at(-1)).toContain('Bearer fake-router-secret-value');
+      session.dispose();
+    } finally {
+      sandboxWorks = false;
+      for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+      Object.assign(process.env, saved);
+      fake.closeAllConnections?.();
+      fake.close();
+    }
+  });
+
+  test('says one plain sentence when the router is there but does not answer, and starts nothing', async () => {
+    const saved = { ...process.env };
+    for (const key of Object.keys(process.env)) if (/^(ANTHROPIC_|TRIO_PI_)/.test(key)) delete process.env[key];
+    process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:1';
+    process.env.ANTHROPIC_AUTH_TOKEN = 'fake';
+    const { AgentPtySession } = await import('../agent-pty.js');
+    const work = join(tmp(), '.solutions', 'maya', 'fibonacci');
+    mkdirSync(work, { recursive: true });
+    spawn.mockReset();
+    sandboxWorks = true;
+    try {
+      const session = new AgentPtySession({ key: 'router-2', tool: 'pi', workPath: work, assistantContext: '' });
+      session.start();
+      await new Promise(resolve => setTimeout(resolve, 400));
+      expect(spawn).not.toHaveBeenCalled();
+      expect(session.scrollback).toContain('the model router did not answer');
+      expect(session.scrollback).not.toMatch(/127\.0\.0\.1|fake/);
+    } finally {
+      sandboxWorks = false;
+      for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+      Object.assign(process.env, saved);
+    }
   });
 });
