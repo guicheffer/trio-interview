@@ -11,7 +11,9 @@ export { sandboxed };
 import { loadPty } from './terminal-session.js';
 import { BIN } from './binaries.js';
 import { DEFAULT_MODEL } from '../../shared/models.js';
-import { hasPiHistory, piArgs, piEnvironment, piHomeDir, piProgramFolders, PI_BLOCKED_ENVIRONMENT, seedPiHome, writePiRules } from './pi-pty.js';
+import { choosePiSource, hasPiHistory, piArgs, piEnvironment, piHomeDir, piProgramFolders, PI_BLOCKED_ENVIRONMENT, readPiLogin, seedPiHome, seedPiRouterHome, writePiRules, type PiSource } from './pi-pty.js';
+import { chooseRouterModel, readRouter, startRouterProxy, type RouterProxy } from './router-proxy.js';
+import { readInterviewConfig } from './interview-config.js';
 import { hasOpencodeHistory, opencodeArgs, opencodeEnvironment, opencodeHomeDir, seedOpencodeHome, writeOpencodeRules } from './opencode-pty.js';
 
 export type TerminalTool = 'claude-code' | 'opencode' | 'pi';
@@ -143,6 +145,9 @@ export class AgentPtySession {
   private cols = 100;
   private rows = 30;
   private disposed = false;
+  private piSource: PiSource | null = null;
+  private routerProxy: RouterProxy | null = null;
+  private routerModel = '';
 
   constructor(private readonly opts: AgentPtyOptions) {}
 
@@ -190,8 +195,17 @@ export class AgentPtySession {
     }
     if (tool === 'pi') {
       const home = piHomeDir(workPath);
-      const problem = seedPiHome(home);
-      if (problem) return { error: problem };
+      const source = this.piSource;
+      if (!source) return { error: 'Pi was not prepared.' };
+      if (source.kind === 'none') return { error: source.problem };
+      if (source.kind === 'own-login') {
+        const problem = seedPiHome(home, { login: source.login, problem: '' });
+        if (problem) return { error: problem };
+      } else if (this.routerProxy && this.routerModel) {
+        seedPiRouterHome(home, this.routerProxy, this.routerModel);
+      } else {
+        return { error: 'The model router did not answer.' };
+      }
       writePiRules(home, assistantContext);
       // Pi has no sandbox of its own either. It is not started without the operating system's.
       const walled = sandboxed({ bin: BIN.pi, args: piArgs(hasPiHistory(home)), workPath, configDir: home, writable: [workPath, home], programFolders: piProgramFolders(BIN.pi) });
@@ -229,7 +243,42 @@ export class AgentPtySession {
   }
 
   /** Starts the tool, continuing the conversation it had if the process ended earlier */
+  /**
+   * Pi's source is settled before it starts: its own login, or the model router (asked once for a model that answers, with the
+   * router's key staying in this process behind a loopback proxy). Other assistants need nothing here.
+   */
+  private async preparePi(): Promise<void> {
+    this.closeRouter();
+    const config = readInterviewConfig().pi;
+    const router = readRouter();
+    const source = choosePiSource(config, readPiLogin(), router);
+    this.piSource = source;
+    if (source.kind !== 'router' || !router) return;
+    const chosen = await chooseRouterModel(router, config.model);
+    if (!chosen.ok) { this.piSource = { kind: 'none', problem: `The model router is set up but ${chosen.problem}.` }; return; }
+    this.routerProxy = await startRouterProxy(router);
+    this.routerModel = chosen.model;
+  }
+
+  private closeRouter() {
+    this.routerProxy?.close();
+    this.routerProxy = null;
+    this.routerModel = '';
+  }
+
+  private starting = false;
+
   start() {
+    if (this.child || this.disposed || this.starting) return;
+    if (this.opts.tool === 'pi') {
+      this.starting = true;
+      this.preparePi().catch(() => { this.piSource = { kind: 'none', problem: 'Pi could not be prepared.' }; }).finally(() => { this.starting = false; this.launch(); });
+      return;
+    }
+    this.launch();
+  }
+
+  private launch() {
     if (this.child || this.disposed) return;
     const { workPath, tool } = this.opts;
     const name = TOOL_NAMES[tool];
@@ -262,6 +311,7 @@ export class AgentPtySession {
     child.onExit(({ exitCode }) => {
       if (this.child !== child) return;
       this.child = null;
+      this.closeRouter();
       if (this.disposed) return;
       const text = `\r\n\x1b[2m--- ${name} ended (${exitCode}). Press Enter to start it again ---\x1b[0m\r\n`;
       this.store(text);
@@ -288,6 +338,7 @@ export class AgentPtySession {
 
   dispose() {
     this.disposed = true;
+    this.closeRouter();
     const child = this.child;
     this.child = null;
     if (child) { try { child.kill(); } catch {} }

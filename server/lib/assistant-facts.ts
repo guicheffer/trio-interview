@@ -1,5 +1,7 @@
 import { readOpencodeLogin } from './opencode-pty.js';
-import { PI_MIN_VERSION, readPiLogin } from './pi-pty.js';
+import { choosePiSource, PI_MIN_VERSION, readPiLogin } from './pi-pty.js';
+import { readRouter } from './router-proxy.js';
+import { readInterviewConfig } from './interview-config.js';
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -72,11 +74,14 @@ export function assistantFacts(tool: AssistantName, version: string | null, erro
       loginProblem: 'OpenCode is installed but there is no login to copy. Sign in to a provider in OpenCode and pick a default model, or set TRIO_OPENCODE_API_KEY.',
     };
   }
-  const found = installed ? readPiLogin() : { login: null, problem: '' };
+  // Which source Pi will use, said in words and never with an address or a key. Whether the router really answers is asked when Pi starts.
+  const own = installed ? readPiLogin() : { login: null, problem: '' };
+  const source = installed ? choosePiSource(readInterviewConfig().pi, own, readRouter()) : null;
+  const found = { login: source?.kind === 'own-login' ? `${source.login.provider}, from ${source.login.source}` : source?.kind === 'router' ? 'your model router (the one Claude Code uses)' : null, problem: source?.kind === 'none' ? source.problem : '' };
   return {
     ...base,
     versionProblem: !installed ? error || undefined : !versionAtLeast(version, PI_MIN_VERSION.major, PI_MIN_VERSION.minor) ? `Pi ${PI_MIN_VERSION.major}.${PI_MIN_VERSION.minor} or later is needed (found "${version}"). Update it with: npm install -g @mariozechner/pi-coding-agent` : undefined,
-    login: found.login ? `${found.login.provider}, from ${found.login.source}` : null,
+    login: found.login,
     loginProblem: found.problem,
   };
 }

@@ -2,6 +2,8 @@ import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSy
 import { homedir } from 'os';
 import { basename, dirname, join } from 'path';
 import { buildTerminalSystemPrompt } from './assistant-prompt.js';
+import type { PiConfig } from '../../shared/interview-config.js';
+import type { Router } from './router-proxy.js';
 
 /** The oldest Pi these flags were checked against */
 export const PI_MIN_VERSION = { major: 0, minor: 73 };
@@ -178,4 +180,58 @@ export function piProgramFolders(bin: string): string[] {
   // a program started as `node program.js` also reads what sits next to it
   if (existsSync(dirname(resolved))) folders.push(dirname(resolved));
   return [...new Set(folders)];
+}
+
+
+/** The name Pi shows for the provider that goes through the model router */
+export const PI_ROUTER_PROVIDER = 'router';
+
+/** Which source Pi will use: a login of its own, the model router, or nothing yet */
+export type PiSource = { kind: 'own-login'; login: PiLogin } | { kind: 'router' } | { kind: 'none'; problem: string };
+
+/**
+ * Applies the interviewer's choice. `auto` prefers a Pi login that is already there (it is the interviewer's own, and costs them
+ * nothing extra), then the model router their Claude Code uses, then the quiet "sign in once" note. `router` and `own-login` force one.
+ */
+export function choosePiSource(config: PiConfig, own: PiLoginResult, router: Router | null): PiSource {
+  const routerOk = router !== null;
+  if (config.provider === 'own-login') return own.login ? { kind: 'own-login', login: own.login } : { kind: 'none', problem: own.problem };
+  if (config.provider === 'router') return routerOk ? { kind: 'router' } : { kind: 'none', problem: 'No model router was found. It is read from the same place Claude Code reads it.' };
+  if (own.login) return { kind: 'own-login', login: own.login };
+  if (routerOk) return { kind: 'router' };
+  return { kind: 'none', problem: own.problem };
+}
+
+/**
+ * The private home for the router: a custom provider that points at this machine's loopback proxy with a random key. The router's
+ * real address and key are not in any file here, in the environment, or in a command line.
+ */
+export function seedPiRouterHome(piHome: string, proxy: { url: string; key: string }, model: string): void {
+  const agent = join(piHome, 'agent');
+  mkdirSync(agent, { recursive: true });
+  mkdirSync(join(piHome, 'sessions'), { recursive: true });
+  mkdirSync(join(piHome, 'tmp'), { recursive: true });
+  writeFileSync(join(agent, 'settings.json'), JSON.stringify({
+    defaultProvider: PI_ROUTER_PROVIDER,
+    defaultModel: model,
+    enableInstallTelemetry: false,
+    quietStartup: true,
+    packages: [],
+    extensions: [],
+    skills: [],
+    prompts: [],
+    themes: [],
+  }, null, 2));
+  // nothing is left over from an earlier login of another kind
+  secretFile(join(agent, 'auth.json'), '{}');
+  secretFile(join(agent, 'models.json'), JSON.stringify({
+    providers: {
+      [PI_ROUTER_PROVIDER]: {
+        baseUrl: proxy.url,
+        api: 'anthropic-messages',
+        apiKey: proxy.key,
+        models: [{ id: model, name: model, reasoning: false, input: ['text'], contextWindow: 200000, maxTokens: 16384 }],
+      },
+    },
+  }, null, 2));
 }
