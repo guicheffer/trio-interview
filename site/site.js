@@ -7,6 +7,7 @@
   var screenEl = document.getElementById('screen');
   var urlEl = document.getElementById('url'), noteEl = document.getElementById('note');
   var countEl = document.getElementById('count'), prev = document.getElementById('prev'), next = document.getElementById('next');
+  var more = document.getElementById('more');
   if (!screenEl) return;
   var by = {}; frames.forEach(function (f) { by[f.dataset.scene] = f; });
 
@@ -37,6 +38,7 @@
     steps.forEach(function (s, k) { s.classList.toggle('on', k === i); });
     tabs.forEach(function (t, k) { t.classList.toggle('on', k === i); t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
     countEl.textContent = (i + 1) + ' / ' + plan.length;
+    if (more) { more.hidden = false; more.classList.toggle('on', i === plan.length - 1); more.tabIndex = i === plan.length - 1 ? 0 : -1; }
     prev.disabled = i === 0; next.disabled = i === plan.length - 1;
 
     if (p.scene === 'fib') {
